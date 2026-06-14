@@ -1,0 +1,281 @@
+/**
+ * Schema Drizzle (PostgreSQL) — Apêndice A.7 do PLANO-TECNICO.md.
+ * Modela a campanha Cinderak Burning: gangues, fighters, equipamento,
+ * Sympathisers, desafios e Triumphs.
+ */
+import {
+  pgTable,
+  pgEnum,
+  uuid,
+  text,
+  integer,
+  boolean,
+  timestamp,
+  date,
+  smallint,
+  primaryKey,
+  index,
+  vector,
+} from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+
+/** Dimensão dos embeddings (OpenAI text-embedding-3-small). */
+export const EMBEDDING_DIMENSIONS = 1536;
+
+/* ----------------------------- Enums ----------------------------- */
+export const campaignPhase = pgEnum("campaign_phase", [
+  "great_darkness",
+  "downtime",
+  "spark_of_rebellion",
+]);
+
+export const userRole = pgEnum("user_role", ["admin", "player"]);
+
+export const fighterCategory = pgEnum("fighter_category", [
+  "leader",
+  "champion",
+  "prospect",
+  "ganger",
+  "juve",
+  "crew",
+  "hanger_on",
+  "brute",
+]);
+
+export const fighterStatus = pgEnum("fighter_status", [
+  "active",
+  "in_recovery",
+  "injured",
+  "captured",
+  "dead",
+]);
+
+export const equipmentCategory = pgEnum("equipment_category", [
+  "weapon",
+  "wargear",
+  "skill",
+  "armour",
+  "upgrade",
+]);
+
+/* --------------------------- Tabelas ----------------------------- */
+export const campaigns = pgTable("campaign", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  phase: campaignPhase("phase").notNull().default("great_darkness"),
+  currentCycle: smallint("current_cycle").notNull().default(1),
+  totalCycles: smallint("total_cycles").notNull().default(7),
+  startDate: date("start_date"),
+  endDate: date("end_date"),
+  status: text("status").notNull().default("active"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const users = pgTable("app_user", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  email: text("email").notNull().unique(),
+  role: userRole("role").notNull().default("player"),
+  displayName: text("display_name").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  // hash de senha gerado pelo admin (sem self-signup)
+  passwordHash: text("password_hash"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const gangs = pgTable("gang", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  campaignId: uuid("campaign_id")
+    .notNull()
+    .references(() => campaigns.id, { onDelete: "cascade" }),
+  ownerUserId: uuid("owner_user_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  name: text("name").notNull(),
+  house: text("house").notNull(),
+  stashCredits: integer("stash_credits").notNull().default(0),
+  reputation: integer("reputation").notNull().default(1),
+  // valores derivados, recalculados em escrita (ver lib/scoring.ts)
+  ratingCached: integer("rating_cached").notNull().default(0),
+  wealthCached: integer("wealth_cached").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const equipment = pgTable("equipment", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  category: equipmentCategory("category").notNull(),
+  cost: integer("cost").notNull().default(0),
+});
+
+export const fighters = pgTable("fighter", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  gangId: uuid("gang_id")
+    .notNull()
+    .references(() => gangs.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  type: text("type").notNull(),
+  category: fighterCategory("category").notNull(),
+  baseCost: integer("base_cost").notNull().default(0),
+  // perfil de características (Fighter Card, p.78)
+  m: smallint("m"),
+  ws: smallint("ws"),
+  bs: smallint("bs"),
+  s: smallint("s"),
+  t: smallint("t"),
+  w: smallint("w"),
+  i: smallint("i"),
+  a: smallint("a"),
+  ld: smallint("ld"),
+  cl: smallint("cl"),
+  wil: smallint("wil"),
+  int: smallint("int"),
+  xp: integer("xp").notNull().default(0),
+  status: fighterStatus("status").notNull().default("active"),
+  capturedByGangId: uuid("captured_by_gang_id"),
+});
+
+export const fighterEquipment = pgTable(
+  "fighter_equipment",
+  {
+    fighterId: uuid("fighter_id")
+      .notNull()
+      .references(() => fighters.id, { onDelete: "cascade" }),
+    equipmentId: uuid("equipment_id")
+      .notNull()
+      .references(() => equipment.id, { onDelete: "cascade" }),
+    qty: integer("qty").notNull().default(1),
+  },
+  (t) => [primaryKey({ columns: [t.fighterId, t.equipmentId] })],
+);
+
+export const stashItems = pgTable("stash_item", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  gangId: uuid("gang_id")
+    .notNull()
+    .references(() => gangs.id, { onDelete: "cascade" }),
+  equipmentId: uuid("equipment_id")
+    .notNull()
+    .references(() => equipment.id, { onDelete: "cascade" }),
+  qty: integer("qty").notNull().default(1),
+});
+
+export const sympathisers = pgTable("sympathiser", {
+  id: text("id").primaryKey(), // slug estável (ex.: "fallen-house")
+  name: text("name").notNull(),
+  // o Arbitrator escolhe quais Sympathisers ficam ativos na campanha
+  enabled: boolean("enabled").notNull().default(true),
+});
+
+export const sympathiserControl = pgTable("sympathiser_control", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sympathiserId: text("sympathiser_id")
+    .notNull()
+    .references(() => sympathisers.id, { onDelete: "cascade" }),
+  gangId: uuid("gang_id").references(() => gangs.id, { onDelete: "cascade" }),
+  sinceCycle: smallint("since_cycle").notNull().default(1),
+  isCurrent: boolean("is_current").notNull().default(true),
+});
+
+export const challenges = pgTable("challenge", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  campaignId: uuid("campaign_id")
+    .notNull()
+    .references(() => campaigns.id, { onDelete: "cascade" }),
+  cycle: smallint("cycle").notNull(),
+  challengerGangId: uuid("challenger_gang_id")
+    .notNull()
+    .references(() => gangs.id, { onDelete: "cascade" }),
+  challengedGangId: uuid("challenged_gang_id").references(() => gangs.id, {
+    onDelete: "cascade",
+  }),
+  sympathiserId: text("sympathiser_id").references(() => sympathisers.id),
+  scenario: text("scenario"),
+  outcome: text("outcome"), // 'challenger_win' | 'challenged_win' | 'declined' | 'draw'
+  resolved: boolean("resolved").notNull().default(false),
+  playedAt: timestamp("played_at"),
+});
+
+export const triumphs = pgTable("triumph", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  campaignId: uuid("campaign_id")
+    .notNull()
+    .references(() => campaigns.id, { onDelete: "cascade" }),
+  gangId: uuid("gang_id").references(() => gangs.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  awardedAt: timestamp("awarded_at").notNull().defaultNow(),
+});
+
+/**
+ * Trechos de regras vetorizados para o assistente de IA (RAG).
+ * Requer a extensão pgvector: CREATE EXTENSION IF NOT EXISTS vector;
+ */
+export const ruleChunks = pgTable(
+  "rule_chunk",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    source: text("source").notNull(), // arquivo/origem do trecho
+    book: text("book"), // título do livro oficial (quando aplicável)
+    page: integer("page"), // página do livro (para verificação manual)
+    heading: text("heading").notNull().default(""),
+    content: text("content").notNull(),
+    embedding: vector("embedding", {
+      dimensions: EMBEDDING_DIMENSIONS,
+    }).notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("rule_chunk_embedding_idx").using(
+      "hnsw",
+      t.embedding.op("vector_cosine_ops"),
+    ),
+  ],
+);
+
+/* --------------------------- Relations --------------------------- */
+export const gangsRelations = relations(gangs, ({ many, one }) => ({
+  fighters: many(fighters),
+  stash: many(stashItems),
+  owner: one(users, {
+    fields: [gangs.ownerUserId],
+    references: [users.id],
+  }),
+  campaign: one(campaigns, {
+    fields: [gangs.campaignId],
+    references: [campaigns.id],
+  }),
+}));
+
+export const fightersRelations = relations(fighters, ({ many, one }) => ({
+  gang: one(gangs, { fields: [fighters.gangId], references: [gangs.id] }),
+  equipment: many(fighterEquipment),
+}));
+
+export const fighterEquipmentRelations = relations(
+  fighterEquipment,
+  ({ one }) => ({
+    fighter: one(fighters, {
+      fields: [fighterEquipment.fighterId],
+      references: [fighters.id],
+    }),
+    equipment: one(equipment, {
+      fields: [fighterEquipment.equipmentId],
+      references: [equipment.id],
+    }),
+  }),
+);
+
+export const stashItemsRelations = relations(stashItems, ({ one }) => ({
+  gang: one(gangs, { fields: [stashItems.gangId], references: [gangs.id] }),
+  equipment: one(equipment, {
+    fields: [stashItems.equipmentId],
+    references: [equipment.id],
+  }),
+}));
+
+export const usersRelations = relations(users, ({ many }) => ({
+  gangs: many(gangs),
+}));
+
+export const campaignsRelations = relations(campaigns, ({ many }) => ({
+  gangs: many(gangs),
+}));

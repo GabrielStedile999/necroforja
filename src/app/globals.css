@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+/*
+ * Design system "tom Necromunda" — seção 5 do PLANO-TECNICO.md.
+ * Tailwind v4: tokens definidos via @theme viram utilitários (bg-void, text-hazard...).
+ */
+@theme {
+  --color-void: #0b0c0e;
+  --color-panel: #15171b;
+  --color-elevated: #1e2127;
+  --color-rivet: #2c2f36;
+  --color-ink: #e6e1d6;
+  --color-muted: #9a968c;
+  --color-hazard: #f2a900;
+  --color-hazard-strong: #ff7a00;
+  --color-toxic: #8fbf3f;
+  --color-blood: #a11b1b;
+  --color-rust: #7a4a2b;
+  --color-cyan: #3fb6a8;
+
+  --font-display: var(--font-oswald), "Arial Narrow", sans-serif;
+  --font-body: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-void);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  /* leve grão industrial */
+  background-image: radial-gradient(
+    circle at 50% 0%,
+    rgba(242, 169, 0, 0.04),
+    transparent 60%
+  );
+  min-height: 100vh;
+}
+
+/* Faixa de perigo (hazard stripes) — usar com parcimônia */
+.hazard-stripes {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--color-hazard) 0,
+    var(--color-hazard) 12px,
+    var(--color-void) 12px,
+    var(--color-void) 24px
+  );
+}
+
+/* Cabeçalho stencil */
+.stencil {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Foco visível (acessibilidade) */
+*:focus-visible {
+  outline: 2px solid var(--color-hazard);
+  outline-offset: 2px;
+}
