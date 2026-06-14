@@ -290,7 +290,7 @@ on the route. Accents/fonts in the PDF.
 
 ---
 
-## 8. PWA (installable and offline-friendly)
+## 8. PWA (installable and offline-friendly) ✅ COMPLETED
 
 **Goal.** Allow installing the app on phone/tablet and consulting basic data even
 with a poor connection at the game table.

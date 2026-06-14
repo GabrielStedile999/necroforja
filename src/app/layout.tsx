@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Oswald, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { PwaRegister } from "@/components/PwaRegister";
+import { OfflineBanner } from "@/components/OfflineBanner";
 
 const oswald = Oswald({
   subsets: ["latin"],
@@ -27,6 +29,21 @@ export const metadata: Metadata = {
     type: "website",
   },
   robots: { index: true, follow: true },
+  // PWA — theme-color for mobile browsers (duplicates manifest.ts for iOS Safari)
+  themeColor: "#f2a900",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "NecroForja",
+  },
+  icons: {
+    // Apple-touch-icon for iOS home-screen add (manifest icons are ignored there)
+    apple: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+  },
 };
 
 export default function RootLayout({
@@ -37,7 +54,11 @@ export default function RootLayout({
       <body
         className={`${oswald.variable} ${inter.variable} ${jetbrains.variable} antialiased`}
       >
+        {/* PWA: offline banner renders at top of viewport when network is lost */}
+        <OfflineBanner />
         {children}
+        {/* PWA: registers /sw.js; renders nothing */}
+        <PwaRegister />
       </body>
     </html>
   );

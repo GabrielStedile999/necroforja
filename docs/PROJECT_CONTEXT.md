@@ -279,11 +279,11 @@ tests/                       # scoring, campaign-rules, chunk, fase1 (validation
 ## 10. Current state
 
 Phases 1–3 of `PLANO-TECNICO.md` delivered (auth+accounts, gang management,
-challenges+live ranking, RAG assistant). Features 1–7 of
+challenges+live ranking, RAG assistant). Features 1–8 of
 `IMPLEMENTATION_PLAN.md` delivered (equip/unequip fighters, Stash management,
 fighter lifecycle + Downtime, initial Sympathiser assignment, Triumphs &
-campaign closure, AI assistant improvements, PDF gang sheet export). Pending
-items and next steps detailed in `IMPLEMENTATION_PLAN.md`.
+campaign closure, AI assistant improvements, PDF gang sheet export, PWA).
+Pending items and next steps detailed in `IMPLEMENTATION_PLAN.md`.
 
 ### Feature 5 — Triumphs & Campaign Closure (technical summary)
 - `Campaign` domain type now includes `status: string` (`"active" | "finished"`).
@@ -346,6 +346,56 @@ items and next steps detailed in `IMPLEMENTATION_PLAN.md`.
   to `NextResponse` to satisfy TypeScript's `BodyInit` constraint.
 - **No schema changes.** No `db:push` or `rules:ingest` needed.
 - Tests: `tests/gang-sheet.test.ts` (11 cases for `buildGangSheetData`).
+
+### Feature 8 — PWA: Installable & Offline-Friendly (technical summary)
+
+- No new npm dependencies — implemented with native Web APIs and a manual service
+  worker to avoid `@serwist/next` / `next-pwa` webpack-plugin complexity with
+  Next.js 16.
+- **Icon generation** (`scripts/generate-icons.mjs`): pure Node.js script (no
+  external deps). Encodes a `192×192` and `512×512` PNG from scratch using
+  `zlib.deflateSync` + a hand-rolled CRC-32 table. Run once with
+  `node scripts/generate-icons.mjs` to emit `public/icons/icon-192.png` and
+  `public/icons/icon-512.png`. `public/icon.svg` provides the vector version.
+- **Web App Manifest** (`src/app/manifest.ts`): Next.js `MetadataRoute.Manifest`
+  export served at `/manifest.webmanifest`. Colours match the Necromunda theme
+  (`background_color: "#0b0c0e"`, `theme_color: "#f2a900"`).
+- **Caching strategy** (`src/lib/pwa/cache-routes.ts`): pure TypeScript helper
+  `getCacheStrategy(pathname): CacheStrategy` with three tiers:
+  - `network-only` — `/api/*`, `/admin*`, `/login*`, `/dashboard*`,
+    `/_next/data/*` (mutations + auth — never cached).
+  - `cache-first` — `/_next/static/*`, `/icons/*`, `/icon.svg`, `/favicon.ico`
+    (content-hashed or rarely-changing static assets).
+  - `network-first` — `/player*`, `/` and everything else (navigable pages;
+    cached for offline fallback).
+- **Service worker** (`public/sw.js`): plain JavaScript mirroring
+  `cache-routes.ts`. Install: `skipWaiting`. Activate: purge stale caches,
+  `clients.claim`. Fetch: network-only skips interception; cache-first serves
+  from cache and fills on miss; network-first tries network, caches successful
+  navigations, falls back to cache or returns a `503` plain-text response.
+- **SW headers** in `next.config.ts`: `/sw.js` gets
+  `Cache-Control: public, max-age=0, must-revalidate` and
+  `Service-Worker-Allowed: /` so the browser re-fetches it on every page load and
+  the SW can register with full scope.
+- **`PwaRegister`** (`src/components/PwaRegister.tsx`): `"use client"` component
+  that registers `/sw.js` on mount. Returns `null`. Placed in `layout.tsx`.
+- **`OfflineBanner`** (`src/components/OfflineBanner.tsx`): `"use client"`
+  component. Reads `navigator.onLine` on mount; listens to `online`/`offline`
+  window events. When offline renders a fixed top banner (z-50, `bg-rust/90`)
+  with a `WifiOff` icon and the message "You're offline. Viewing cached data —
+  changes require a connection." Returns `null` when online.
+- **`layout.tsx`** updated: imports both components; renders `<OfflineBanner />`
+  before `{children}` and `<PwaRegister />` after. Also adds `themeColor`,
+  `appleWebApp`, and `icons` metadata entries for iOS Safari PWA support
+  (apple-touch-icon, theme-color meta tag).
+- **No schema changes.** No `db:push` or `rules:ingest` needed.
+- **Tests**: `tests/pwa.test.ts` — 15 Vitest cases for `getCacheStrategy`
+  covering all three tiers, edge cases (exact-match `/icon.svg`,
+  `/api` vs `/api/`), and boundary conditions.
+- **User commands**: `node scripts/generate-icons.mjs` (already run; re-run if
+  the icon design changes). `npm test` to run the full test suite.
+
+---
 
 ### Feature 4 — Initial Sympathiser Assignment (technical summary)
 - New action `assignSympathiser` in `app/admin/campaign/actions.ts`:

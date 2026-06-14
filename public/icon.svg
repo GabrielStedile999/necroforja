@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <!-- Background -->
+  <rect width="192" height="192" fill="#0b0c0e"/>
+  <!-- Hazard border -->
+  <rect x="0" y="0" width="192" height="12" fill="#f2a900"/>
+  <rect x="0" y="180" width="192" height="12" fill="#f2a900"/>
+  <rect x="0" y="0" width="12" height="192" fill="#f2a900"/>
+  <rect x="180" y="0" width="12" height="192" fill="#f2a900"/>
+  <!-- Central rhombus (danger marker) -->
+  <polygon points="96,38 154,96 96,154 38,96" fill="#f2a900"/>
+  <!-- Void cutout in centre -->
+  <circle cx="96" cy="96" r="21" fill="#0b0c0e"/>
+</svg>
