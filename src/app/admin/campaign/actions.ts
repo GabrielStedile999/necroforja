@@ -4,11 +4,12 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db, schema } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/guards";
-import { getActiveCampaign } from "@/lib/db/queries";
+import { getActiveCampaign, getLatestCampaign } from "@/lib/db/queries";
 import {
   createChallengeSchema,
   resolveChallengeSchema,
   assignSympathiserSchema,
+  awardTriumphSchema,
 } from "@/lib/validation";
 import {
   setSympathiserController,
@@ -170,6 +171,63 @@ export async function assignSympathiser(
   revalidatePath("/admin/campaign");
   revalidatePath("/");
   return { success: "Assignment recorded." };
+}
+
+/**
+ * Awards a Triumph to a gang (or to the campaign as a whole when gangId is empty).
+ * Works on both active and finished campaigns.
+ */
+export async function awardTriumph(
+  _prev: CampaignState,
+  formData: FormData,
+): Promise<CampaignState> {
+  await requireAdmin();
+
+  const campaign = await getLatestCampaign();
+  if (!campaign) return { error: "No campaign found." };
+
+  const parsed = awardTriumphSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+  const { title, gangId } = parsed.data;
+
+  // If a gangId is provided, confirm it belongs to this campaign
+  if (gangId) {
+    const gang = await db.query.gangs.findFirst({
+      where: and(
+        eq(schema.gangs.id, gangId),
+        eq(schema.gangs.campaignId, campaign.id),
+      ),
+      columns: { id: true },
+    });
+    if (!gang) return { error: "Gang not found in this campaign." };
+  }
+
+  await db.insert(schema.triumphs).values({
+    campaignId: campaign.id,
+    gangId: gangId ?? null,
+    title,
+  });
+
+  revalidatePath("/admin/campaign");
+  revalidatePath("/");
+  return { success: `Triumph "${title}" awarded.` };
+}
+
+/** Marks the active campaign as finished. */
+export async function finishCampaign() {
+  await requireAdmin();
+  const campaign = await getActiveCampaign();
+  if (!campaign) return;
+
+  await db
+    .update(schema.campaigns)
+    .set({ status: "finished" })
+    .where(eq(schema.campaigns.id, campaign.id));
+
+  revalidatePath("/admin/campaign");
+  revalidatePath("/");
 }
 
 /** Advances the campaign by one cycle (and adjusts the phase). When entering

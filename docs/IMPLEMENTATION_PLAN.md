@@ -204,7 +204,7 @@ without inserting is cleaner).
 
 ---
 
-## 5. Triumphs and campaign closure
+## 5. Triumphs and campaign closure ✅ COMPLETED
 
 **Goal.** Close the campaign loop: at the end (cycle 7), the Arbitrator awards
 **Triumphs** (table `triumph` already exists) and the campaign can be marked as

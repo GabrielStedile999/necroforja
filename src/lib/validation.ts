@@ -153,6 +153,18 @@ export const removeEquipmentSchema = z.object({
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
+/** Awards a Triumph to a gang (or to the campaign as a whole if gangId is empty). */
+export const awardTriumphSchema = z.object({
+  title: z.string().min(1, "Please enter a title.").max(100),
+  gangId: z
+    .string()
+    .uuid("Invalid gang ID.")
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+});
+
+export type AwardTriumphInput = z.infer<typeof awardTriumphSchema>;
+
 /** Admin manually assigns a Sympathiser to a gang (or releases it). */
 export const assignSympathiserSchema = z.object({
   sympathiserId: z.string().min(1, "Select the Sympathiser."),

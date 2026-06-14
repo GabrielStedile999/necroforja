@@ -23,6 +23,24 @@ export async function getActiveCampaign() {
   });
 }
 
+/**
+ * Returns the most recent campaign regardless of status (active or finished).
+ * Used in the admin panel and public repo to handle post-closure state.
+ */
+export async function getLatestCampaign() {
+  return db.query.campaigns.findFirst({
+    orderBy: [desc(schema.campaigns.createdAt)],
+  });
+}
+
+/** Triumphs for a campaign, most recently awarded first. */
+export async function listTriumphs(campaignId: string) {
+  return db.query.triumphs.findMany({
+    where: eq(schema.triumphs.campaignId, campaignId),
+    orderBy: [desc(schema.triumphs.awardedAt)],
+  });
+}
+
 function findGangWithRelations(where: SQL | undefined) {
   return db.query.gangs.findFirst({
     where,

@@ -101,6 +101,16 @@ export interface Campaign {
   totalCycles: number;
   startDate: string;
   endDate: string;
+  /** "active" | "finished" */
+  status: string;
+}
+
+export interface Triumph {
+  id: string;
+  gangId: string | null;
+  gangName: string | null;
+  title: string;
+  awardedAt: string;
 }
 
 /* ---- Aggregated public view (consumed by the landing) ---- */
@@ -138,5 +148,6 @@ export interface PublicView {
   gangs: GangRankRow[];
   sympathisers: SympathiserView[];
   recentChallenges: ChallengeView[];
+  triumphs: Triumph[];
   source: "db" | "seed";
 }

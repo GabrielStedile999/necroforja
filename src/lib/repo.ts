@@ -3,7 +3,7 @@
  * otherwise (or if tables do not yet exist) falls back to seed data.
  * This way the landing works with or without a connected database.
  */
-import type { PublicView, GangRankRow, SympathiserView } from "@/types";
+import type { PublicView, GangRankRow, SympathiserView, Triumph } from "@/types";
 import { SYMPATHISERS } from "@/lib/data/sympathisers";
 import {
   CAMPAIGN,
@@ -34,14 +34,17 @@ export async function getPublicView(): Promise<PublicView> {
 async function getDbView(): Promise<PublicView> {
   const {
     getActiveCampaign,
+    getLatestCampaign,
     getAllGangs,
     getSympathiserControlMap,
     getSympathiserControllerMap,
     listSympathisers,
     listChallenges,
+    listTriumphs,
   } = await import("@/lib/db/queries");
 
-  const campaignRow = await getActiveCampaign();
+  // Prefer an active campaign; fall back to the most recent finished one
+  const campaignRow = (await getActiveCampaign()) ?? (await getLatestCampaign());
   if (!campaignRow) return getSeedView();
 
   const gangs = await getAllGangs();
@@ -49,6 +52,7 @@ async function getDbView(): Promise<PublicView> {
   const controllerMap = await getSympathiserControllerMap();
   const enabledSymps = await listSympathisers(true); // enabled only
   const challenges = await listChallenges(campaignRow.id, 8);
+  const triumphRows = await listTriumphs(campaignRow.id);
 
   const nameById = new Map(gangs.map((g) => [g.id, g.name]));
   const sympNameById = new Map(SYMPATHISERS.map((s) => [s.id, s.name]));
@@ -79,6 +83,14 @@ async function getDbView(): Promise<PublicView> {
       };
     });
 
+  const triumphs: Triumph[] = triumphRows.map((t) => ({
+    id: t.id,
+    gangId: t.gangId,
+    gangName: t.gangId ? (nameById.get(t.gangId) ?? null) : null,
+    title: t.title,
+    awardedAt: t.awardedAt.toISOString(),
+  }));
+
   return {
     campaign: {
       id: campaignRow.id,
@@ -88,6 +100,7 @@ async function getDbView(): Promise<PublicView> {
       totalCycles: campaignRow.totalCycles,
       startDate: campaignRow.startDate ?? "",
       endDate: campaignRow.endDate ?? "",
+      status: campaignRow.status,
     },
     gangs: rankGangs(gangRows),
     sympathisers,
@@ -105,6 +118,7 @@ async function getDbView(): Promise<PublicView> {
       outcome: c.outcome,
       resolved: c.resolved,
     })),
+    triumphs,
     source: "db",
   };
 }
@@ -139,6 +153,7 @@ function getSeedView(): PublicView {
     gangs: rankGangs(gangRows),
     sympathisers,
     recentChallenges: [],
+    triumphs: [],
     source: "seed",
   };
 }

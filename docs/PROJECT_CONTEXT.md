@@ -266,10 +266,31 @@ tests/                       # scoring, campaign-rules, chunk, fase1 (validation
 ## 10. Current state
 
 Phases 1–3 of `PLANO-TECNICO.md` delivered (auth+accounts, gang management,
-challenges+live ranking, RAG assistant). Features 1, 2, 3, and 4 of
+challenges+live ranking, RAG assistant). Features 1–5 of
 `IMPLEMENTATION_PLAN.md` delivered (equip/unequip fighters, Stash management,
-fighter lifecycle + Downtime, initial Sympathiser assignment). Pending items and
-next steps detailed in `IMPLEMENTATION_PLAN.md`.
+fighter lifecycle + Downtime, initial Sympathiser assignment, Triumphs &
+campaign closure). Pending items and next steps detailed in
+`IMPLEMENTATION_PLAN.md`.
+
+### Feature 5 — Triumphs & Campaign Closure (technical summary)
+- `Campaign` domain type now includes `status: string` (`"active" | "finished"`).
+- New `Triumph` interface in `types/index.ts`; `PublicView` gains `triumphs: Triumph[]`.
+- `awardTriumphSchema` added to `lib/validation.ts` (title required, gangId optional UUID).
+- `listTriumphs(campaignId)` + `getLatestCampaign()` added to `lib/db/queries.ts`.
+  `getLatestCampaign` returns the most recent campaign regardless of status.
+- `awardTriumph(_prev, formData)` + `finishCampaign()` added to
+  `app/admin/campaign/actions.ts`. `finishCampaign` sets `campaign.status = "finished"`.
+- Admin page now uses `getLatestCampaign` (works post-closure). Shows "Campaign
+  Closure" card on last cycle: award form, Triumph list, "Close Campaign" button.
+  Challenge forms are hidden/read-only when campaign is finished.
+- `lib/repo.ts` updated: falls back to finished campaign when no active one;
+  includes `triumphs` and `campaign.status` in `PublicView`.
+- `src/lib/data/campaign.ts` seed now includes `status: "active"`.
+- New components: `AwardTriumphForm.tsx` (admin, client), `Triumphs.tsx` (landing,
+  presentational). Landing shows Triumphs + "Campaign Closed" badge when applicable.
+- Tests: `tests/triumphs.test.ts` (8 cases for `awardTriumphSchema`).
+- **No schema migration needed** — the `triumph` table and `campaign.status` column
+  already existed in the schema.
 
 ### Feature 4 — Initial Sympathiser Assignment (technical summary)
 - New action `assignSympathiser` in `app/admin/campaign/actions.ts`:

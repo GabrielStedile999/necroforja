@@ -6,17 +6,19 @@ import { Button } from "@/components/ui/button";
 import { CreateChallengeForm } from "@/components/admin/CreateChallengeForm";
 import { ResolveChallengeForm } from "@/components/admin/ResolveChallengeForm";
 import { SympathiserAssignForm } from "@/components/admin/SympathiserAssignForm";
+import { AwardTriumphForm } from "@/components/admin/AwardTriumphForm";
 import {
-  getActiveCampaign,
+  getLatestCampaign,
   listGangsBasic,
   listChallenges,
   listSympathisers,
   getSympathiserControllerMap,
+  listTriumphs,
 } from "@/lib/db/queries";
 import { SYMPATHISERS } from "@/lib/data/sympathisers";
-import { advanceCycle, toggleSympathiser } from "./actions";
+import { advanceCycle, toggleSympathiser, finishCampaign } from "./actions";
 import type { CampaignPhase } from "@/types";
-import { Swords } from "lucide-react";
+import { Swords, Trophy } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Campaign" };
@@ -29,7 +31,7 @@ const PHASE_LABEL: Record<CampaignPhase, string> = {
 };
 
 export default async function CampaignAdminPage() {
-  const campaign = await getActiveCampaign();
+  const campaign = await getLatestCampaign();
 
   if (!campaign) {
     return (
@@ -37,7 +39,7 @@ export default async function CampaignAdminPage() {
         <SiteHeader />
         <main className="mx-auto max-w-2xl px-4 py-16 text-center">
           <h1 className="stencil text-2xl font-bold text-ink">
-            No active campaign
+            No campaign found
           </h1>
           <p className="mt-2 text-sm text-muted">
             Connect the database and run <code>npm run db:seed</code> to start.
@@ -47,12 +49,17 @@ export default async function CampaignAdminPage() {
     );
   }
 
-  const [gangs, challenges, controllerMap, allSymps] = await Promise.all([
-    listGangsBasic(campaign.id),
-    listChallenges(campaign.id, 30),
-    getSympathiserControllerMap(),
-    listSympathisers(),
-  ]);
+  const isFinished = campaign.status === "finished";
+  const isLastCycle = campaign.currentCycle >= campaign.totalCycles;
+
+  const [gangs, challenges, controllerMap, allSymps, triumphs] =
+    await Promise.all([
+      listGangsBasic(campaign.id),
+      listChallenges(campaign.id, 30),
+      getSympathiserControllerMap(),
+      listSympathisers(),
+      listTriumphs(campaign.id),
+    ]);
 
   const gangName = new Map(gangs.map((g) => [g.id, g.name]));
   const sympName = new Map(SYMPATHISERS.map((s) => [s.id, s.name]));
@@ -88,6 +95,11 @@ export default async function CampaignAdminPage() {
             Campaign Panel
           </h1>
           <Badge variant="hazard">{PHASE_LABEL[campaign.phase]}</Badge>
+          {isFinished && (
+            <Badge variant="muted" className="border-blood/40 text-blood">
+              Closed
+            </Badge>
+          )}
           <Link href="/admin" className="ml-auto">
             <Button variant="ghost">Accounts →</Button>
           </Link>
@@ -98,21 +110,83 @@ export default async function CampaignAdminPage() {
             <CardTitle>
               Cycle {campaign.currentCycle} / {campaign.totalCycles}
             </CardTitle>
-            <form action={advanceCycle} className="ml-auto">
-              <Button
-                type="submit"
-                variant="outline"
-                disabled={campaign.currentCycle >= campaign.totalCycles}
-              >
-                Advance cycle →
-              </Button>
-            </form>
+            {!isFinished && (
+              <form action={advanceCycle} className="ml-auto">
+                <Button
+                  type="submit"
+                  variant="outline"
+                  disabled={isLastCycle}
+                >
+                  Advance cycle →
+                </Button>
+              </form>
+            )}
           </CardHeader>
           <CardContent className="text-sm text-muted">
             Great Darkness (cycles 1-3) · Downtime (4) · Spark of Rebellion
             (5-7). Advancing the cycle automatically adjusts the phase.
           </CardContent>
         </Card>
+
+        {/* ── Campaign Closure (shown when on last cycle or already finished) ── */}
+        {(isLastCycle || isFinished) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-hazard" aria-hidden />
+                Campaign Closure
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-6">
+              {/* Existing Triumphs */}
+              {triumphs.length > 0 && (
+                <div>
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
+                    Awarded Triumphs
+                  </p>
+                  <ul className="flex flex-col divide-y divide-rivet/50">
+                    {triumphs.map((t) => (
+                      <li
+                        key={t.id}
+                        className="flex items-center justify-between gap-3 py-2 text-sm"
+                      >
+                        <span className="font-semibold text-hazard">
+                          {t.title}
+                        </span>
+                        <span className="text-muted">
+                          {t.gangId ? (gangName.get(t.gangId) ?? "—") : "Campaign-wide"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Award Triumph form */}
+              <div>
+                <p className="mb-3 text-sm text-muted">
+                  Award a Triumph to a gang or to the campaign as a whole.
+                </p>
+                <AwardTriumphForm gangs={gangs} />
+              </div>
+
+              {/* Close Campaign button */}
+              {!isFinished && (
+                <div className="border-t border-rivet pt-4">
+                  <p className="mb-3 text-sm text-muted">
+                    Once closed, the campaign is read-only and the result is
+                    shown on the public landing.
+                  </p>
+                  <form action={finishCampaign}>
+                    <Button type="submit" variant="outline" className="border-blood/50 text-blood hover:bg-blood/10">
+                      Close campaign
+                    </Button>
+                  </form>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
@@ -204,20 +278,34 @@ export default async function CampaignAdminPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>New challenge</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {gangs.length < 2 ? (
+        {/* ── Challenge panel — read-only when campaign is finished ── */}
+        {isFinished ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Challenges</CardTitle>
+            </CardHeader>
+            <CardContent>
               <p className="text-sm text-muted">
-                At least two gangs are required.
+                The campaign is closed — challenges are read-only.
               </p>
-            ) : (
-              <CreateChallengeForm gangs={gangs} sympathisers={sympOptions} />
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>New challenge</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {gangs.length < 2 ? (
+                <p className="text-sm text-muted">
+                  At least two gangs are required.
+                </p>
+              ) : (
+                <CreateChallengeForm gangs={gangs} sympathisers={sympOptions} />
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
@@ -260,10 +348,13 @@ export default async function CampaignAdminPage() {
                         <div className="text-xs text-muted">{c.scenario}</div>
                       )}
                     </div>
-                    <ResolveChallengeForm
-                      challengeId={c.id}
-                      hasDefender={!!c.challengedGangId}
-                    />
+                    {/* Read-only when finished */}
+                    {!isFinished && (
+                      <ResolveChallengeForm
+                        challengeId={c.id}
+                        hasDefender={!!c.challengedGangId}
+                      />
+                    )}
                   </li>
                 ))}
               </ul>

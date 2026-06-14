@@ -17,6 +17,7 @@ export const CAMPAIGN: Campaign = {
   totalCycles: 7,
   startDate: "2026-06-01",
   endDate: "2026-07-20",
+  status: "active",
 };
 
 export const GANGS: Gang[] = [

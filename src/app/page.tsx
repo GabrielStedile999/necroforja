@@ -3,6 +3,7 @@ import { CampaignStatus } from "@/components/CampaignStatus";
 import { GangRankingTable } from "@/components/GangRankingTable";
 import { SympathiserMap } from "@/components/SympathiserMap";
 import { ChallengeLog } from "@/components/ChallengeLog";
+import { Triumphs } from "@/components/Triumphs";
 import { getPublicView } from "@/lib/repo";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,10 @@ export default async function HomePage() {
       <SiteHeader />
       <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8">
         <CampaignStatus view={view} />
+        <Triumphs
+          triumphs={view.triumphs}
+          campaignClosed={view.campaign.status === "finished"}
+        />
         <div className="grid gap-6 lg:grid-cols-5">
           <div className="flex min-w-0 flex-col gap-6 lg:col-span-2">
             <GangRankingTable gangs={view.gangs} />
