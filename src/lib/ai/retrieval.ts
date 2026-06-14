@@ -9,7 +9,6 @@
 import { sql, cosineDistance, desc, gt } from "drizzle-orm";
 import { generateText } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
-import { db, schema } from "@/lib/db";
 import { embedText } from "./embeddings";
 
 export interface RetrievedChunk {
@@ -39,6 +38,7 @@ export async function searchRules(
   k = 8,
   minSimilarity = 0.1,
 ): Promise<RetrievedChunk[]> {
+  const { db, schema } = await import("@/lib/db");
   const queryEmbedding = await embedText(query);
 
   const similarity = sql<number>`1 - (${cosineDistance(
