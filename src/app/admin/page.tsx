@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CreatePlayerForm } from "@/components/admin/CreatePlayerForm";
 import { listPlayers } from "@/lib/db/queries";
 import { togglePlayerActive } from "./actions";
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert, FileDown } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Arbitrator" };
@@ -73,6 +73,19 @@ export default async function AdminPage() {
                       <Badge variant={p.isActive ? "toxic" : "muted"}>
                         {p.isActive ? "active" : "inactive"}
                       </Badge>
+                      {p.gangs[0] && (
+                        <a
+                          href={`/admin/gangs/${p.gangs[0].id}/export`}
+                          target="_blank"
+                          rel="noreferrer"
+                          title="Export gang sheet as PDF"
+                        >
+                          <Button variant="ghost" type="button" className="gap-1 text-xs">
+                            <FileDown className="h-4 w-4" aria-hidden />
+                            PDF
+                          </Button>
+                        </a>
+                      )}
                       <form action={togglePlayerActive}>
                         <input type="hidden" name="userId" value={p.id} />
                         <input

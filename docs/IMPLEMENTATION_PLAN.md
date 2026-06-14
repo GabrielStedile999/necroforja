@@ -265,7 +265,7 @@ fallback.
 
 ---
 
-## 7. Export gang sheet as PDF
+## 7. Export gang sheet as PDF ✅ COMPLETED
 
 **Goal.** Generate a printable PDF of the gang (roster, costs, Rating/Wealth)
 for use at the table.

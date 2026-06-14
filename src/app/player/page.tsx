@@ -10,7 +10,7 @@ import { StashCreditsForm } from "@/components/player/StashCreditsForm";
 import { EquipFromStashForm } from "@/components/player/EquipFromStashForm";
 import { UpdateFighterStatusForm } from "@/components/player/UpdateFighterStatusForm";
 import { FighterXpForm } from "@/components/player/FighterXpForm";
-import { Bot } from "lucide-react";
+import { Bot, FileDown } from "lucide-react";
 import { requireUser } from "@/lib/auth/guards";
 import {
   getGangByOwnerId,
@@ -68,12 +68,20 @@ export default async function PlayerPage() {
             <p className="text-sm text-muted">
               {gang.ownerName} · {gang.house}
             </p>
-            <Link href="/player/assistant">
-              <Button variant="outline" className="mt-2 gap-2">
-                <Bot className="h-4 w-4" aria-hidden />
-                Rules Assistant
-              </Button>
-            </Link>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Link href="/player/assistant">
+                <Button variant="outline" className="gap-2">
+                  <Bot className="h-4 w-4" aria-hidden />
+                  Rules Assistant
+                </Button>
+              </Link>
+              <a href="/player/export" target="_blank" rel="noreferrer">
+                <Button variant="outline" className="gap-2">
+                  <FileDown className="h-4 w-4" aria-hidden />
+                  Export PDF
+                </Button>
+              </a>
+            </div>
           </div>
           <div className="flex gap-6 font-mono">
             <Metric label="Rating" value={gangRating(gang)} />

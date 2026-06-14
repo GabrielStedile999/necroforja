@@ -279,11 +279,11 @@ tests/                       # scoring, campaign-rules, chunk, fase1 (validation
 ## 10. Current state
 
 Phases 1–3 of `PLANO-TECNICO.md` delivered (auth+accounts, gang management,
-challenges+live ranking, RAG assistant). Features 1–6 of
+challenges+live ranking, RAG assistant). Features 1–7 of
 `IMPLEMENTATION_PLAN.md` delivered (equip/unequip fighters, Stash management,
 fighter lifecycle + Downtime, initial Sympathiser assignment, Triumphs &
-campaign closure, AI assistant improvements). Pending items and next steps
-detailed in `IMPLEMENTATION_PLAN.md`.
+campaign closure, AI assistant improvements, PDF gang sheet export). Pending
+items and next steps detailed in `IMPLEMENTATION_PLAN.md`.
 
 ### Feature 5 — Triumphs & Campaign Closure (technical summary)
 - `Campaign` domain type now includes `status: string` (`"active" | "finished"`).
@@ -323,6 +323,29 @@ detailed in `IMPLEMENTATION_PLAN.md`.
 - **No schema or ingestion changes needed.**
 - **StreamData wiring is not testable in the sandbox** — validate with `tsc` and
   test manually after deploying.
+
+### Feature 7 — PDF Gang Sheet Export (technical summary)
+- New dependency: **`pdf-lib`** (pure JS, no native binaries). Must be Node
+  runtime (not edge). Install with `npm install pdf-lib`.
+- `src/lib/pdf/gangSheet.ts` exports two layers:
+  - `buildGangSheetData(gang: Gang): GangSheetData` — pure function; extracts
+    rating, wealth, per-fighter totals, stash items. Tested in Vitest.
+  - `buildGangSheetPdf(gang: Gang): Promise<Uint8Array>` — calls the above then
+    assembles an A4 PDF using pdf-lib (header band, metrics band, roster table
+    with equipment lines, stash section, footer). Multi-page support via
+    `ensureSpace()`.
+- `src/app/player/export/route.ts` — `GET /player/export`; Node runtime;
+  authenticates with `auth()`, loads gang via `getGangByOwnerId`, returns
+  `Content-Type: application/pdf` download. Players can only export their own gang.
+- `src/app/admin/gangs/[gangId]/export/route.ts` — `GET /admin/gangs/[id]/export`;
+  Node runtime; checks `role === "admin"`, loads gang via `getGangById`, returns
+  PDF download. Admin can export any gang.
+- UI: "Export PDF" button (`FileDown` icon) added to `/player` header. Per-gang
+  "PDF" ghost button added to each player row in `/admin`.
+- Return type `Uint8Array` from pdf-lib wrapped in `Buffer.from()` before passing
+  to `NextResponse` to satisfy TypeScript's `BodyInit` constraint.
+- **No schema changes.** No `db:push` or `rules:ingest` needed.
+- Tests: `tests/gang-sheet.test.ts` (11 cases for `buildGangSheetData`).
 
 ### Feature 4 — Initial Sympathiser Assignment (technical summary)
 - New action `assignSympathiser` in `app/admin/campaign/actions.ts`:
