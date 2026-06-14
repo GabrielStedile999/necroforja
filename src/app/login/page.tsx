@@ -4,7 +4,10 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Sign In" };
+export const metadata: Metadata = {
+  title: "Sign In",
+  robots: { index: false, follow: false },
+};
 
 export default function LoginPage() {
   return (

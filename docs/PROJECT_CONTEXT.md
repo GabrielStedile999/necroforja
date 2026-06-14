@@ -41,7 +41,7 @@ refactoring.
 
 ```
 src/
-  middleware.ts              # protects /admin (role admin) and /player (authenticated)
+  proxy.ts                   # protects /admin (role admin) and /player (authenticated) — Next.js 16 uses "proxy" convention (replaces deprecated middleware.ts)
   auth.config.ts             # Auth.js edge-safe config (authorized/jwt/session callbacks)
   auth.ts                    # full NextAuth (Credentials + argon2 + DB) — Node runtime
   app/
@@ -94,7 +94,7 @@ tests/                       # scoring, campaign-rules, chunk, fase1 (validation
 ## 4. How the main parts work
 
 ### Authentication and authorisation
-- `middleware.ts` uses `auth.config.ts` (edge-safe, WITHOUT DB/argon2). The
+- `proxy.ts` uses `auth.config.ts` (edge-safe, WITHOUT DB/argon2). The
   `authorized` callback decides access by route: `/admin` requires
   `role === "admin"`, `/player` requires a session.
 - `auth.ts` (Node runtime) has the Credentials provider: validates with
@@ -246,7 +246,7 @@ tests/                       # scoring, campaign-rules, chunk, fase1 (validation
   expose rule text/art in the public area. `content/books/` is gitignored and
   must not be committed. Citing book+page is fine; reproducing content publicly
   is not.
-- **Edge vs Node**: `middleware.ts`/`auth.config.ts` CANNOT import DB or argon2
+- **Edge vs Node**: `proxy.ts`/`auth.config.ts` CANNOT import DB or argon2
   (they run on the edge). Logic that touches the database/crypto stays in
   `auth.ts`/actions (Node runtime).
 - **Changed the schema?** Run `npm run db:push`. **Changed chunking/ingestion or
@@ -279,11 +279,12 @@ tests/                       # scoring, campaign-rules, chunk, fase1 (validation
 ## 10. Current state
 
 Phases 1–3 of `PLANO-TECNICO.md` delivered (auth+accounts, gang management,
-challenges+live ranking, RAG assistant). Features 1–8 of
+challenges+live ranking, RAG assistant). Features 1–9 of
 `IMPLEMENTATION_PLAN.md` delivered (equip/unequip fighters, Stash management,
 fighter lifecycle + Downtime, initial Sympathiser assignment, Triumphs &
-campaign closure, AI assistant improvements, PDF gang sheet export, PWA).
-Pending items and next steps detailed in `IMPLEMENTATION_PLAN.md`.
+campaign closure, AI assistant improvements, PDF gang sheet export, PWA,
+SEO & Lighthouse). Pending items and next steps detailed in
+`IMPLEMENTATION_PLAN.md`.
 
 ### Feature 5 — Triumphs & Campaign Closure (technical summary)
 - `Campaign` domain type now includes `status: string` (`"active" | "finished"`).
@@ -346,6 +347,47 @@ Pending items and next steps detailed in `IMPLEMENTATION_PLAN.md`.
   to `NextResponse` to satisfy TypeScript's `BodyInit` constraint.
 - **No schema changes.** No `db:push` or `rules:ingest` needed.
 - Tests: `tests/gang-sheet.test.ts` (11 cases for `buildGangSheetData`).
+
+### Feature 9 — SEO & Lighthouse Audit (technical summary)
+
+- **`src/app/robots.ts`**: `MetadataRoute.Robots` export. Allows `/`; disallows
+  `/admin`, `/player`, `/api/`, `/dashboard`, `/login`. Includes `sitemap` URL.
+  Base URL from `process.env.AUTH_URL || "https://necroforja.vercel.app"`.
+- **`src/app/sitemap.ts`**: `MetadataRoute.Sitemap` export. Single entry for `/`
+  with `changeFrequency: "daily"`, `priority: 1`, and a live `lastModified` date.
+- **`src/app/opengraph-image.tsx`**: Dynamic OG image via `ImageResponse`
+  (`next/og`). Edge runtime; 1200×630 px. Dark void background, hazard-yellow
+  accent gradient, NecroForja branding, campaign name pill, author byline.
+  Served at `/opengraph-image` and automatically picked up by Next.js as the
+  default OG image for all pages in the root layout.
+- **`src/app/layout.tsx`** enriched metadata:
+  - `metadataBase: new URL(siteUrl)` — makes all relative metadata URLs canonical.
+  - Full `openGraph` block: `type`, `url`, `siteName`, `locale`, `description`.
+  - `twitter` card: `summary_large_image`, title, description.
+  - `authors`, `creator`, `keywords` fields added.
+  - `alternates.canonical: "/"` for the root.
+- **`src/app/page.tsx`**:
+  - Replaced `export const dynamic = "force-dynamic"` with
+    `export const revalidate = 60` (ISR). Campaign data changes at most a few
+    times per session; 60 s is fresh enough while letting Vercel's CDN cache HTML.
+  - Injects two JSON-LD `<script type="application/ld+json">` blocks: `WebSite`
+    (with `potentialAction` SearchAction) and `SoftwareApplication`
+    (`applicationCategory: "GameApplication"`, `offers.price: "0"`).
+- **noindex on private pages**: `robots: { index: false, follow: false }` added
+  to `metadata` in `admin/page.tsx`, `admin/campaign/page.tsx`,
+  `player/page.tsx`, `player/assistant/page.tsx`, `login/page.tsx`, and
+  `dashboard/page.tsx` (which also gained a `Metadata` export for the first time).
+- **`src/lib/seo/json-ld.ts`**: pure helper module exporting
+  `buildWebsiteJsonLd(siteUrl)` → `WebsiteJsonLd` and
+  `buildAppJsonLd(siteUrl)` → `SoftwareApplicationJsonLd`. Fully typed
+  interfaces. Used by `page.tsx`.
+- **No schema changes.** No `db:push` or `rules:ingest` needed.
+- **Tests**: `tests/seo.test.ts` — 12 Vitest cases covering both builders:
+  `@type`/`@context`, URL embedding, name, description presence, author shape,
+  potentialAction target, multi-URL correctness, applicationCategory, price.
+- **Total tests**: 142 passing (13 test files).
+
+---
 
 ### Feature 8 — PWA: Installable & Offline-Friendly (technical summary)
 

@@ -21,7 +21,10 @@ import type { CampaignPhase } from "@/types";
 import { Swords, Trophy } from "lucide-react";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Campaign" };
+export const metadata: Metadata = {
+  title: "Campaign",
+  robots: { index: false, follow: false },
+};
 export const dynamic = "force-dynamic";
 
 const PHASE_LABEL: Record<CampaignPhase, string> = {

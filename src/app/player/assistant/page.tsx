@@ -6,7 +6,10 @@ import { requireUser } from "@/lib/auth/guards";
 import { Bot } from "lucide-react";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Rules Assistant" };
+export const metadata: Metadata = {
+  title: "Rules Assistant",
+  robots: { index: false, follow: false },
+};
 export const dynamic = "force-dynamic";
 
 export default async function AssistantPage() {

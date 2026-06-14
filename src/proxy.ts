@@ -1,8 +1,10 @@
 import NextAuth from "next-auth";
 import { authConfig } from "@/auth.config";
 
-// Edge-safe middleware: uses only authConfig (no DB/argon2).
-export const { auth: middleware } = NextAuth(authConfig);
+// Edge-safe proxy: uses only authConfig (no DB/argon2).
+const { auth } = NextAuth(authConfig);
+
+export const proxy = auth;
 
 export const config = {
   // Protects authenticated areas; ignores assets and the auth route.

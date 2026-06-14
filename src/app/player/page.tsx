@@ -27,7 +27,10 @@ import {
 } from "@/lib/scoring";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "My Gang" };
+export const metadata: Metadata = {
+  title: "My Gang",
+  robots: { index: false, follow: false },
+};
 export const dynamic = "force-dynamic";
 
 export default async function PlayerPage() {

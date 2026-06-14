@@ -315,7 +315,7 @@ inadvertently. Choose a lib compatible with Next 16.
 
 ---
 
-## 9. SEO and Lighthouse audit (public section)
+## 9. SEO and Lighthouse audit (public section) ✅ COMPLETED
 
 **Goal.** Maximise discoverability and quality of the landing (target: 95+ in all
 4 categories).

@@ -9,7 +9,10 @@ import { togglePlayerActive } from "./actions";
 import { ShieldAlert, FileDown } from "lucide-react";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Arbitrator" };
+export const metadata: Metadata = {
+  title: "Arbitrator",
+  robots: { index: false, follow: false },
+};
 
 // Always fresh data (administrative area).
 export const dynamic = "force-dynamic";
