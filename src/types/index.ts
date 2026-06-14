@@ -1,6 +1,6 @@
 /**
- * Tipos de domínio da campanha Necromunda (Cinderak Burning).
- * Refletem o Apêndice A do PLANO-TECNICO.md.
+ * Domain types for the Necromunda campaign (Cinderak Burning).
+ * Reflect Appendix A of PLANO-TECNICO.md.
  */
 
 export type CampaignPhase =
@@ -32,7 +32,7 @@ export type EquipmentCategory =
   | "armour"
   | "upgrade";
 
-/** Perfil de características do fighter (Fighter Card, p.78 do Core Rulebook). */
+/** Fighter characteristic profile (Fighter Card, p.78 of the Core Rulebook). */
 export interface FighterProfile {
   /** Movement */ m: number;
   /** Weapon Skill */ ws: number;
@@ -42,10 +42,10 @@ export interface FighterProfile {
   /** Wounds */ w: number;
   /** Initiative */ i: number;
   /** Attacks */ a: number;
-  /** Leadership (psicológico) */ ld: number;
-  /** Cool (psicológico) */ cl: number;
-  /** Willpower (psicológico) */ wil: number;
-  /** Intelligence (psicológico) */ int: number;
+  /** Leadership (psychological) */ ld: number;
+  /** Cool (psychological) */ cl: number;
+  /** Willpower (psychological) */ wil: number;
+  /** Intelligence (psychological) */ int: number;
 }
 
 export interface EquipmentItem {
@@ -62,14 +62,14 @@ export interface Fighter {
   category: FighterCategory;
   baseCost: number;
   profile: FighterProfile;
-  /** Itens equipados (já contam para o Rating). */
+  /** Equipped items (already counted towards the Rating). */
   equipment: EquipmentItem[];
   xp: number;
   status: FighterStatus;
 }
 
 export interface StashItem {
-  /** id da linha stash_item (necessário para remoção e equipar). */
+  /** id of the stash_item row (required for removal and equipping). */
   id: string;
   equipment: EquipmentItem;
   qty: number;
@@ -81,9 +81,9 @@ export interface Gang {
   house: string;
   ownerName: string;
   fighters: Fighter[];
-  /** Créditos parados no Stash. */
+  /** Credits held in the Stash. */
   stashCredits: number;
-  /** Equipamento guardado no Stash (conta para Wealth, não para Rating). */
+  /** Equipment stored in the Stash (counts towards Wealth, not Rating). */
   stash: StashItem[];
   reputation: number;
 }
@@ -103,7 +103,7 @@ export interface Campaign {
   endDate: string;
 }
 
-/* ---- View pública agregada (consumida pela landing) ---- */
+/* ---- Aggregated public view (consumed by the landing) ---- */
 
 export interface GangRankRow {
   id: string;

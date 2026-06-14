@@ -3,14 +3,14 @@ import { Badge } from "@/components/ui/badge";
 import type { GangRankRow } from "@/types";
 
 /**
- * Ranking público de gangues. Ordenação: nº de Sympathisers controlados
- * (decide a campanha), desempate por Gang Rating. Recebe linhas já ordenadas.
+ * Public gang ranking. Sorted by: number of controlled Sympathisers
+ * (decides the campaign), tie-broken by Gang Rating. Receives already-sorted rows.
  */
 export function GangRankingTable({ gangs }: { gangs: GangRankRow[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Ranking da Campanha</CardTitle>
+        <CardTitle>Campaign Ranking</CardTitle>
       </CardHeader>
       <CardContent className="px-0 py-0">
         <div className="hidden overflow-x-auto sm:block">
@@ -18,8 +18,8 @@ export function GangRankingTable({ gangs }: { gangs: GangRankRow[] }) {
           <thead>
             <tr className="border-b border-rivet text-left text-xs uppercase tracking-wider text-muted">
               <th className="px-5 py-2 font-medium">#</th>
-              <th className="px-5 py-2 font-medium">Gangue</th>
-              <th className="px-5 py-2 font-medium">Casa</th>
+              <th className="px-5 py-2 font-medium">Gang</th>
+              <th className="px-5 py-2 font-medium">House</th>
               <th className="px-5 py-2 text-center font-medium">Sympath.</th>
               <th className="px-5 py-2 text-right font-medium">Rating</th>
               <th className="px-5 py-2 text-right font-medium">Wealth</th>

@@ -1,371 +1,377 @@
 # IMPLEMENTATION_PLAN
 
-Roadmap das próximas features, em ordem recomendada. Cada item é
-auto-suficiente: um assistente deve conseguir implementar **uma feature por vez**
-lendo este arquivo + `PROJECT_CONTEXT.md`, sem reanalisar o projeto inteiro.
+Roadmap of upcoming features, in recommended order. Each item is
+self-contained: an assistant should be able to implement **one feature at a
+time** by reading this file + `PROJECT_CONTEXT.md`, without re-analysing the
+entire project.
 
-Convenções válidas para todas as features (ver PROJECT_CONTEXT §7):
-- Validar entrada com **Zod** (`lib/validation.ts`), checar autorização
-  (`requireUser`/`requireAdmin`) e **propriedade** antes de escrever.
-- Após mutação em gangue, chamar `recalcGangScores(gangId)`; sempre
-  `revalidatePath` das rotas afetadas.
-- Server Actions retornam `{ error?, success? }` e são consumidas por
-  `useActionState` em componentes `"use client"`.
-- Usar tokens do tema Necromunda; UI em português; páginas autenticadas com
+Conventions valid for all features (see PROJECT_CONTEXT §7):
+- Validate input with **Zod** (`lib/validation.ts`), check authorisation
+  (`requireUser`/`requireAdmin`) and **ownership** before writing.
+- After a mutation on a gang, call `recalcGangScores(gangId)`; always
+  `revalidatePath` the affected routes.
+- Server Actions return `{ error?, success? }` and are consumed by
+  `useActionState` in `"use client"` components.
+- Use Necromunda theme tokens; UI in English; authenticated pages with
   `export const dynamic = "force-dynamic"`.
-- Verificar com `tsc --noEmit` (stub de `@node-rs/argon2`) + testes Vitest na
-  máquina do usuário.
+- Verify with `tsc --noEmit` (stub for `@node-rs/argon2`) + Vitest tests on the
+  user's machine.
 
-Status atual: Fases 1–3 entregues. As features abaixo são a Fase 4+ e
-refinamentos.
+Current status: Phases 1–3 delivered. The features below are Phase 4+ and
+refinements.
 
 ---
 
-## Prompt de handoff (copiar/colar)
+## Handoff prompt (copy/paste)
 
-Use isto para delegar **uma feature por vez** a um modelo implementador (Claude
-Code, Codex/Cursor, etc.). Pré-requisito: o implementador precisa de **acesso
-direto ao repositório** (ler/escrever arquivos) — não funciona bem em chat puro.
-Recomendado: modelo intermediário (Sonnet/GPT-5) para as features mecânicas;
-reservar um modelo mais forte (ou revisão dele) para as #6 (IA/RAG), #8 (PWA) e
-#10 (testes). Abra um **contexto novo por feature** para gastar menos tokens.
+Use this to delegate **one feature at a time** to an implementing model (Claude
+Code, Codex/Cursor, etc.). Prerequisite: the implementor needs **direct
+repository access** (read/write files) — does not work well in pure chat.
+Recommended: intermediate model (Sonnet/GPT-5) for mechanical features; reserve
+a stronger model (or its review) for #6 (AI/RAG), #8 (PWA), and #10 (tests).
+Open a **new context per feature** to spend fewer tokens.
 
-Substitua `<NÚMERO>` pela feature desejada e cole o prompt abaixo:
+Replace `<NUMBER>` with the desired feature and paste the prompt below:
 
 ```
-Você vai implementar UMA feature neste projeto (Next.js 16 + TS + Drizzle +
-Auth.js + RAG). Trabalhe apenas no escopo da feature; não refatore o resto.
+You will implement ONE feature in this project (Next.js 16 + TS + Drizzle +
+Auth.js + RAG). Work only within the feature's scope; do not refactor the rest.
 
-Antes de codar, leia COMPLETO:
-- PROJECT_CONTEXT.md  (stack, estrutura, convenções, problemas já resolvidos)
-- A seção "## <NÚMERO>." de IMPLEMENTATION_PLAN.md (a feature a implementar)
-- O bloco "Convenções válidas para todas as features" no topo de IMPLEMENTATION_PLAN.md
+Before coding, read IN FULL:
+- PROJECT_CONTEXT.md  (stack, structure, conventions, already-solved problems)
+- The "## <NUMBER>." section of IMPLEMENTATION_PLAN.md (the feature to implement)
+- The "Conventions valid for all features" block at the top of IMPLEMENTATION_PLAN.md
 
-Regras inegociáveis (de PROJECT_CONTEXT §6 e §8):
-- NÃO migrar o AI SDK para v5 (o código depende da API v4).
-- middleware.ts / auth.config.ts são edge-safe: não importar DB nem argon2 ali.
-- Ao ler env, usar `||` (não `??`) para tratar "" como ausente.
-- Validar entrada com Zod; checar requireUser/requireAdmin E propriedade
-  (ex.: o recurso pertence à gangue do usuário) ANTES de escrever.
-- Após mutação em gangue, chamar recalcGangScores(gangId); revalidatePath.
-- UI em português, tokens do tema Necromunda; páginas autenticadas com
+Non-negotiable rules (from PROJECT_CONTEXT §6 and §8):
+- Do NOT migrate the AI SDK to v5 (the code depends on the v4 API).
+- middleware.ts / auth.config.ts are edge-safe: do not import DB or argon2 there.
+- When reading env, use `||` (not `??`) to treat "" as absent.
+- Validate input with Zod; check requireUser/requireAdmin AND ownership
+  (e.g.: the resource belongs to the user's gang) BEFORE writing.
+- After a mutation on a gang, call recalcGangScores(gangId); revalidatePath.
+- UI in English, Necromunda theme tokens; authenticated pages with
   `export const dynamic = "force-dynamic"`.
 
-Entregue:
-1. A implementação completa da feature, seguindo os "Arquivos prováveis".
-2. `npm run typecheck` SEM erros. (No sandbox, se @node-rs/argon2 ou os pacotes
-   @ai-sdk/* não instalarem, crie um .d.ts ambiente temporário declarando-os,
-   rode o tsc e remova o stub depois — ver PROJECT_CONTEXT §8.)
-3. Testes Vitest novos para a lógica pura introduzida; não quebrar os existentes.
-4. Cumprir os "Critérios de aceite" da feature.
-5. Atualizar PROJECT_CONTEXT.md se schema, convenções ou comportamento mudaram.
-6. Um resumo final: o que mudou, e os comandos que EU (usuário) preciso rodar
-   na minha máquina (ex.: `npm run db:push`, `npm run rules:ingest`, `npm test`).
+Deliver:
+1. The complete feature implementation, following the "Likely files".
+2. `npm run typecheck` WITHOUT errors. (In the sandbox, if @node-rs/argon2 or
+   the @ai-sdk/* packages don't install, create a temporary ambient .d.ts
+   declaring them, run tsc, and remove the stub afterwards — see PROJECT_CONTEXT §8.)
+3. New Vitest tests for the pure logic introduced; do not break the existing ones.
+4. Meet the "Acceptance criteria" for the feature.
+5. Update PROJECT_CONTEXT.md if the schema, conventions, or behaviour changed.
+6. A final summary: what changed, and the commands that I (the user) need to run
+   on my machine (e.g.: `npm run db:push`, `npm run rules:ingest`, `npm test`).
 
-Não rode db:push/seed/ingest você mesmo (dependem do meu banco/chaves); apenas
-me diga quando são necessários. Pergunte se algo do escopo estiver ambíguo.
+Do not run db:push/seed/ingest yourself (they depend on my database/keys); just
+tell me when they are needed. Ask if anything in the scope is ambiguous.
 ```
 
-> Dica: depois que a feature passar (tsc + testes + critérios de aceite), peça ao
-> implementador para atualizar este arquivo marcando a feature como concluída,
-> para a próxima iteração continuar limpa.
+> Tip: once the feature passes (tsc + tests + acceptance criteria), ask the
+> implementor to update this file marking the feature as complete, so the next
+> iteration starts clean.
 
 ---
 
-## 1. Equipar/desequipar fighters (UI de equipamento) ✅ CONCLUÍDA
+## 1. Equip/unequip fighters (equipment UI) ✅ COMPLETED
 
-**Objetivo.** Permitir que o jogador equipe armas/wargear/armadura/skills nos
-fighters da própria gangue pela interface. A action `addEquipment` já existe;
-falta UI e a remoção de item.
+**Goal.** Allow the player to equip weapons/wargear/armour/skills on fighters in
+their own gang via the interface. The `addEquipment` action already exists;
+missing: UI and item removal.
 
-**Comportamento esperado.**
-- Em `/player`, cada fighter mostra seus itens equipados (nome + custo) e o custo
-  total do fighter.
-- Formulário "Adicionar equipamento" por fighter: nome, categoria
-  (weapon/wargear/skill/armour/upgrade), custo. Ao enviar, o item é criado e
-  vinculado; Rating/Wealth recalculam.
-- Botão "remover" por item equipado.
+**Expected behaviour.**
+- In `/player`, each fighter shows its equipped items (name + cost) and the
+  fighter's total cost.
+- "Add equipment" form per fighter: name, category
+  (weapon/wargear/skill/armour/upgrade), cost. On submit, the item is created
+  and linked; Rating/Wealth recalculate.
+- "Remove" button per equipped item.
 
-**Arquivos prováveis.**
-- `src/app/player/actions.ts` — já tem `addEquipment`; adicionar
-  `removeEquipment(formData)` (valida que o `fighter_equipment` pertence a fighter
-  da gangue do usuário; deleta vínculo + opcionalmente o `equipment`).
-- `src/components/player/AddEquipmentForm.tsx` (novo, client, `useActionState`).
-- `src/app/player/page.tsx` — renderizar itens por fighter + formulário + remover.
-- `src/lib/validation.ts` — já tem `addEquipmentSchema`; criar
-  `removeEquipmentSchema` se necessário.
-- `src/lib/db/queries.ts` — `getGangByOwnerId` já traz `fighter.equipment`; reusar.
+**Likely files.**
+- `src/app/player/actions.ts` — already has `addEquipment`; add
+  `removeEquipment(formData)` (validates that the `fighter_equipment` belongs to
+  a fighter in the user's gang; deletes the link + optionally the `equipment`).
+- `src/components/player/AddEquipmentForm.tsx` (new, client, `useActionState`).
+- `src/app/player/page.tsx` — render items per fighter + form + remove.
+- `src/lib/validation.ts` — already has `addEquipmentSchema`; create
+  `removeEquipmentSchema` if needed.
+- `src/lib/db/queries.ts` — `getGangByOwnerId` already brings
+  `fighter.equipment`; reuse.
 
-**Riscos.** Autorização (não equipar fighter de outra gangue) — reusar
-`fighterBelongsToGang`. Excluir `equipment` órfão vs. compartilhado: hoje cada
-item é uma linha própria por fighter, então pode deletar com segurança.
+**Risks.** Authorisation (do not equip another gang's fighter) — reuse
+`fighterBelongsToGang`. Deleting orphan `equipment` vs. shared: today each item
+is its own row per fighter, so it can be safely deleted.
 
-**Critérios de aceite.**
-- Jogador adiciona/remove item; Rating e Wealth atualizam na hora.
-- Jogador não consegue alterar fighter de outra gangue (testar action direta).
-- Itens aparecem listados sob cada fighter.
+**Acceptance criteria.**
+- Player adds/removes item; Rating and Wealth update immediately.
+- Player cannot modify another gang's fighter (test the action directly).
+- Items appear listed under each fighter.
 
 ---
 
-## 2. Gestão de Stash (créditos + equipamento guardado) ✅ CONCLUÍDA
+## 2. Stash management (credits + stored equipment) ✅ COMPLETED
 
-**Objetivo.** Refletir corretamente a **Wealth** (= Rating + Stash). Hoje
-`stash_credits` existe e `stash_item` está no schema, mas não há UI para mexer.
+**Goal.** Correctly reflect **Wealth** (= Rating + Stash). Today `stash_credits`
+exists and `stash_item` is in the schema, but there is no UI to interact with it.
 
-**Comportamento esperado.**
-- Jogador vê o Stash (créditos + itens guardados) na `/player`.
-- Ações: ajustar créditos do Stash (recompensas pós-batalha), adicionar/remover
-  item ao Stash, e **mover item do Stash para um fighter** (e vice-versa).
+**Expected behaviour.**
+- Player sees the Stash (credits + stored items) in `/player`.
+- Actions: adjust Stash credits (post-battle rewards), add/remove item to Stash,
+  and **move item from Stash to a fighter** (and vice-versa).
 
-**Arquivos prováveis.**
+**Likely files.**
 - `src/app/player/actions.ts` — `setStashCredits`, `addStashItem`,
-  `removeStashItem`, `equipFromStash` (transação: remove de `stash_item`, cria
-  `fighter_equipment`).
-- `src/lib/validation.ts` — schemas de stash.
-- `src/components/player/StashPanel.tsx` (novo).
-- `src/app/player/page.tsx` — painel de Stash.
-- `src/lib/db/mutations.ts` — helper de transação se mover item; `recalcGangScores`.
+  `removeStashItem`, `equipFromStash` (transaction: removes from `stash_item`,
+  creates `fighter_equipment`).
+- `src/lib/validation.ts` — stash schemas.
+- `src/components/player/StashPanel.tsx` (new).
+- `src/app/player/page.tsx` — Stash panel.
+- `src/lib/db/mutations.ts` — transaction helper to move item; `recalcGangScores`.
 
-**Riscos.** Consistência (mover item deve ser atômico — usar transação Drizzle
-`db.transaction`). Wealth depende de `stash_item.qty * equipment.cost` — conferir
-`gangWealth` (já implementado).
+**Risks.** Consistency (moving item must be atomic — use Drizzle `db.transaction`).
+Wealth depends on `stash_item.qty * equipment.cost` — check `gangWealth`
+(already implemented).
 
-**Critérios de aceite.**
-- Alterar créditos/itens do Stash muda a Wealth (não o Rating).
-- Mover item Stash→fighter aumenta o Rating e some do Stash; Wealth constante.
-- Operações restritas à própria gangue.
+**Acceptance criteria.**
+- Changing Stash credits/items changes Wealth (not Rating).
+- Moving an item Stash→fighter increases Rating and removes it from Stash;
+  Wealth constant.
+- Operations restricted to the player's own gang.
 
 ---
 
-## 3. Ciclo de vida do fighter + passos de Downtime ✅ CONCLUÍDA
+## 3. Fighter lifecycle + Downtime steps ✅ COMPLETED
 
-**Objetivo.** Suportar status do fighter (active/in_recovery/injured/captured/dead),
-XP/avanços e os passos de Downtime da campanha.
+**Goal.** Support fighter statuses (active/in_recovery/injured/captured/dead),
+XP/advances, and the campaign's Downtime steps.
 
-**Comportamento esperado.**
-- Jogador/admin altera status e XP do fighter; fighters mortos não contam no
-  Rating (já tratado em `gangRating`).
-- Admin, ao avançar para/da fase Downtime, dispara os passos: limpar "In
-  Recovery", devolver capturados, etc. (ver PLANO-TECNICO Apêndice A; Core
-  Rulebook p.164+ via assistente).
-- "Captured": registrar `captured_by_gang_id`.
+**Expected behaviour.**
+- Player/admin changes fighter status and XP; dead fighters do not count in
+  Rating (already handled in `gangRating`).
+- Admin, when advancing to/from the Downtime phase, triggers the steps: clear
+  "In Recovery", return captured fighters, etc. (see PLANO-TECNICO Appendix A;
+  Core Rulebook p.164+ via assistant).
+- "Captured": record `captured_by_gang_id`.
 
-**Arquivos prováveis.**
+**Likely files.**
 - `src/app/player/actions.ts` — `updateFighterStatus`, `addFighterXp`.
-- `src/app/admin/campaign/actions.ts` — `applyDowntime(campaignId)` (limpa
-  recovery, devolve capturados) acionado ao entrar no ciclo 4.
+- `src/app/admin/campaign/actions.ts` — `applyDowntime(campaignId)` (clears
+  recovery, returns captured fighters) triggered on entering cycle 4.
 - `src/lib/validation.ts` — schemas.
-- `src/app/player/page.tsx` — controles de status/XP por fighter.
+- `src/app/player/page.tsx` — status/XP controls per fighter.
 - `src/lib/db/mutations.ts` — `applyDowntimeEffects`.
 
-**Riscos.** Regras de Downtime são detalhadas; começar pelo essencial (recovery +
-capturados) e iterar. Recalcular Rating quando status muda (mortos saem).
+**Risks.** Downtime rules are detailed; start with the essentials (recovery +
+captured) and iterate. Recalculate Rating when status changes (dead fighters
+leave).
 
-**Critérios de aceite.**
-- Marcar fighter como `dead` reduz o Rating; `in_recovery` é resetado no Downtime.
-- XP persiste e aparece no roster.
-- Captura registra a gangue captora.
+**Acceptance criteria.**
+- Marking a fighter as `dead` reduces the Rating; `in_recovery` is reset on
+  Downtime.
+- XP persists and appears in the roster.
+- Capture records the capturing gang.
 
 ---
 
-## 4. Admin: atribuição inicial de Sympathisers ✅ CONCLUÍDA
+## 4. Admin: initial Sympathiser assignment ✅ COMPLETED
 
-**Objetivo.** Permitir ao Arbitrator definir/ajustar manualmente quem controla
-cada Sympathiser (hoje só muda via resolução de desafio; o estado inicial vem do
-seed).
+**Goal.** Allow the Arbitrator to manually set/adjust who controls each
+Sympathiser (currently only changes via challenge resolution; the initial state
+comes from the seed).
 
-**Comportamento esperado.**
-- Em `/admin/campaign`, uma seção lista os 26 Sympathisers com o controlador
-  atual e um seletor para reatribuir (ou "livre").
-- Reatribuir usa `setSympathiserController` (encerra controle atual, cria novo).
+**Expected behaviour.**
+- In `/admin/campaign`, a section lists the 26 Sympathisers with the current
+  controller and a selector to reassign (or "free").
+- Reassigning uses `setSympathiserController` (ends current control, creates a
+  new one).
 
-**Arquivos prováveis.**
+**Likely files.**
 - `src/app/admin/campaign/actions.ts` — `assignSympathiser(formData)`
-  (`requireAdmin`, valida sympathiserId ∈ catálogo, gangId ∈ campanha ou vazio).
-- `src/components/admin/SympathiserAssignForm.tsx` (novo).
-- `src/app/admin/campaign/page.tsx` — seção de atribuição.
+  (`requireAdmin`, validates sympathiserId ∈ catalogue, gangId ∈ campaign or
+  empty).
+- `src/components/admin/SympathiserAssignForm.tsx` (new).
+- `src/app/admin/campaign/page.tsx` — assignment section.
 - `src/lib/validation.ts` — `assignSympathiserSchema`.
 
-**Riscos.** Manter histórico consistente (`is_current`). Para "livre", inserir
-controle com `gangId = null` ou apenas encerrar o atual (decidir: encerrar e não
-inserir é mais limpo).
+**Risks.** Keep history consistent (`is_current`). For "free", either insert a
+control with `gangId = null` or just end the current one (decision: ending
+without inserting is cleaner).
 
-**Critérios de aceite.**
-- Admin reatribui um Sympathiser; landing e mapa refletem na hora.
-- Marcar como "livre" remove o controlador.
-- Não-admin não acessa.
+**Acceptance criteria.**
+- Admin reassigns a Sympathiser; landing and map reflect it immediately.
+- Marking as "free" removes the controller.
+- Non-admin cannot access.
 
 ---
 
-## 5. Triumphs e encerramento da campanha
+## 5. Triumphs and campaign closure
 
-**Objetivo.** Fechar o loop da campanha: ao fim (ciclo 7), o Arbitrator concede
-**Triumphs** (tabela `triumph` já existe) e a campanha pode ser marcada como
-encerrada.
+**Goal.** Close the campaign loop: at the end (cycle 7), the Arbitrator awards
+**Triumphs** (table `triumph` already exists) and the campaign can be marked as
+finished.
 
-**Comportamento esperado.**
-- Em `/admin/campaign`, quando `currentCycle === totalCycles`, aparece a seção
-  "Encerramento": conceder Triumphs (título + gangue) e botão "Encerrar campanha"
-  (muda `campaign.status` para `finished`).
-- A landing pública mostra os Triumphs e um selo de "Campanha encerrada".
+**Expected behaviour.**
+- In `/admin/campaign`, when `currentCycle === totalCycles`, a "Closure" section
+  appears: award Triumphs (title + gang) and a "Close campaign" button (changes
+  `campaign.status` to `finished`).
+- The public landing shows the Triumphs and a "Campaign closed" badge.
 
-**Arquivos prováveis.**
+**Likely files.**
 - `src/app/admin/campaign/actions.ts` — `awardTriumph`, `finishCampaign`.
 - `src/lib/db/queries.ts` — `listTriumphs(campaignId)`.
-- `src/lib/repo.ts` + `src/types/index.ts` — incluir `triumphs` no `PublicView`.
-- `src/components/admin/AwardTriumphForm.tsx` (novo).
-- `src/components/Triumphs.tsx` (novo, landing) + `src/app/page.tsx`.
+- `src/lib/repo.ts` + `src/types/index.ts` — include `triumphs` in `PublicView`.
+- `src/components/admin/AwardTriumphForm.tsx` (new).
+- `src/components/Triumphs.tsx` (new, landing) + `src/app/page.tsx`.
 
-**Riscos.** `getActiveCampaign` filtra `status = "active"`; ao encerrar, a landing/
-admin que dependem dela precisam tratar campanha `finished` (mostrar resultado em
-vez de painel ativo).
+**Risks.** `getActiveCampaign` filters `status = "active"`; on closure, the
+landing/admin that depend on it need to handle a `finished` campaign (show result
+instead of active panel).
 
-**Critérios de aceite.**
-- Admin concede Triumphs e encerra; landing mostra resultado.
-- Encerrada, o painel de desafios fica somente-leitura.
-
----
-
-## 6. Melhorias do assistente de IA
-
-**Objetivo.** Aumentar a precisão (busca cross-lingual) e a usabilidade das fontes.
-
-**Comportamento esperado.**
-- **Expansão de query PT→EN:** antes da busca, traduzir/expandir os termos-chave
-  da pergunta para inglês (chamada barata ao Claude ou um dicionário simples) e
-  embutir a versão EN (ou ambas, mesclando resultados). Melhora o recall sobre o
-  texto em inglês.
-- **Painel de fontes clicável:** em vez de só texto, anexar os trechos
-  recuperados (livro, página, similaridade) como dados estruturados e renderizar
-  um bloco "Fontes" abaixo da resposta.
-
-**Arquivos prováveis.**
-- `src/lib/ai/retrieval.ts` — `expandQuery()` opcional; mesclar resultados de duas
-  buscas (dedupe por conteúdo).
-- `src/app/api/assistant/route.ts` — usar `StreamData`/`appendMessageAnnotation`
-  do AI SDK v4 para enviar as fontes; manter o fallback textual.
-- `src/components/assistant/RulesChat.tsx` — ler `message.annotations` e renderizar
-  o painel de fontes.
-
-**Riscos.** A wiring de `StreamData` não é testável no sandbox — validar por
-`tsc` contra os tipos reais do AI SDK e testar manualmente. Expansão de query
-adiciona latência/custo (mínimos no volume atual). Não quebrar o fallback textual
-já funcional.
-
-**Critérios de aceite.**
-- Pergunta em PT sobre regra específica (ex.: "trait Web") retorna a definição com
-  livro+página corretos.
-- Cada resposta exibe as fontes consultadas de forma estruturada.
+**Acceptance criteria.**
+- Admin awards Triumphs and closes; landing shows the result.
+- Once closed, the challenge panel is read-only.
 
 ---
 
-## 7. Exportar ficha da gangue em PDF
+## 6. AI assistant improvements
 
-**Objetivo.** Gerar um PDF imprimível da gangue (roster, custos, Rating/Wealth)
-para uso em mesa.
+**Goal.** Increase precision (cross-lingual search) and usability of sources.
 
-**Comportamento esperado.**
-- Botão "Exportar PDF" em `/player` (e admin por gangue). Gera o PDF no servidor
-  e faz download.
+**Expected behaviour.**
+- **Query expansion EN→EN:** before searching, translate/expand the key terms of
+  the question to English (cheap Claude call or a simple dictionary) and embed
+  the EN version (or both, merging results). Improves recall over English text.
+- **Clickable sources panel:** instead of text only, attach the retrieved chunks
+  (book, page, similarity) as structured data and render a "Sources" block below
+  the response.
 
-**Arquivos prováveis.**
-- `src/app/player/export/route.ts` (Route Handler `GET` que retorna o PDF) ou uma
-  Server Action que devolve um blob.
-- `src/lib/pdf/gangSheet.ts` — montagem do PDF.
-- Dependência: avaliar `@react-pdf/renderer` ou `pdf-lib` (sem nativo; cuidado com
-  bundle/edge — usar runtime Node).
+**Likely files.**
+- `src/lib/ai/retrieval.ts` — optional `expandQuery()`; merge results from two
+  searches (deduplicate by content).
+- `src/app/api/assistant/route.ts` — use `StreamData`/`appendMessageAnnotation`
+  from AI SDK v4 to send sources; keep the text fallback.
+- `src/components/assistant/RulesChat.tsx` — read `message.annotations` and
+  render the sources panel.
 
-**Riscos.** Bibliotecas de PDF podem ser pesadas/edge-incompatíveis — fixar
-`runtime = "nodejs"` na rota. Acentuação/fontes no PDF.
+**Risks.** The `StreamData` wiring is not testable in the sandbox — validate via
+`tsc` against the real AI SDK types and test manually. Query expansion adds
+latency/cost (minimal at current volume). Do not break the already-working text
+fallback.
 
-**Critérios de aceite.**
-- Download de um PDF legível com o roster e os totais corretos.
-- Apenas dono/admin exporta a gangue.
-
----
-
-## 8. PWA (instalável e amigável offline)
-
-**Objetivo.** Permitir instalar o app no celular/tablet e consultar dados básicos
-mesmo com conexão ruim na mesa de jogo.
-
-**Comportamento esperado.**
-- Manifesto + ícones; service worker com cache das páginas do jogador e assets.
-- Consulta de gangue/roster funciona offline (último estado em cache).
-
-**Arquivos prováveis.**
-- `src/app/manifest.ts` (Next Metadata) + ícones em `public/`.
-- Service worker (ex.: `@serwist/next` ou `next-pwa`) — avaliar compatibilidade
-  com Next 16.
-- Ajustes em `layout.tsx` (metadados PWA).
-
-**Riscos.** SW + App Router exigem cuidado; dados autenticados não devem ser
-cacheados indevidamente. Escolher lib compatível com Next 16.
-
-**Critérios de aceite.**
-- App instalável (Lighthouse PWA).
-- Roster visível offline após visita prévia; mutações exigem rede (degradar com
-  mensagem clara).
+**Acceptance criteria.**
+- An English question about a specific rule (e.g.: "Web trait") returns the
+  definition with the correct book+page.
+- Each response displays the consulted sources in a structured way.
 
 ---
 
-## 9. SEO e auditoria Lighthouse (parte pública)
+## 7. Export gang sheet as PDF
 
-**Objetivo.** Maximizar descoberta e qualidade da landing (meta: 95+ nas 4
-categorias).
+**Goal.** Generate a printable PDF of the gang (roster, costs, Rating/Wealth)
+for use at the table.
 
-**Comportamento esperado.**
-- `sitemap.xml`, `robots.txt`, Open Graph/Twitter, JSON-LD; imagens otimizadas;
-  Core Web Vitals verdes.
+**Expected behaviour.**
+- "Export PDF" button in `/player` (and admin per gang). Generates the PDF on
+  the server and triggers a download.
 
-**Arquivos prováveis.**
+**Likely files.**
+- `src/app/player/export/route.ts` (Route Handler `GET` returning the PDF) or a
+  Server Action returning a blob.
+- `src/lib/pdf/gangSheet.ts` — PDF assembly.
+- Dependency: evaluate `@react-pdf/renderer` or `pdf-lib` (no native binaries;
+  be careful with bundle/edge — use Node runtime).
+
+**Risks.** PDF libraries can be heavy/edge-incompatible — pin `runtime = "nodejs"`
+on the route. Accents/fonts in the PDF.
+
+**Acceptance criteria.**
+- Download a readable PDF with the roster and correct totals.
+- Only owner/admin can export the gang.
+
+---
+
+## 8. PWA (installable and offline-friendly)
+
+**Goal.** Allow installing the app on phone/tablet and consulting basic data even
+with a poor connection at the game table.
+
+**Expected behaviour.**
+- Manifest + icons; service worker caching the player's pages and assets.
+- Gang/roster lookup works offline (last cached state).
+
+**Likely files.**
+- `src/app/manifest.ts` (Next Metadata) + icons in `public/`.
+- Service worker (e.g.: `@serwist/next` or `next-pwa`) — evaluate compatibility
+  with Next 16.
+- Adjustments in `layout.tsx` (PWA metadata).
+
+**Risks.** SW + App Router require care; authenticated data must not be cached
+inadvertently. Choose a lib compatible with Next 16.
+
+**Acceptance criteria.**
+- App installable (Lighthouse PWA).
+- Roster visible offline after a prior visit; mutations require network (degrade
+  with a clear message).
+
+---
+
+## 9. SEO and Lighthouse audit (public section)
+
+**Goal.** Maximise discoverability and quality of the landing (target: 95+ in all
+4 categories).
+
+**Expected behaviour.**
+- `sitemap.xml`, `robots.txt`, Open Graph/Twitter, JSON-LD; optimised images;
+  green Core Web Vitals.
+
+**Likely files.**
 - `src/app/sitemap.ts`, `src/app/robots.ts`, `src/app/opengraph-image.tsx`.
-- Ajustes de metadados em `layout.tsx`/`page.tsx`.
+- Metadata adjustments in `layout.tsx`/`page.tsx`.
 
-**Riscos.** Apenas a landing deve ser indexável; `/admin` e `/player` ficam
-`noindex` (e já são protegidos). Garantir que `dynamic` na landing não derrube
-métricas — considerar ISR onde possível.
+**Risks.** Only the landing should be indexable; `/admin` and `/player` stay
+`noindex` (and are already protected). Ensure that `dynamic` on the landing does
+not tank metrics — consider ISR where possible.
 
-**Critérios de aceite.**
-- Lighthouse 95+ em Performance/Accessibility/Best Practices/SEO na landing.
-- `sitemap.xml` e `robots.txt` válidos; OG renderiza no compartilhamento.
-
----
-
-## 10. Hardening: testes de integração, rate limit durável, observabilidade
-
-**Objetivo.** Robustez para produção e sinal de qualidade no portfólio.
-
-**Comportamento esperado.**
-- Testes de Server Actions (criação de conta, desafio→transferência de controle,
-  recálculo de Rating) — idealmente com Postgres efêmero (Testcontainers/PGlite).
-- Rate limit durável para serverless multi-instância (substituir o in-memory por
-  **Upstash Ratelimit**) no `/api/assistant`.
-- Logging/observabilidade básica (erros de IA, falhas de auth).
-
-**Arquivos prováveis.**
-- `tests/` — novos testes de integração.
-- `src/lib/ai/rate-limit.ts` — backend Upstash opcional (fallback in-memory em dev).
-- `src/app/api/assistant/route.ts` — usar o novo rate limiter.
-
-**Riscos.** Testes de integração exigem banco; escolher PGlite (sem container) p/
-rodar em CI. Upstash adiciona env/infra (free tier existe).
-
-**Critérios de aceite.**
-- `npm test` cobre os fluxos críticos de escrita.
-- Rate limit funciona consistentemente em ambiente serverless.
+**Acceptance criteria.**
+- Lighthouse 95+ on Performance/Accessibility/Best Practices/SEO on the landing.
+- `sitemap.xml` and `robots.txt` valid; OG renders on share.
 
 ---
 
-## Notas de priorização
+## 10. Hardening: integration tests, durable rate limit, observability
 
-- **1–3** completam o *core loop* de gestão de gangue (equipar, stash, ciclo de
-  vida) — maior valor para o uso real e dependências de outras features.
-- **4–5** fecham a **mecânica da campanha** (Sympathisers manuais + encerramento).
-- **6** é alto valor de portfólio (IA) e pode ser feito a qualquer momento depois
-  da 1.
-- **7–9** são polimento/entrega (PDF, PWA, SEO).
-- **10** é hardening; fazer antes de divulgar o projeto publicamente.
+**Goal.** Production robustness and a quality signal in the portfolio.
 
-Sugestão de execução: uma feature por iteração, sempre terminando com `tsc`,
-testes e (se mexeu em schema/ingestão) `db:push` / `rules:ingest`.
+**Expected behaviour.**
+- Tests for Server Actions (account creation, challenge→control transfer, Rating
+  recalculation) — ideally with ephemeral Postgres (Testcontainers/PGlite).
+- Durable rate limit for multi-instance serverless (replace in-memory with
+  **Upstash Ratelimit**) on `/api/assistant`.
+- Basic logging/observability (AI errors, auth failures).
+
+**Likely files.**
+- `tests/` — new integration tests.
+- `src/lib/ai/rate-limit.ts` — optional Upstash backend (in-memory fallback in
+  dev).
+- `src/app/api/assistant/route.ts` — use the new rate limiter.
+
+**Risks.** Integration tests require a database; choose PGlite (no container) to
+run in CI. Upstash adds env/infra (free tier available).
+
+**Acceptance criteria.**
+- `npm test` covers the critical write flows.
+- Rate limit works consistently in a serverless environment.
+
+---
+
+## Prioritisation notes
+
+- **1–3** complete the *core loop* of gang management (equip, stash, lifecycle)
+  — highest value for real use and dependencies of other features.
+- **4–5** close the **campaign mechanics** (manual Sympathisers + closure).
+- **6** is high portfolio value (AI) and can be done at any time after 1.
+- **7–9** are polish/delivery (PDF, PWA, SEO).
+- **10** is hardening; do before publicly sharing the project.
+
+Suggested execution: one feature per iteration, always finishing with `tsc`,
+tests, and (if schema/ingestion was touched) `db:push` / `rules:ingest`.

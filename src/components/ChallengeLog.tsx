@@ -3,10 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import type { ChallengeView } from "@/types";
 
 const OUTCOME_LABEL: Record<string, { text: string; variant: "toxic" | "blood" | "muted" }> = {
-  challenger_win: { text: "Desafiante venceu", variant: "toxic" },
-  challenged_win: { text: "Defensor venceu", variant: "toxic" },
-  declined: { text: "Recusado", variant: "muted" },
-  draw: { text: "Empate", variant: "muted" },
+  challenger_win: { text: "Challenger won", variant: "toxic" },
+  challenged_win: { text: "Defender won", variant: "toxic" },
+  declined: { text: "Declined", variant: "muted" },
+  draw: { text: "Draw", variant: "muted" },
 };
 
 export function ChallengeLog({
@@ -19,7 +19,7 @@ export function ChallengeLog({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Desafios recentes</CardTitle>
+        <CardTitle>Recent challenges</CardTitle>
       </CardHeader>
       <CardContent className="px-0 py-0">
         <ul className="divide-y divide-rivet/50">
@@ -30,12 +30,12 @@ export function ChallengeLog({
                 <span className="font-mono text-xs text-muted">C{c.cycle}</span>
                 <div className="flex-1 text-sm">
                   <span className="text-ink">{c.challengerName}</span>
-                  <span className="text-muted"> desafiou </span>
+                  <span className="text-muted"> challenged </span>
                   <span className="text-ink">{c.challengedName ?? "—"}</span>
                   {c.sympathiserName && (
                     <span className="text-muted">
                       {" "}
-                      por {c.sympathiserName.replace(" Sympathisers", "")}
+                      for {c.sympathiserName.replace(" Sympathisers", "")}
                     </span>
                   )}
                   {c.scenario && (
@@ -45,7 +45,7 @@ export function ChallengeLog({
                 {outcome ? (
                   <Badge variant={outcome.variant}>{outcome.text}</Badge>
                 ) : (
-                  <Badge variant="hazard">Pendente</Badge>
+                  <Badge variant="hazard">Pending</Badge>
                 )}
               </li>
             );

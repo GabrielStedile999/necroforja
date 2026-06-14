@@ -17,9 +17,9 @@ export async function authenticate(
     });
     return {};
   } catch (error) {
-    // signIn lança um redirect em caso de sucesso — deve propagar.
+    // signIn throws a redirect on success — must propagate.
     if (error instanceof AuthError) {
-      return { error: "E-mail ou senha inválidos." };
+      return { error: "Invalid e-mail or password." };
     }
     throw error;
   }

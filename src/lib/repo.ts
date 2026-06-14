@@ -1,7 +1,7 @@
 /**
- * Repositório da view pública. Lê do banco quando DATABASE_URL está definido;
- * caso contrário (ou se as tabelas ainda não existem) cai para os dados-semente.
- * Assim a landing funciona com ou sem banco conectado.
+ * Public view repository. Reads from the database when DATABASE_URL is defined;
+ * otherwise (or if tables do not yet exist) falls back to seed data.
+ * This way the landing works with or without a connected database.
  */
 import type { PublicView, GangRankRow, SympathiserView } from "@/types";
 import { SYMPATHISERS } from "@/lib/data/sympathisers";
@@ -24,7 +24,7 @@ export async function getPublicView(): Promise<PublicView> {
     try {
       return await getDbView();
     } catch {
-      // tabelas ainda não migradas / banco indisponível → fallback
+      // tables not yet migrated / database unavailable → fallback
       return getSeedView();
     }
   }
@@ -47,7 +47,7 @@ async function getDbView(): Promise<PublicView> {
   const gangs = await getAllGangs();
   const controlMap = await getSympathiserControlMap();
   const controllerMap = await getSympathiserControllerMap();
-  const enabledSymps = await listSympathisers(true); // só os habilitados
+  const enabledSymps = await listSympathisers(true); // enabled only
   const challenges = await listChallenges(campaignRow.id, 8);
 
   const nameById = new Map(gangs.map((g) => [g.id, g.name]));

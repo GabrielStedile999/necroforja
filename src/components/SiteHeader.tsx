@@ -26,7 +26,7 @@ export async function SiteHeader() {
                 </Link>
               )}
               <Link href="/player">
-                <Button variant="outline">Minha Gangue</Button>
+                <Button variant="outline">My Gang</Button>
               </Link>
               <span className="hidden text-xs text-muted sm:inline">
                 {user.name}
@@ -35,7 +35,7 @@ export async function SiteHeader() {
             </>
           ) : (
             <Link href="/login">
-              <Button variant="outline">Entrar</Button>
+              <Button variant="outline">Sign In</Button>
             </Link>
           )}
         </nav>

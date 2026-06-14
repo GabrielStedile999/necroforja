@@ -1,65 +1,65 @@
 import { describe, it, expect } from "vitest";
 import { chunkMarkdown, chunkPlain } from "@/lib/ai/chunk";
 
-const SAMPLE = `# Título A
+const SAMPLE = `# Title A
 
-Parágrafo um da seção A com algum conteúdo de regra.
+Paragraph one of section A with some rule content.
 
-Parágrafo dois da seção A.
+Paragraph two of section A.
 
-## Título B
+## Title B
 
-Parágrafo da seção B.`;
+Paragraph of section B.`;
 
 describe("chunkMarkdown", () => {
-  it("preserva o cabeçalho em cada chunk", () => {
-    const chunks = chunkMarkdown(SAMPLE, "teste.md", { maxChars: 1000 });
+  it("preserves the heading in each chunk", () => {
+    const chunks = chunkMarkdown(SAMPLE, "test.md", { maxChars: 1000 });
     expect(chunks.length).toBeGreaterThanOrEqual(2);
-    expect(chunks.every((c) => c.source === "teste.md")).toBe(true);
+    expect(chunks.every((c) => c.source === "test.md")).toBe(true);
     const headings = new Set(chunks.map((c) => c.heading));
-    expect(headings.has("Título A")).toBe(true);
-    expect(headings.has("Título B")).toBe(true);
+    expect(headings.has("Title A")).toBe(true);
+    expect(headings.has("Title B")).toBe(true);
   });
 
-  it("agrupa parágrafos respeitando maxChars (quebra em chunks menores)", () => {
-    const chunks = chunkMarkdown(SAMPLE, "teste.md", { maxChars: 60 });
-    // com limite pequeno, a seção A deve gerar mais de um chunk
-    const secA = chunks.filter((c) => c.heading === "Título A");
+  it("groups paragraphs respecting maxChars (breaks into smaller chunks)", () => {
+    const chunks = chunkMarkdown(SAMPLE, "test.md", { maxChars: 60 });
+    // with a small limit, section A should produce more than one chunk
+    const secA = chunks.filter((c) => c.heading === "Title A");
     expect(secA.length).toBeGreaterThanOrEqual(2);
   });
 
-  it("não gera chunks vazios", () => {
-    const chunks = chunkMarkdown(SAMPLE, "teste.md");
+  it("does not produce empty chunks", () => {
+    const chunks = chunkMarkdown(SAMPLE, "test.md");
     expect(chunks.every((c) => c.content.trim().length > 0)).toBe(true);
   });
 
-  it("texto sem cabeçalho vira chunk com heading vazio", () => {
-    const chunks = chunkMarkdown("Só um parágrafo solto.", "x.md");
+  it("text without a heading becomes a chunk with an empty heading", () => {
+    const chunks = chunkMarkdown("Just a loose paragraph.", "x.md");
     expect(chunks).toHaveLength(1);
     expect(chunks[0]!.heading).toBe("");
-    expect(chunks[0]!.content).toContain("parágrafo solto");
+    expect(chunks[0]!.content).toContain("loose paragraph");
   });
 });
 
-describe("chunkPlain (páginas de livro)", () => {
-  it("quebra um parágrafo grande em vários chunks", () => {
-    const big = "Frase um. Frase dois. ".repeat(200);
+describe("chunkPlain (book pages)", () => {
+  it("breaks a large paragraph into multiple chunks", () => {
+    const big = "Sentence one. Sentence two. ".repeat(200);
     const chunks = chunkPlain(big, 500);
     expect(chunks.length).toBeGreaterThan(1);
     expect(chunks.every((c) => c.length <= 700)).toBe(true);
     expect(chunks.every((c) => c.trim().length > 0)).toBe(true);
   });
 
-  it("mantém texto pequeno em um único chunk", () => {
-    const chunks = chunkPlain("Parágrafo A.\n\nParágrafo B.", 1000);
+  it("keeps small text in a single chunk", () => {
+    const chunks = chunkPlain("Paragraph A.\n\nParagraph B.", 1000);
     expect(chunks).toHaveLength(1);
-    expect(chunks[0]).toContain("Parágrafo A");
-    expect(chunks[0]).toContain("Parágrafo B");
+    expect(chunks[0]).toContain("Paragraph A");
+    expect(chunks[0]).toContain("Paragraph B");
   });
 
-  it("isola verbetes em MAIÚSCULAS em chunks distintos (glossário)", () => {
+  it("isolates UPPERCASE entries into separate chunks (glossary)", () => {
     const text =
-      "Texto introdutório qualquer aqui presente. " +
+      "Some introductory text present here. " +
       "WEB If the wound roll succeeds the target becomes Webbed instantly. " +
       "TOXIN Instead of a wound roll, roll a D6 for the toxic effect now.";
     const chunks = chunkPlain(text, 60);

@@ -1,6 +1,6 @@
 /**
- * Camada de leitura (Drizzle). Mapeia linhas do banco para os tipos de domínio
- * usados por lib/scoring.ts. Todas as funções rodam só no servidor.
+ * Read layer (Drizzle). Maps database rows to the domain types
+ * used by lib/scoring.ts. All functions run server-side only.
  */
 import { eq, and, desc, type SQL } from "drizzle-orm";
 import { db, schema } from "./index";
@@ -38,7 +38,7 @@ type GangWithRelations = NonNullable<
   Awaited<ReturnType<typeof findGangWithRelations>>
 >;
 
-/** Converte a linha do banco (com relations) no tipo de domínio Gang. */
+/** Converts a database row (with relations) to the Gang domain type. */
 export function toDomainGang(g: GangWithRelations): Gang {
   const fighters: Fighter[] = g.fighters.map((f) => ({
     id: f.id,
@@ -94,7 +94,7 @@ export async function getGangById(gangId: string): Promise<Gang | null> {
   return row ? toDomainGang(row) : null;
 }
 
-/** Verifica se um fighter pertence a uma gangue (autorização nas mutations). */
+/** Checks whether a fighter belongs to a gang (authorisation in mutations). */
 export async function fighterBelongsToGang(
   fighterId: string,
   gangId: string,
@@ -109,7 +109,7 @@ export async function fighterBelongsToGang(
   return !!row;
 }
 
-/** Lista jogadores (role player) com a respectiva gangue, para o admin. */
+/** Lists players (role player) with their respective gang, for the admin. */
 export async function listPlayers() {
   const users = await db.query.users.findMany({
     where: eq(schema.users.role, "player"),
@@ -118,7 +118,7 @@ export async function listPlayers() {
   return users;
 }
 
-/** Todas as gangues da campanha já mapeadas para domínio (ranking público). */
+/** All campaign gangs already mapped to domain types (public ranking). */
 export async function getAllGangs(): Promise<Gang[]> {
   const rows = await db.query.gangs.findMany({
     with: {
@@ -144,7 +144,7 @@ export async function getSympathiserControlMap(): Promise<
   return map;
 }
 
-/** Mapa inverso: sympathiserId -> gangId que o controla atualmente. */
+/** Inverse map: sympathiserId -> gangId that currently controls it. */
 export async function getSympathiserControllerMap(): Promise<
   Record<string, string>
 > {
@@ -158,14 +158,14 @@ export async function getSympathiserControllerMap(): Promise<
   return map;
 }
 
-/** Lista Sympathisers do catálogo (opcionalmente só os habilitados). */
+/** Lists Sympathisers from the catalogue (optionally only the enabled ones). */
 export async function listSympathisers(onlyEnabled = false) {
   return db.query.sympathisers.findMany(
     onlyEnabled ? { where: eq(schema.sympathisers.enabled, true) } : undefined,
   );
 }
 
-/** Desafios da campanha (mais recentes primeiro). */
+/** Campaign challenges (most recent first). */
 export async function listChallenges(campaignId: string, limit = 20) {
   return db.query.challenges.findMany({
     where: eq(schema.challenges.campaignId, campaignId),
@@ -175,8 +175,8 @@ export async function listChallenges(campaignId: string, limit = 20) {
 }
 
 /**
- * Retorna as outras gangues da mesma campanha (excluindo a própria).
- * Usado no seletor de gangue captora ao marcar um fighter como "captured".
+ * Returns the other gangs in the same campaign (excluding the player's own).
+ * Used in the capturing gang selector when marking a fighter as "captured".
  */
 export async function getOtherGangsInCampaign(
   gangId: string,
@@ -194,7 +194,7 @@ export async function getOtherGangsInCampaign(
   return all.filter((g) => g.id !== gangId);
 }
 
-/** Verifica se um stash_item pertence a uma gangue (autorização nas mutations). */
+/** Checks whether a stash_item belongs to a gang (authorisation in mutations). */
 export async function stashItemBelongsToGang(
   stashItemId: string,
   gangId: string,
@@ -209,7 +209,7 @@ export async function stashItemBelongsToGang(
   return !!row;
 }
 
-/** Gangues (id + nome) para selects do admin. */
+/** Gangs (id + name) for admin selects. */
 export async function listGangsBasic(campaignId: string) {
   return db.query.gangs.findMany({
     where: eq(schema.gangs.campaignId, campaignId),

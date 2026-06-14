@@ -39,7 +39,7 @@ export function FighterXpForm({
           />
         </div>
         <Button type="submit" disabled={pending} variant="outline">
-          {pending ? "..." : "Adicionar XP"}
+          {pending ? "..." : "Add XP"}
         </Button>
       </div>
 

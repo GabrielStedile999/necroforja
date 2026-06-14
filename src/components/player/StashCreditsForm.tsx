@@ -16,11 +16,11 @@ export function StashCreditsForm({
   );
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Ao salvar com sucesso o valor já vem do servidor via revalidatePath;
-  // não precisamos resetar o input (ele reflete o novo valor via props).
+  // On successful save the value already comes from the server via revalidatePath;
+  // we don't need to reset the input (it reflects the new value via props).
   useEffect(() => {
     if (state.success && formRef.current) {
-      // Garante que o input mostra o valor salvo (sem precisar de re-render forçado)
+      // Ensure the input shows the saved value (without needing a forced re-render)
       const input = formRef.current.elements.namedItem(
         "credits",
       ) as HTMLInputElement | null;
@@ -31,7 +31,7 @@ export function StashCreditsForm({
   return (
     <form ref={formRef} action={formAction} className="flex items-end gap-3">
       <div className="flex-1">
-        <Label htmlFor="stash-credits">Créditos no Stash</Label>
+        <Label htmlFor="stash-credits">Credits in Stash</Label>
         <Input
           id="stash-credits"
           name="credits"
@@ -42,7 +42,7 @@ export function StashCreditsForm({
         />
       </div>
       <Button type="submit" disabled={pending} variant="outline">
-        {pending ? "Salvando..." : "Salvar"}
+        {pending ? "Saving..." : "Save"}
       </Button>
 
       {state.error && (

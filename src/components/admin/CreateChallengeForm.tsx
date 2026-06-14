@@ -27,7 +27,7 @@ export function CreateChallengeForm({
     <form action={formAction} className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <Label htmlFor="challengerGangId">Desafiante</Label>
+          <Label htmlFor="challengerGangId">Challenger</Label>
           <Select id="challengerGangId" name="challengerGangId" required>
             {gangs.map((g) => (
               <option key={g.id} value={g.id}>
@@ -37,9 +37,9 @@ export function CreateChallengeForm({
           </Select>
         </div>
         <div>
-          <Label htmlFor="challengedGangId">Defensor (opcional)</Label>
+          <Label htmlFor="challengedGangId">Defender (optional)</Label>
           <Select id="challengedGangId" name="challengedGangId">
-            <option value="">— Sympathiser livre —</option>
+            <option value="">— free Sympathiser —</option>
             {gangs.map((g) => (
               <option key={g.id} value={g.id}>
                 {g.name}
@@ -48,22 +48,22 @@ export function CreateChallengeForm({
           </Select>
         </div>
         <div className="sm:col-span-2">
-          <Label htmlFor="sympathiserId">Sympathiser em disputa</Label>
+          <Label htmlFor="sympathiserId">Contested Sympathiser</Label>
           <Select id="sympathiserId" name="sympathiserId" required>
             {sympathisers.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name.replace(" Sympathisers", "")}
-                {s.controllerName ? ` — ${s.controllerName}` : " — livre"}
+                {s.controllerName ? ` — ${s.controllerName}` : " — free"}
               </option>
             ))}
           </Select>
         </div>
         <div className="sm:col-span-2">
-          <Label htmlFor="scenario">Cenário (vazio = rolar 2D6)</Label>
+          <Label htmlFor="scenario">Scenario (empty = roll 2D6)</Label>
           <Input
             id="scenario"
             name="scenario"
-            placeholder="ex.: Gunk War"
+            placeholder="e.g.: Gunk War"
           />
         </div>
       </div>
@@ -81,7 +81,7 @@ export function CreateChallengeForm({
 
       <div>
         <Button type="submit" disabled={pending}>
-          {pending ? "Registrando..." : "Registrar desafio"}
+          {pending ? "Registering..." : "Register challenge"}
         </Button>
       </div>
     </form>

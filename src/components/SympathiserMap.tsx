@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { SympathiserView } from "@/types";
 
-/** Cor por gangue (determinística a partir do id), para o mapa. */
+/** Gang colour (deterministic from the id), for the map. */
 const PALETTE = [
   "border-blood/60 bg-blood/15 text-ink",
   "border-cyan/60 bg-cyan/10 text-ink",
@@ -15,13 +15,13 @@ function colorFor(gangId: string, order: Map<string, number>): string {
   return PALETTE[idx % PALETTE.length]!;
 }
 
-/** Mapa dos 26 Sympathisers: quem controla cada um. Livres ficam apagados. */
+/** Map of the 26 Sympathisers: who controls each one. Free ones are dimmed. */
 export function SympathiserMap({
   sympathisers,
 }: {
   sympathisers: SympathiserView[];
 }) {
-  // ordena gangs por aparição para atribuir cores estáveis
+  // sort gangs by order of appearance to assign stable colours
   const order = new Map<string, number>();
   for (const s of sympathisers) {
     if (s.controllerGangId && !order.has(s.controllerGangId)) {
@@ -32,9 +32,9 @@ export function SympathiserMap({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Mapa de Sympathisers</CardTitle>
+        <CardTitle>Sympathiser Map</CardTitle>
         <span className="ml-auto text-xs uppercase tracking-wider text-muted">
-          {sympathisers.length} territórios
+          {sympathisers.length} territories
         </span>
       </CardHeader>
       <CardContent>
@@ -57,7 +57,7 @@ export function SympathiserMap({
                   ) : null}
                 </div>
                 <span className="text-xs opacity-80">
-                  {s.controllerName ?? "Livre"}
+                  {s.controllerName ?? "Free"}
                 </span>
               </div>
             );

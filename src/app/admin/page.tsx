@@ -11,7 +11,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Arbitrator" };
 
-// Dados sempre frescos (área administrativa).
+// Always fresh data (administrative area).
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
@@ -24,19 +24,19 @@ export default async function AdminPage() {
         <div className="flex items-center gap-3">
           <ShieldAlert className="h-6 w-6 text-hazard" aria-hidden />
           <h1 className="stencil text-2xl font-bold text-ink">
-            Dashboard do Arbitrator
+            Arbitrator Dashboard
           </h1>
           <Badge variant="hazard">Admin</Badge>
           <Link href="/admin/campaign" className="ml-auto">
-            <Button variant="outline">Painel da Campanha →</Button>
+            <Button variant="outline">Campaign Panel →</Button>
           </Link>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Nova conta de jogador</CardTitle>
+            <CardTitle>New player account</CardTitle>
             <span className="ml-auto text-xs text-muted">
-              sem self-signup
+              no self-signup
             </span>
           </CardHeader>
           <CardContent>
@@ -46,12 +46,12 @@ export default async function AdminPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Jogadores ({players.length})</CardTitle>
+            <CardTitle>Players ({players.length})</CardTitle>
           </CardHeader>
           <CardContent className="px-0 py-0">
             {players.length === 0 ? (
               <p className="px-5 py-6 text-sm text-muted">
-                Nenhum jogador ainda. Crie a primeira conta acima.
+                No players yet. Create the first account above.
               </p>
             ) : (
               <ul className="divide-y divide-rivet/50">
@@ -62,7 +62,7 @@ export default async function AdminPage() {
                   >
                     <div>
                       <div className="font-display text-base font-semibold uppercase text-ink">
-                        {p.gangs[0]?.name ?? "— sem gangue —"}
+                        {p.gangs[0]?.name ?? "— no gang —"}
                       </div>
                       <div className="text-xs text-muted">
                         {p.displayName} · {p.email}
@@ -71,7 +71,7 @@ export default async function AdminPage() {
                     </div>
                     <div className="flex items-center gap-3">
                       <Badge variant={p.isActive ? "toxic" : "muted"}>
-                        {p.isActive ? "ativo" : "inativo"}
+                        {p.isActive ? "active" : "inactive"}
                       </Badge>
                       <form action={togglePlayerActive}>
                         <input type="hidden" name="userId" value={p.id} />
@@ -81,7 +81,7 @@ export default async function AdminPage() {
                           value={String(p.isActive)}
                         />
                         <Button variant="outline" type="submit">
-                          {p.isActive ? "Desativar" : "Ativar"}
+                          {p.isActive ? "Deactivate" : "Activate"}
                         </Button>
                       </form>
                     </div>

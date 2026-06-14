@@ -1,6 +1,6 @@
 /**
- * Busca semântica de regras (RAG). Embute a pergunta e recupera os chunks mais
- * próximos por distância de cosseno (pgvector).
+ * Semantic rules search (RAG). Embeds the question and retrieves the closest
+ * chunks by cosine distance (pgvector).
  */
 import { sql, cosineDistance, desc, gt } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
@@ -15,7 +15,7 @@ export interface RetrievedChunk {
   similarity: number;
 }
 
-/** Rótulo de citação oficial, ex.: "Necromunda: Core Rulebook (2023), p. 92". */
+/** Official citation label, e.g. "Necromunda: Core Rulebook (2023), p. 92". */
 export function citationLabel(c: {
   book: string | null;
   page: number | null;
@@ -31,8 +31,8 @@ export function citationLabel(c: {
 export async function searchRules(
   query: string,
   k = 8,
-  // limiar baixo: a busca é cross-lingual (pergunta em PT, regras em EN),
-  // o que reduz os escores de similaridade dos trechos relevantes.
+  // low threshold: the search is cross-lingual (question in PT, rules in EN),
+  // which reduces the similarity scores of relevant chunks.
   minSimilarity = 0.1,
 ): Promise<RetrievedChunk[]> {
   const queryEmbedding = await embedText(query);

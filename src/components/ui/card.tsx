@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-/** Painel "chapa metálica" — borda de rebite, fundo escuro. */
+/** "Metal sheet" panel — rivet border, dark background. */
 export function Card({
   className,
   ...props

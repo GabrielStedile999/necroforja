@@ -8,7 +8,7 @@ const UUID_A = "123e4567-e89b-12d3-a456-426614174000";
 const UUID_B = "987fcdeb-51a2-43d7-b012-0987654321ab";
 
 describe("updateFighterStatusSchema", () => {
-  it("aceita todos os status válidos", () => {
+  it("accepts all valid statuses", () => {
     const statuses = [
       "active",
       "in_recovery",
@@ -25,7 +25,7 @@ describe("updateFighterStatusSchema", () => {
     }
   });
 
-  it("aceita capturedByGangId opcional quando status = captured", () => {
+  it("accepts optional capturedByGangId when status = captured", () => {
     const r = updateFighterStatusSchema.safeParse({
       fighterId: UUID_A,
       status: "captured",
@@ -35,7 +35,7 @@ describe("updateFighterStatusSchema", () => {
     if (r.success) expect(r.data.capturedByGangId).toBe(UUID_B);
   });
 
-  it("trata capturedByGangId vazio como undefined", () => {
+  it("treats empty capturedByGangId as undefined", () => {
     const r = updateFighterStatusSchema.safeParse({
       fighterId: UUID_A,
       status: "captured",
@@ -45,7 +45,7 @@ describe("updateFighterStatusSchema", () => {
     if (r.success) expect(r.data.capturedByGangId).toBeUndefined();
   });
 
-  it("aceita status sem capturedByGangId", () => {
+  it("accepts status without capturedByGangId", () => {
     const r = updateFighterStatusSchema.safeParse({
       fighterId: UUID_A,
       status: "dead",
@@ -54,7 +54,7 @@ describe("updateFighterStatusSchema", () => {
     if (r.success) expect(r.data.capturedByGangId).toBeUndefined();
   });
 
-  it("rejeita status inválido", () => {
+  it("rejects invalid status", () => {
     expect(
       updateFighterStatusSchema.safeParse({
         fighterId: UUID_A,
@@ -63,7 +63,7 @@ describe("updateFighterStatusSchema", () => {
     ).toBe(false);
   });
 
-  it("rejeita fighterId não-UUID", () => {
+  it("rejects non-UUID fighterId", () => {
     expect(
       updateFighterStatusSchema.safeParse({
         fighterId: "abc",
@@ -72,7 +72,7 @@ describe("updateFighterStatusSchema", () => {
     ).toBe(false);
   });
 
-  it("rejeita capturedByGangId não-UUID quando preenchido", () => {
+  it("rejects non-UUID capturedByGangId when filled", () => {
     expect(
       updateFighterStatusSchema.safeParse({
         fighterId: UUID_A,
@@ -84,7 +84,7 @@ describe("updateFighterStatusSchema", () => {
 });
 
 describe("addFighterXpSchema", () => {
-  it("aceita xpDelta positivo com coerce de string", () => {
+  it("accepts positive xpDelta with string coerce", () => {
     const r = addFighterXpSchema.safeParse({
       fighterId: UUID_A,
       xpDelta: "5",
@@ -93,37 +93,37 @@ describe("addFighterXpSchema", () => {
     if (r.success) expect(r.data.xpDelta).toBe(5);
   });
 
-  it("aceita xpDelta = 1 (mínimo)", () => {
+  it("accepts xpDelta = 1 (minimum)", () => {
     expect(
       addFighterXpSchema.safeParse({ fighterId: UUID_A, xpDelta: 1 }).success,
     ).toBe(true);
   });
 
-  it("aceita xpDelta = 100 (máximo)", () => {
+  it("accepts xpDelta = 100 (maximum)", () => {
     expect(
       addFighterXpSchema.safeParse({ fighterId: UUID_A, xpDelta: 100 }).success,
     ).toBe(true);
   });
 
-  it("rejeita xpDelta = 0", () => {
+  it("rejects xpDelta = 0", () => {
     expect(
       addFighterXpSchema.safeParse({ fighterId: UUID_A, xpDelta: 0 }).success,
     ).toBe(false);
   });
 
-  it("rejeita xpDelta negativo", () => {
+  it("rejects negative xpDelta", () => {
     expect(
       addFighterXpSchema.safeParse({ fighterId: UUID_A, xpDelta: -1 }).success,
     ).toBe(false);
   });
 
-  it("rejeita xpDelta > 100", () => {
+  it("rejects xpDelta > 100", () => {
     expect(
       addFighterXpSchema.safeParse({ fighterId: UUID_A, xpDelta: 101 }).success,
     ).toBe(false);
   });
 
-  it("rejeita fighterId não-UUID", () => {
+  it("rejects non-UUID fighterId", () => {
     expect(
       addFighterXpSchema.safeParse({ fighterId: "bad", xpDelta: 5 }).success,
     ).toBe(false);

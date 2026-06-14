@@ -1,12 +1,12 @@
 import type { Campaign, Gang } from "@/types";
 
 /**
- * Dados-semente da campanha atual (Cinderak Burning) arbitrada por Gabriel.
- * Servem para renderizar a landing pública sem depender do banco ainda.
- * Quando o Supabase estiver conectado, estes valores migram para o seed.ts.
+ * Seed data for the current campaign (Cinderak Burning) arbitrated by Gabriel.
+ * Used to render the public landing without depending on the database yet.
+ * When Supabase is connected, these values migrate to seed.ts.
  *
- * Os rosters abaixo são exemplos mínimos só para os cálculos de Rating/Wealth
- * terem o que somar — os dados reais serão inseridos pelos jogadores no app.
+ * The rosters below are minimal examples just so the Rating/Wealth calculations
+ * have something to sum — the real data will be entered by players in the app.
  */
 
 export const CAMPAIGN: Campaign = {
@@ -213,8 +213,8 @@ export const GANGS: Gang[] = [
 ];
 
 /**
- * Controle de Sympathisers no início (Great Darkness). gangId -> sympathiserId[].
- * Cada gangue começa controlando os informados por você.
+ * Sympathiser control at the start (Great Darkness). gangId -> sympathiserId[].
+ * Each gang starts controlling the ones you provide here.
  */
 export const SYMPATHISER_CONTROL: Record<string, string[]> = {
   "red-harvest": ["fallen-house"],
@@ -227,7 +227,7 @@ export function getGang(id: string): Gang | undefined {
   return GANGS.find((g) => g.id === id);
 }
 
-/** Retorna o id da gangue que controla um Sympathiser, ou null se livre. */
+/** Returns the id of the gang that controls a Sympathiser, or null if free. */
 export function controllerOf(sympathiserId: string): string | null {
   for (const [gangId, ids] of Object.entries(SYMPATHISER_CONTROL)) {
     if (ids.includes(sympathiserId)) return gangId;

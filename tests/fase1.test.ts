@@ -7,20 +7,20 @@ import {
 } from "@/lib/validation";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 
-describe("validação (Zod)", () => {
-  it("loginSchema rejeita e-mail inválido", () => {
+describe("validation (Zod)", () => {
+  it("loginSchema rejects invalid e-mail", () => {
     expect(loginSchema.safeParse({ email: "x", password: "a" }).success).toBe(
       false,
     );
   });
 
-  it("loginSchema aceita credenciais válidas", () => {
+  it("loginSchema accepts valid credentials", () => {
     expect(
       loginSchema.safeParse({ email: "a@b.com", password: "x" }).success,
     ).toBe(true);
   });
 
-  it("createPlayerSchema exige senha de 8+ caracteres", () => {
+  it("createPlayerSchema requires a password of 8+ characters", () => {
     const base = {
       displayName: "Davi",
       email: "davi@x.com",
@@ -35,7 +35,7 @@ describe("validação (Zod)", () => {
     ).toBe(true);
   });
 
-  it("fighterSchema faz coerce de strings de formulário em números", () => {
+  it("fighterSchema coerces form strings to numbers", () => {
     const r = fighterSchema.safeParse({
       name: "Vorr",
       type: "Leader",
@@ -46,7 +46,7 @@ describe("validação (Zod)", () => {
     if (r.success) expect(r.data.baseCost).toBe(130);
   });
 
-  it("fighterSchema rejeita categoria inválida", () => {
+  it("fighterSchema rejects invalid category", () => {
     const r = fighterSchema.safeParse({
       name: "X",
       type: "Y",
@@ -56,7 +56,7 @@ describe("validação (Zod)", () => {
     expect(r.success).toBe(false);
   });
 
-  it("addEquipmentSchema exige fighterId uuid", () => {
+  it("addEquipmentSchema requires fighterId uuid", () => {
     expect(
       addEquipmentSchema.safeParse({
         fighterId: "not-a-uuid",
@@ -68,11 +68,11 @@ describe("validação (Zod)", () => {
   });
 });
 
-describe("hashing de senha (Argon2id)", () => {
-  it("verifica a senha correta e rejeita a errada", async () => {
+describe("password hashing (Argon2id)", () => {
+  it("verifies the correct password and rejects the wrong one", async () => {
     const hash = await hashPassword("s3cret-test-pw");
     expect(hash).not.toBe("s3cret-test-pw");
     expect(await verifyPassword(hash, "s3cret-test-pw")).toBe(true);
-    expect(await verifyPassword(hash, "senhaerrada")).toBe(false);
+    expect(await verifyPassword(hash, "wrongpassword")).toBe(false);
   });
 });

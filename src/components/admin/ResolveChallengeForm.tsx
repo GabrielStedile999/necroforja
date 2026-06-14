@@ -24,15 +24,15 @@ export function ResolveChallengeForm({
     <form action={formAction} className="flex items-center gap-2">
       <input type="hidden" name="challengeId" value={challengeId} />
       <Select name="outcome" defaultValue="challenger_win" className="h-9 w-44">
-        <option value="challenger_win">Desafiante venceu</option>
+        <option value="challenger_win">Challenger won</option>
         {hasDefender && (
-          <option value="challenged_win">Defensor venceu</option>
+          <option value="challenged_win">Defender won</option>
         )}
-        <option value="declined">Recusado</option>
-        <option value="draw">Empate</option>
+        <option value="declined">Declined</option>
+        <option value="draw">Draw</option>
       </Select>
       <Button type="submit" variant="outline" disabled={pending} className="h-9">
-        {pending ? "..." : "Resolver"}
+        {pending ? "..." : "Resolve"}
       </Button>
       {state.error && <span className="text-xs text-blood">{state.error}</span>}
     </form>

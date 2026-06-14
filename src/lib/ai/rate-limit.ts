@@ -1,7 +1,7 @@
 /**
- * Rate limiting simples em memória (janela deslizante por chave).
- * Suficiente para o baixo volume desta campanha em uma única instância.
- * Para produção multi-instância (serverless), troque por Upstash Ratelimit.
+ * Simple in-memory rate limiting (sliding window per key).
+ * Sufficient for the low volume of this campaign on a single instance.
+ * For multi-instance production (serverless), replace with Upstash Ratelimit.
  */
 const hits = new Map<string, number[]>();
 

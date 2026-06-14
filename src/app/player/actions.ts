@@ -24,18 +24,18 @@ import { recalcGangScores } from "@/lib/db/mutations";
 
 export type PlayerState = { error?: string; success?: string };
 
-/** Adiciona um fighter à gangue do jogador autenticado. */
+/** Adds a fighter to the authenticated player's gang. */
 export async function addFighter(
   _prev: PlayerState,
   formData: FormData,
 ): Promise<PlayerState> {
   const user = await requireUser();
   const gang = await getGangByOwnerId(user.id);
-  if (!gang) return { error: "Você ainda não tem uma gangue." };
+  if (!gang) return { error: "You don't have a gang yet." };
 
   const parsed = fighterSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
   }
   const d = parsed.data;
 
@@ -51,10 +51,10 @@ export async function addFighter(
 
   await recalcGangScores(gang.id);
   revalidatePath("/player");
-  return { success: `${d.name} recrutado.` };
+  return { success: `${d.name} recruited.` };
 }
 
-/** Remove um fighter (apenas da própria gangue). */
+/** Removes a fighter (from the player's own gang only). */
 export async function removeFighter(formData: FormData) {
   const user = await requireUser();
   const gang = await getGangByOwnerId(user.id);
@@ -68,23 +68,23 @@ export async function removeFighter(formData: FormData) {
   revalidatePath("/player");
 }
 
-/** Equipa um item num fighter da própria gangue. */
+/** Equips an item on a fighter belonging to the player's own gang. */
 export async function addEquipment(
   _prev: PlayerState,
   formData: FormData,
 ): Promise<PlayerState> {
   const user = await requireUser();
   const gang = await getGangByOwnerId(user.id);
-  if (!gang) return { error: "Você ainda não tem uma gangue." };
+  if (!gang) return { error: "You don't have a gang yet." };
 
   const parsed = addEquipmentSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
   }
   const d = parsed.data;
 
   if (!(await fighterBelongsToGang(d.fighterId, gang.id))) {
-    return { error: "Fighter inválido." };
+    return { error: "Invalid fighter." };
   }
 
   const [created] = await db
@@ -101,10 +101,10 @@ export async function addEquipment(
 
   await recalcGangScores(gang.id);
   revalidatePath("/player");
-  return { success: `${d.name} adicionado.` };
+  return { success: `${d.name} added.` };
 }
 
-/** Remove um item equipado de um fighter da própria gangue. */
+/** Removes an equipped item from a fighter in the player's own gang. */
 export async function removeEquipment(formData: FormData) {
   const user = await requireUser();
   const gang = await getGangByOwnerId(user.id);
@@ -114,10 +114,10 @@ export async function removeEquipment(formData: FormData) {
   if (!parsed.success) return;
   const { fighterId, equipmentId } = parsed.data;
 
-  // Autorização: o fighter deve pertencer à gangue do usuário
+  // Authorisation: the fighter must belong to the user's gang
   if (!(await fighterBelongsToGang(fighterId, gang.id))) return;
 
-  // Remove o vínculo fighter ↔ equipment
+  // Remove the fighter ↔ equipment link
   await db
     .delete(schema.fighterEquipment)
     .where(
@@ -127,7 +127,7 @@ export async function removeEquipment(formData: FormData) {
       ),
     );
 
-  // Remove o item em si (cada row é exclusiva de um fighter no modelo atual)
+  // Remove the item itself (each row is exclusive to one fighter in the current model)
   await db
     .delete(schema.equipment)
     .where(eq(schema.equipment.id, equipmentId));
@@ -140,18 +140,18 @@ export async function removeEquipment(formData: FormData) {
 /*  Stash                                                               */
 /* ------------------------------------------------------------------ */
 
-/** Ajusta os créditos do Stash da gangue (recompensas pós-batalha etc.). */
+/** Adjusts the gang's Stash credits (post-battle rewards, etc.). */
 export async function setStashCredits(
   _prev: PlayerState,
   formData: FormData,
 ): Promise<PlayerState> {
   const user = await requireUser();
   const gang = await getGangByOwnerId(user.id);
-  if (!gang) return { error: "Você ainda não tem uma gangue." };
+  if (!gang) return { error: "You don't have a gang yet." };
 
   const parsed = setStashCreditsSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
   }
 
   await db
@@ -161,21 +161,21 @@ export async function setStashCredits(
 
   await recalcGangScores(gang.id);
   revalidatePath("/player");
-  return { success: "Créditos do Stash atualizados." };
+  return { success: "Stash credits updated." };
 }
 
-/** Adiciona um item ao Stash (cria nova row de equipment + stash_item). */
+/** Adds an item to the Stash (creates a new equipment row + stash_item). */
 export async function addStashItem(
   _prev: PlayerState,
   formData: FormData,
 ): Promise<PlayerState> {
   const user = await requireUser();
   const gang = await getGangByOwnerId(user.id);
-  if (!gang) return { error: "Você ainda não tem uma gangue." };
+  if (!gang) return { error: "You don't have a gang yet." };
 
   const parsed = addStashItemSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
   }
   const d = parsed.data;
 
@@ -194,10 +194,10 @@ export async function addStashItem(
 
   await recalcGangScores(gang.id);
   revalidatePath("/player");
-  return { success: `${d.name} adicionado ao Stash.` };
+  return { success: `${d.name} added to Stash.` };
 }
 
-/** Remove um item do Stash (e o equipment associado). */
+/** Removes an item from the Stash (and the associated equipment). */
 export async function removeStashItem(formData: FormData) {
   const user = await requireUser();
   const gang = await getGangByOwnerId(user.id);
@@ -227,13 +227,13 @@ export async function removeStashItem(formData: FormData) {
 }
 
 /**
- * Move um item do Stash para um fighter (operação atômica).
+ * Moves an item from the Stash to a fighter (atomic operation).
  *
- * - qty > 1: decrementa qty no stash; cria novo equipment + fighter_equipment.
- * - qty = 1: deleta stash_item; reutiliza o equipment row no fighter_equipment.
+ * - qty > 1: decrements qty in stash; creates new equipment + fighter_equipment.
+ * - qty = 1: deletes stash_item; reuses the equipment row in fighter_equipment.
  *
- * Em ambos os casos Wealth permanece constante (item sai do Stash e entra no
- * Rating), apenas a composição muda.
+ * In both cases Wealth remains constant (item leaves the Stash and enters the
+ * Rating); only the composition changes.
  */
 export async function equipFromStash(
   _prev: PlayerState,
@@ -241,19 +241,19 @@ export async function equipFromStash(
 ): Promise<PlayerState> {
   const user = await requireUser();
   const gang = await getGangByOwnerId(user.id);
-  if (!gang) return { error: "Você ainda não tem uma gangue." };
+  if (!gang) return { error: "You don't have a gang yet." };
 
   const parsed = equipFromStashSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
   }
   const { stashItemId, fighterId } = parsed.data;
 
   if (!(await stashItemBelongsToGang(stashItemId, gang.id))) {
-    return { error: "Item inválido." };
+    return { error: "Invalid item." };
   }
   if (!(await fighterBelongsToGang(fighterId, gang.id))) {
-    return { error: "Fighter inválido." };
+    return { error: "Invalid fighter." };
   }
 
   const stashRow = await db.query.stashItems.findFirst({
@@ -261,14 +261,14 @@ export async function equipFromStash(
     with: { equipment: true },
   });
   if (!stashRow || !stashRow.equipment) {
-    return { error: "Item não encontrado." };
+    return { error: "Item not found." };
   }
 
   const itemName = stashRow.equipment.name;
 
   await db.transaction(async (tx) => {
     if (stashRow.qty > 1) {
-      // Decrementa qty no stash; cria nova instância de equipment para o fighter
+      // Decrement qty in stash; create a new equipment instance for the fighter
       await tx
         .update(schema.stashItems)
         .set({ qty: stashRow.qty - 1 })
@@ -291,7 +291,7 @@ export async function equipFromStash(
         });
       }
     } else {
-      // qty === 1: deleta stash_item, reutiliza a row de equipment no fighter
+      // qty === 1: delete stash_item, reuse the equipment row in the fighter
       await tx
         .delete(schema.stashItems)
         .where(eq(schema.stashItems.id, stashItemId));
@@ -306,17 +306,17 @@ export async function equipFromStash(
 
   await recalcGangScores(gang.id);
   revalidatePath("/player");
-  return { success: `${itemName} equipado ao fighter.` };
+  return { success: `${itemName} equipped to fighter.` };
 }
 
 /* ------------------------------------------------------------------ */
-/*  Ciclo de vida do fighter                                            */
+/*  Fighter lifecycle                                                    */
 /* ------------------------------------------------------------------ */
 
 /**
- * Altera o status de um fighter da própria gangue.
- * Ao marcar como "dead", o fighter sai do Rating (recalcGangScores).
- * Ao marcar como "captured", registra a gangue captora.
+ * Changes the status of a fighter in the player's own gang.
+ * When marked as "dead", the fighter is removed from the Rating (recalcGangScores).
+ * When marked as "captured", registers the capturing gang.
  */
 export async function updateFighterStatus(
   _prev: PlayerState,
@@ -324,56 +324,56 @@ export async function updateFighterStatus(
 ): Promise<PlayerState> {
   const user = await requireUser();
   const gang = await getGangByOwnerId(user.id);
-  if (!gang) return { error: "Você ainda não tem uma gangue." };
+  if (!gang) return { error: "You don't have a gang yet." };
 
   const parsed = updateFighterStatusSchema.safeParse(
     Object.fromEntries(formData),
   );
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
   }
   const { fighterId, status, capturedByGangId } = parsed.data;
 
   if (!(await fighterBelongsToGang(fighterId, gang.id))) {
-    return { error: "Fighter inválido." };
+    return { error: "Invalid fighter." };
   }
 
   await db
     .update(schema.fighters)
     .set({
       status,
-      // Limpa o campo se não for mais "captured"
+      // Clear the field if no longer "captured"
       capturedByGangId:
         status === "captured" ? (capturedByGangId ?? null) : null,
     })
     .where(eq(schema.fighters.id, fighterId));
 
-  // Fighters mortos saem do Rating — recalcular
+  // Dead fighters leave the Rating — recalculate
   await recalcGangScores(gang.id);
   revalidatePath("/player");
-  return { success: "Status atualizado." };
+  return { success: "Status updated." };
 }
 
-/** Adiciona XP a um fighter (delta positivo; XP é acumulativo). */
+/** Adds XP to a fighter (positive delta; XP is cumulative). */
 export async function addFighterXp(
   _prev: PlayerState,
   formData: FormData,
 ): Promise<PlayerState> {
   const user = await requireUser();
   const gang = await getGangByOwnerId(user.id);
-  if (!gang) return { error: "Você ainda não tem uma gangue." };
+  if (!gang) return { error: "You don't have a gang yet." };
 
   const parsed = addFighterXpSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
   }
   const { fighterId, xpDelta } = parsed.data;
 
   if (!(await fighterBelongsToGang(fighterId, gang.id))) {
-    return { error: "Fighter inválido." };
+    return { error: "Invalid fighter." };
   }
 
-  // Incremento seguro: busca o valor atual e soma
+  // Safe increment: fetch the current value and add to it
   const current = await db.query.fighters.findFirst({
     where: eq(schema.fighters.id, fighterId),
     columns: { xp: true },
@@ -386,5 +386,5 @@ export async function addFighterXp(
     .where(eq(schema.fighters.id, fighterId));
 
   revalidatePath("/player");
-  return { success: `+${xpDelta} XP adicionado.` };
+  return { success: `+${xpDelta} XP added.` };
 }

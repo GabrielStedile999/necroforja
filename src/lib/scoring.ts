@@ -1,13 +1,13 @@
 /**
- * Cálculos de pontuação da gangue — fórmulas oficiais (Core Rulebook 2023, p.80–92).
- * Funções puras e testáveis (ver tests/scoring.test.ts).
+ * Gang scoring calculations — official formulas (Core Rulebook 2023, p.80–92).
+ * Pure and testable functions (see tests/scoring.test.ts).
  */
 import type { Fighter, Gang } from "@/types";
 
-/** Orçamento de fundação numa Succession Campaign (Cinderak Burning). */
+/** Founding budget in a Succession Campaign (Cinderak Burning). */
 export const SUCCESSION_FOUNDING_BUDGET = 2000;
 
-/** Custo total de um fighter = custo base + soma de todo o equipamento equipado. */
+/** Total cost of a fighter = base cost + sum of all equipped items. */
 export function fighterTotalCost(fighter: Fighter): number {
   const equipmentCost = fighter.equipment.reduce(
     (sum, item) => sum + item.cost,
@@ -17,8 +17,8 @@ export function fighterTotalCost(fighter: Fighter): number {
 }
 
 /**
- * Gang Rating = custo total de todos os fighters (e veículos), incluindo todo
- * o equipamento e upgrades que carregam. Fighters mortos não contam.
+ * Gang Rating = total cost of all fighters (and vehicles), including all
+ * equipment and upgrades they carry. Dead fighters do not count.
  */
 export function gangRating(gang: Gang): number {
   return gang.fighters
@@ -27,7 +27,7 @@ export function gangRating(gang: Gang): number {
 }
 
 /**
- * Wealth = Gang Rating + valor dos créditos e equipamentos no Stash.
+ * Wealth = Gang Rating + value of credits and equipment in the Stash.
  */
 export function gangWealth(gang: Gang): number {
   const stashEquipment = gang.stash.reduce(
@@ -37,12 +37,12 @@ export function gangWealth(gang: Gang): number {
   return gangRating(gang) + gang.stashCredits + stashEquipment;
 }
 
-/** Créditos já gastos na fundação (útil na tela de criação de gangue). */
+/** Credits already spent on founding (useful on the gang creation screen). */
 export function creditsSpent(gang: Gang): number {
   return gang.fighters.reduce((sum, f) => sum + fighterTotalCost(f), 0);
 }
 
-/** Créditos restantes do orçamento de fundação. */
+/** Remaining credits from the founding budget. */
 export function creditsRemaining(
   gang: Gang,
   budget: number = SUCCESSION_FOUNDING_BUDGET,

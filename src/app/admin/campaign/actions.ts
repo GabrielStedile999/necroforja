@@ -21,25 +21,25 @@ import { controlWinner, rollScenario, nextCycleState } from "@/lib/campaign-rule
 
 export type CampaignState = { error?: string; success?: string };
 
-/** Registra um desafio por um Sympathiser no ciclo atual. */
+/** Registers a challenge for a Sympathiser in the current cycle. */
 export async function createChallenge(
   _prev: CampaignState,
   formData: FormData,
 ): Promise<CampaignState> {
   await requireAdmin();
   const campaign = await getActiveCampaign();
-  if (!campaign) return { error: "Nenhuma campanha ativa." };
+  if (!campaign) return { error: "No active campaign." };
 
   const parsed = createChallengeSchema.safeParse(
     Object.fromEntries(formData),
   );
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
   }
   const d = parsed.data;
 
   if (d.challengedGangId && d.challengedGangId === d.challengerGangId) {
-    return { error: "Uma gangue não pode desafiar a si mesma." };
+    return { error: "A gang cannot challenge itself." };
   }
 
   const scenario =
@@ -59,31 +59,31 @@ export async function createChallenge(
 
   revalidatePath("/admin/campaign");
   revalidatePath("/");
-  return { success: `Desafio registrado (cenário: ${scenario}).` };
+  return { success: `Challenge registered (scenario: ${scenario}).` };
 }
 
-/** Resolve um desafio: transfere o Sympathiser ao vencedor. */
+/** Resolves a challenge: transfers the Sympathiser to the winner. */
 export async function resolveChallenge(
   _prev: CampaignState,
   formData: FormData,
 ): Promise<CampaignState> {
   await requireAdmin();
   const campaign = await getActiveCampaign();
-  if (!campaign) return { error: "Nenhuma campanha ativa." };
+  if (!campaign) return { error: "No active campaign." };
 
   const parsed = resolveChallengeSchema.safeParse(
     Object.fromEntries(formData),
   );
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
   }
   const { challengeId, outcome } = parsed.data;
 
   const challenge = await db.query.challenges.findFirst({
     where: eq(schema.challenges.id, challengeId),
   });
-  if (!challenge) return { error: "Desafio não encontrado." };
-  if (challenge.resolved) return { error: "Desafio já resolvido." };
+  if (!challenge) return { error: "Challenge not found." };
+  if (challenge.resolved) return { error: "Challenge already resolved." };
 
   const winner = controlWinner(
     outcome,
@@ -105,14 +105,14 @@ export async function resolveChallenge(
 
   revalidatePath("/admin/campaign");
   revalidatePath("/");
-  return { success: "Desafio resolvido." };
+  return { success: "Challenge resolved." };
 }
 
-/** Ativa/desativa um Sympathiser na campanha (some do mapa público e dos desafios). */
+/** Enables/disables a Sympathiser in the campaign (disappears from the public map and challenges). */
 export async function toggleSympathiser(formData: FormData) {
   await requireAdmin();
   const sympathiserId = String(formData.get("sympathiserId"));
-  const enabled = formData.get("enabled") === "true"; // estado atual
+  const enabled = formData.get("enabled") === "true"; // current state
   if (!sympathiserId) return;
   await db
     .update(schema.sympathisers)
@@ -123,8 +123,8 @@ export async function toggleSympathiser(formData: FormData) {
 }
 
 /**
- * Atribui manualmente um Sympathiser a uma gangue, ou libera-o (gangId = "").
- * Encerra o controle atual e cria um novo registro se gangId for fornecido.
+ * Manually assigns a Sympathiser to a gang, or releases it (gangId = "").
+ * Ends the current control and creates a new record if gangId is provided.
  */
 export async function assignSympathiser(
   _prev: CampaignState,
@@ -136,26 +136,26 @@ export async function assignSympathiser(
     Object.fromEntries(formData),
   );
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
   }
   const { sympathiserId, gangId } = parsed.data;
 
-  // Validar que o sympathiserId existe no catálogo fixo
+  // Validate that the sympathiserId exists in the fixed catalogue
   if (!SYMPATHISERS.find((s) => s.id === sympathiserId)) {
-    return { error: "Sympathiser inválido." };
+    return { error: "Invalid Sympathiser." };
   }
 
   if (gangId === "") {
-    // Liberar: encerrar controle atual sem criar novo
+    // Release: end current control without creating a new one
     await clearSympathiserController(sympathiserId);
     revalidatePath("/admin/campaign");
     revalidatePath("/");
-    return { success: "Sympathiser liberado." };
+    return { success: "Sympathiser released." };
   }
 
-  // Validar que a gangue pertence à campanha ativa
+  // Validate that the gang belongs to the active campaign
   const campaign = await getActiveCampaign();
-  if (!campaign) return { error: "Nenhuma campanha ativa." };
+  if (!campaign) return { error: "No active campaign." };
 
   const gang = await db.query.gangs.findFirst({
     where: and(
@@ -164,16 +164,17 @@ export async function assignSympathiser(
     ),
     columns: { id: true },
   });
-  if (!gang) return { error: "Gangue inválida." };
+  if (!gang) return { error: "Invalid gang." };
 
   await setSympathiserController(sympathiserId, gangId, campaign.currentCycle);
   revalidatePath("/admin/campaign");
   revalidatePath("/");
-  return { success: "Atribuição registrada." };
+  return { success: "Assignment recorded." };
 }
 
-/** Avança a campanha um ciclo (e ajusta a fase). Ao entrar no ciclo 4 (Downtime),
- *  aplica automaticamente os efeitos: limpa in_recovery, devolve capturados. */
+/** Advances the campaign by one cycle (and adjusts the phase). When entering
+ *  cycle 4 (Downtime), automatically applies the effects: clears in_recovery,
+ *  returns captured fighters. */
 export async function advanceCycle() {
   await requireAdmin();
   const campaign = await getActiveCampaign();
@@ -182,7 +183,7 @@ export async function advanceCycle() {
   const { cycle: newCycle } = nextCycleState(campaign.currentCycle);
   await advanceCampaignCycle(campaign.id);
 
-  // Ciclo 4 = Downtime: resetar fighters in_recovery e captured
+  // Cycle 4 = Downtime: reset fighters in_recovery and captured
   if (newCycle === 4) {
     await applyDowntimeEffects(campaign.id);
   }

@@ -1,15 +1,15 @@
 import type { NextAuthConfig } from "next-auth";
 
 /**
- * Config edge-safe do Auth.js (sem DB nem argon2 — usada pelo middleware).
- * O provider Credentials (que toca o banco) vive em auth.ts, runtime Node.
+ * Edge-safe Auth.js config (no DB or argon2 — used by the middleware).
+ * The Credentials provider (which touches the database) lives in auth.ts, Node runtime.
  */
 export const authConfig = {
   pages: { signIn: "/login" },
   session: { strategy: "jwt" },
   providers: [],
   callbacks: {
-    /** Autorização por rota usada pelo middleware. */
+    /** Route-based authorisation used by the middleware. */
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const role = auth?.user?.role;

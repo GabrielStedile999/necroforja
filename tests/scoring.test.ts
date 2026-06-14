@@ -30,7 +30,7 @@ function mkFighter(over: Partial<Fighter>): Fighter {
 }
 
 describe("fighterTotalCost", () => {
-  it("soma custo base + equipamento", () => {
+  it("sums base cost + equipment", () => {
     const f = mkFighter({
       baseCost: 100,
       equipment: [
@@ -41,7 +41,7 @@ describe("fighterTotalCost", () => {
     expect(fighterTotalCost(f)).toBe(170);
   });
 
-  it("sem equipamento retorna só o custo base", () => {
+  it("without equipment returns only the base cost", () => {
     expect(fighterTotalCost(mkFighter({ baseCost: 40 }))).toBe(40);
   });
 });
@@ -58,7 +58,7 @@ describe("gangRating", () => {
     fighters: [],
   };
 
-  it("soma o custo total de todos os fighters", () => {
+  it("sums the total cost of all fighters", () => {
     const g: Gang = {
       ...base,
       fighters: [
@@ -69,7 +69,7 @@ describe("gangRating", () => {
     expect(gangRating(g)).toBe(190);
   });
 
-  it("ignora fighters mortos", () => {
+  it("ignores dead fighters", () => {
     const g: Gang = {
       ...base,
       fighters: [
@@ -82,20 +82,20 @@ describe("gangRating", () => {
 });
 
 describe("gangWealth", () => {
-  it("Wealth = Rating + créditos + equipamento no Stash", () => {
+  it("Wealth = Rating + credits + equipment in Stash", () => {
     const g: Gang = {
       id: "g", name: "G", house: "H", ownerName: "O", reputation: 1,
       stashCredits: 120,
       stash: [{ id: "si-1", equipment: { id: "s", name: "Lasgun", category: "weapon", cost: 15 }, qty: 2 }],
       fighters: [mkFighter({ baseCost: 100 })],
     };
-    // 100 (rating) + 120 (créditos) + 30 (2x15) = 250
+    // 100 (rating) + 120 (credits) + 30 (2x15) = 250
     expect(gangWealth(g)).toBe(250);
   });
 });
 
 describe("creditsRemaining", () => {
-  it("usa o orçamento de fundação da Succession (2000) por padrão", () => {
+  it("uses the Succession founding budget (2000) by default", () => {
     expect(SUCCESSION_FOUNDING_BUDGET).toBe(2000);
     const g: Gang = {
       id: "g", name: "G", house: "H", ownerName: "O", reputation: 1,
@@ -106,21 +106,21 @@ describe("creditsRemaining", () => {
   });
 });
 
-describe("integridade do seed", () => {
-  it("tem exatamente 26 Sympathisers no catálogo", () => {
+describe("seed integrity", () => {
+  it("has exactly 26 Sympathisers in the catalogue", () => {
     expect(SYMPATHISERS).toHaveLength(26);
   });
 
-  it("ids de Sympathiser são únicos", () => {
+  it("Sympathiser ids are unique", () => {
     const ids = new Set(SYMPATHISERS.map((s) => s.id));
     expect(ids.size).toBe(SYMPATHISERS.length);
   });
 
-  it("tem 4 gangues semeadas", () => {
+  it("has 4 seeded gangs", () => {
     expect(GANGS).toHaveLength(4);
   });
 
-  it("toda gangue tem pelo menos 1 fighter e Rating > 0", () => {
+  it("every gang has at least 1 fighter and Rating > 0", () => {
     for (const g of GANGS) {
       expect(g.fighters.length).toBeGreaterThan(0);
       expect(gangRating(g)).toBeGreaterThan(0);

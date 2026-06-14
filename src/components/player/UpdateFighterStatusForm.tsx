@@ -7,11 +7,11 @@ import { Label, Select } from "@/components/ui/input";
 import type { FighterStatus } from "@/types";
 
 const STATUS_OPTIONS: { value: FighterStatus; label: string }[] = [
-  { value: "active", label: "Ativo" },
-  { value: "in_recovery", label: "Em recuperação" },
-  { value: "injured", label: "Ferido" },
-  { value: "captured", label: "Capturado" },
-  { value: "dead", label: "Morto" },
+  { value: "active", label: "Active" },
+  { value: "in_recovery", label: "In recovery" },
+  { value: "injured", label: "Injured" },
+  { value: "captured", label: "Captured" },
+  { value: "dead", label: "Dead" },
 ];
 
 interface GangOption {
@@ -33,12 +33,12 @@ export function UpdateFighterStatusForm({
     {},
   );
 
-  // Controla exibição do seletor de gangue captora
+  // Controls display of the capturing gang selector
   const [showCapture, setShowCapture] = useState(
     currentStatus === "captured",
   );
 
-  // Sincroniza com o status vindo do servidor após re-render
+  // Synchronise with the status received from the server after re-render
   useEffect(() => {
     setShowCapture(currentStatus === "captured");
   }, [currentStatus]);
@@ -68,9 +68,9 @@ export function UpdateFighterStatusForm({
 
         {showCapture && otherGangs.length > 0 && (
           <div>
-            <Label htmlFor={`captor-${fighterId}`}>Capturado por</Label>
+            <Label htmlFor={`captor-${fighterId}`}>Captured by</Label>
             <Select id={`captor-${fighterId}`} name="capturedByGangId">
-              <option value="">— sem gangue —</option>
+              <option value="">— no gang —</option>
               {otherGangs.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.name}
@@ -81,7 +81,7 @@ export function UpdateFighterStatusForm({
         )}
 
         <Button type="submit" disabled={pending} variant="outline">
-          {pending ? "Salvando..." : "Atualizar"}
+          {pending ? "Saving..." : "Update"}
         </Button>
       </div>
 

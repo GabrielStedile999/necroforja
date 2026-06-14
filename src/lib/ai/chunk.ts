@@ -1,8 +1,8 @@
 /**
- * Divisão de texto de regras em chunks para embedding (RAG).
- * Função pura e testável — sem I/O nem dependências externas.
- * Estratégia: separa por cabeçalhos Markdown e agrupa parágrafos até ~maxChars,
- * preservando o cabeçalho como contexto de cada chunk.
+ * Splitting rules text into chunks for embedding (RAG).
+ * Pure and testable function — no I/O or external dependencies.
+ * Strategy: splits by Markdown headings and groups paragraphs up to ~maxChars,
+ * preserving the heading as context for each chunk.
  */
 export interface RuleChunk {
   source: string;
@@ -74,13 +74,13 @@ export function chunkMarkdown(
 }
 
 /**
- * Quebra texto em "blocos" semânticos: por linha em branco e, principalmente,
- * antes de verbetes/cabeçalhos em MAIÚSCULAS (ex.: "WEB ...", "TOXIN ...",
- * "GANG RATING ..."). Isola cada regra/trait, evitando chunks com vários temas.
+ * Splits text into semantic "blocks": by blank line and, more importantly,
+ * before UPPERCASE headings/entries (e.g. "WEB ...", "TOXIN ...",
+ * "GANG RATING ..."). Isolates each rule/trait, avoiding chunks with multiple topics.
  */
 function splitBlocks(text: string): string[] {
-  // Boundary (zero-width) após fim de frase, antes de um cabeçalho MAIÚSCULO
-  // (palavra com 3+ letras) seguido de palavra capitalizada normal.
+  // Boundary (zero-width) after end of sentence, before an UPPERCASE heading
+  // (word with 3+ letters) followed by a normally capitalised word.
   const headword =
     /(?<=[.!?])(?=\s+[A-ZÀ-Ý][A-ZÀ-Ý'’]{2,}(?:\s+[A-ZÀ-Ý'’]{2,})*\s+[A-ZÀ-Ý][a-zà-ý])/;
 
@@ -110,9 +110,9 @@ function sentencePack(block: string, maxChars: number): string[] {
 }
 
 /**
- * Divide um texto plano (ex.: uma página de livro) em pedaços de até ~maxChars,
- * priorizando limites de verbete (cabeçalhos MAIÚSCULOS) para manter cada
- * regra focada. Retorna apenas strings.
+ * Splits plain text (e.g. a book page) into pieces of up to ~maxChars,
+ * prioritising entry boundaries (UPPERCASE headings) to keep each
+ * rule focused. Returns strings only.
  */
 export function chunkPlain(text: string, maxChars = 700): string[] {
   const blocks = splitBlocks(text);

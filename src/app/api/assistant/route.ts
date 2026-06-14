@@ -7,16 +7,16 @@ import { rateLimit } from "@/lib/ai/rate-limit";
 export const maxDuration = 30;
 
 /**
- * Assistente de regras (RAG). Autenticado e com rate limit.
- * Recupera trechos relevantes via pgvector e responde com Claude, citando fontes.
+ * Rules assistant (RAG). Authenticated and rate-limited.
+ * Retrieves relevant chunks via pgvector and responds with Claude, citing sources.
  */
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user) {
-    return new Response("Não autenticado.", { status: 401 });
+    return new Response("Not authenticated.", { status: 401 });
   }
   if (!rateLimit(session.user.id)) {
-    return new Response("Muitas perguntas em pouco tempo. Aguarde um instante.", {
+    return new Response("Too many questions in a short time. Please wait a moment.", {
       status: 429,
     });
   }
@@ -27,33 +27,33 @@ export async function POST(req: Request) {
   const query =
     typeof lastUser?.content === "string" ? lastUser.content : "";
 
-  let context = "(vazio)";
+  let context = "(empty)";
   try {
     const chunks = await searchRules(query, 8);
     if (chunks.length > 0) {
       context = chunks
-        .map((c, i) => `[${i + 1}] FONTE: ${citationLabel(c)}\n${c.content}`)
+        .map((c, i) => `[${i + 1}] SOURCE: ${citationLabel(c)}\n${c.content}`)
         .join("\n\n");
     }
   } catch {
-    // base de regras ainda não ingerida / banco indisponível
-    context = "(vazio)";
+    // rules base not yet ingested / database unavailable
+    context = "(empty)";
   }
 
-  const system = `Você é o assistente de regras da campanha Necromunda "Cinderak Burning".
-Responda em português, de forma objetiva e USANDO SOMENTE o CONTEXTO abaixo.
-Cada item do CONTEXTO vem numerado e traz a referência oficial no formato:
-  [n] FONTE: <Livro>, p. <página>
-Ao afirmar uma regra, cite o número entre colchetes, por exemplo [1], [2].
-Ao final da resposta, inclua uma seção "Fontes:" listando APENAS as referências que você citou, uma por linha, no formato exato:
-  [n] <Livro>, p. <página>
-copiando o texto da FONTE correspondente do CONTEXTO (livro e página). Nunca invente número de página nem altere a página indicada.
-Se o CONTEXTO não contiver a resposta, diga claramente que não encontrou nas regras carregadas e sugira reformular — nesse caso, não inclua a seção "Fontes:". Nunca invente regras.
+  const system = `You are the rules assistant for the Necromunda "Cinderak Burning" campaign.
+Answer in English, objectively and USING ONLY the CONTEXT below.
+Each item in the CONTEXT is numbered and includes the official reference in the format:
+  [n] SOURCE: <Book>, p. <page>
+When stating a rule, cite the number in brackets, for example [1], [2].
+At the end of your response, include a "Sources:" section listing ONLY the references you cited, one per line, in the exact format:
+  [n] <Book>, p. <page>
+copying the text from the corresponding SOURCE in the CONTEXT (book and page). Never invent a page number or alter the indicated page.
+If the CONTEXT does not contain the answer, clearly state that you did not find it in the loaded rules and suggest rephrasing — in that case, do not include the "Sources:" section. Never invent rules.
 
-CONTEXTO:
+CONTEXT:
 ${context}`;
 
-  // `|| ` (não `??`) para tratar string vazia no .env como "não definido".
+  // `||` (not `??`) to treat an empty string in .env as "not defined".
   const model = process.env.ASSISTANT_MODEL?.trim() || "claude-haiku-4-5";
 
   const result = streamText({
@@ -61,15 +61,15 @@ ${context}`;
     system,
     messages,
     onError: ({ error }) => {
-      // aparece no terminal do servidor para depuração
-      console.error("[assistant] erro no streamText:", error);
+      // appears in the server terminal for debugging
+      console.error("[assistant] streamText error:", error);
     },
   });
 
-  // Por padrão o AI SDK mascara erros do stream; aqui os repassamos ao cliente
-  // para que a UI possa exibi-los.
+  // By default the AI SDK masks stream errors; here we forward them to the client
+  // so the UI can display them.
   return result.toDataStreamResponse({
     getErrorMessage: (error) =>
-      error instanceof Error ? error.message : "Erro ao gerar a resposta.",
+      error instanceof Error ? error.message : "Error generating the response.",
   });
 }

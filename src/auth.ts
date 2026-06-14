@@ -6,8 +6,8 @@ import { getUserByEmail } from "@/lib/db/queries";
 import { verifyPassword } from "@/lib/auth/password";
 
 /**
- * Configuração completa do Auth.js (runtime Node — toca o banco e o argon2).
- * O middleware usa authConfig (edge-safe); aqui adicionamos o provider.
+ * Full Auth.js configuration (Node runtime — touches the database and argon2).
+ * The middleware uses authConfig (edge-safe); here we add the provider.
  */
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -15,7 +15,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Credentials({
       credentials: {
         email: { label: "E-mail", type: "email" },
-        password: { label: "Senha", type: "password" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         const parsed = loginSchema.safeParse(credentials);

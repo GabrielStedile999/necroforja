@@ -19,7 +19,7 @@ import type { CampaignPhase } from "@/types";
 import { Swords } from "lucide-react";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Campanha" };
+export const metadata: Metadata = { title: "Campaign" };
 export const dynamic = "force-dynamic";
 
 const PHASE_LABEL: Record<CampaignPhase, string> = {
@@ -37,10 +37,10 @@ export default async function CampaignAdminPage() {
         <SiteHeader />
         <main className="mx-auto max-w-2xl px-4 py-16 text-center">
           <h1 className="stencil text-2xl font-bold text-ink">
-            Nenhuma campanha ativa
+            No active campaign
           </h1>
           <p className="mt-2 text-sm text-muted">
-            Conecte o banco e rode <code>npm run db:seed</code> para iniciar.
+            Connect the database and run <code>npm run db:seed</code> to start.
           </p>
         </main>
       </>
@@ -58,13 +58,13 @@ export default async function CampaignAdminPage() {
   const sympName = new Map(SYMPATHISERS.map((s) => [s.id, s.name]));
   const sympOrder = new Map(SYMPATHISERS.map((s, i) => [s.id, i]));
 
-  // ordena conforme o catálogo
+  // sort according to the catalogue
   const sympsOrdered = allSymps
     .slice()
     .sort((a, b) => (sympOrder.get(a.id) ?? 0) - (sympOrder.get(b.id) ?? 0));
   const enabledCount = sympsOrdered.filter((s) => s.enabled).length;
 
-  // só os habilitados podem entrar em desafios
+  // only enabled ones can enter challenges
   const sympOptions = sympsOrdered
     .filter((s) => s.enabled)
     .map((s) => ({
@@ -85,18 +85,18 @@ export default async function CampaignAdminPage() {
         <div className="flex flex-wrap items-center gap-3">
           <Swords className="h-6 w-6 text-hazard" aria-hidden />
           <h1 className="stencil text-2xl font-bold text-ink">
-            Painel da Campanha
+            Campaign Panel
           </h1>
           <Badge variant="hazard">{PHASE_LABEL[campaign.phase]}</Badge>
           <Link href="/admin" className="ml-auto">
-            <Button variant="ghost">Contas →</Button>
+            <Button variant="ghost">Accounts →</Button>
           </Link>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle>
-              Ciclo {campaign.currentCycle} / {campaign.totalCycles}
+              Cycle {campaign.currentCycle} / {campaign.totalCycles}
             </CardTitle>
             <form action={advanceCycle} className="ml-auto">
               <Button
@@ -104,27 +104,28 @@ export default async function CampaignAdminPage() {
                 variant="outline"
                 disabled={campaign.currentCycle >= campaign.totalCycles}
               >
-                Avançar ciclo →
+                Advance cycle →
               </Button>
             </form>
           </CardHeader>
           <CardContent className="text-sm text-muted">
-            Great Darkness (ciclos 1-3) · Downtime (4) · Spark of Rebellion
-            (5-7). Avançar o ciclo ajusta a fase automaticamente.
+            Great Darkness (cycles 1-3) · Downtime (4) · Spark of Rebellion
+            (5-7). Advancing the cycle automatically adjusts the phase.
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Sympathisers na campanha</CardTitle>
+            <CardTitle>Sympathisers in the campaign</CardTitle>
             <span className="ml-auto text-xs text-muted">
-              {enabledCount}/{sympsOrdered.length} ativos
+              {enabledCount}/{sympsOrdered.length} active
             </span>
           </CardHeader>
           <CardContent>
             <p className="mb-3 text-sm text-muted">
-              Escolha quais Sympathisers aparecem na campanha e na tela inicial.
-              Os inativos somem do mapa público e não podem ser disputados.
+              Choose which Sympathisers appear in the campaign and on the home
+              screen. Inactive ones disappear from the public map and cannot be
+              contested.
             </p>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {sympsOrdered.map((s) => (
@@ -154,7 +155,7 @@ export default async function CampaignAdminPage() {
                         : "border-toxic/50 text-toxic hover:bg-toxic/10"
                     }`}
                   >
-                    {s.enabled ? "Desativar" : "Ativar"}
+                    {s.enabled ? "Deactivate" : "Activate"}
                   </button>
                 </form>
               ))}
@@ -164,13 +165,13 @@ export default async function CampaignAdminPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Atribuição de Sympathisers</CardTitle>
+            <CardTitle>Sympathiser Assignment</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="mb-3 text-sm text-muted">
-              Defina manualmente quem controla cada Sympathiser — estado inicial
-              ou correção após partida. Alterações refletem no mapa público
-              imediatamente.
+              Manually define who controls each Sympathiser — initial state or
+              correction after a match. Changes are reflected on the public map
+              immediately.
             </p>
             <div className="flex flex-col divide-y divide-rivet/50">
               {sympsOrdered.map((s) => {
@@ -187,7 +188,7 @@ export default async function CampaignAdminPage() {
                       {s.name.replace(" Sympathisers", "")}
                     </span>
                     <span className="w-28 shrink-0 text-xs text-muted">
-                      {ctrlName ?? "livre"}
+                      {ctrlName ?? "free"}
                     </span>
                     <div className="min-w-0 flex-1">
                       <SympathiserAssignForm
@@ -205,12 +206,12 @@ export default async function CampaignAdminPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Novo desafio</CardTitle>
+            <CardTitle>New challenge</CardTitle>
           </CardHeader>
           <CardContent>
             {gangs.length < 2 ? (
               <p className="text-sm text-muted">
-                São necessárias ao menos duas gangues.
+                At least two gangs are required.
               </p>
             ) : (
               <CreateChallengeForm gangs={gangs} sympathisers={sympOptions} />
@@ -220,12 +221,12 @@ export default async function CampaignAdminPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Desafios pendentes ({pending.length})</CardTitle>
+            <CardTitle>Pending challenges ({pending.length})</CardTitle>
           </CardHeader>
           <CardContent className="px-0 py-0">
             {pending.length === 0 ? (
               <p className="px-5 py-6 text-sm text-muted">
-                Nenhum desafio em aberto.
+                No open challenges.
               </p>
             ) : (
               <ul className="divide-y divide-rivet/50">
@@ -245,7 +246,7 @@ export default async function CampaignAdminPage() {
                       <span className="text-ink">
                         {c.challengedGangId
                           ? (gangName.get(c.challengedGangId) ?? "—")
-                          : "livre"}
+                          : "free"}
                       </span>
                       <span className="text-muted">
                         {" · "}
@@ -273,7 +274,7 @@ export default async function CampaignAdminPage() {
         {resolved.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Histórico ({resolved.length})</CardTitle>
+              <CardTitle>History ({resolved.length})</CardTitle>
             </CardHeader>
             <CardContent className="px-0 py-0">
               <ul className="divide-y divide-rivet/50">

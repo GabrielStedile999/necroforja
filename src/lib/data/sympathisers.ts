@@ -1,9 +1,9 @@
 import type { Sympathiser } from "@/types";
 
 /**
- * Catálogo dos 26 Sympathisers da campanha Cinderak Burning.
- * São territórios disputáveis; o Arbitrator escolhe quais ficam ativos na
- * campanha (ver coluna `enabled` em `sympathiser`).
+ * Catalogue of the 26 Sympathisers in the Cinderak Burning campaign.
+ * They are contestable territories; the Arbitrator chooses which ones are
+ * active in the campaign (see the `enabled` column in `sympathiser`).
  */
 export const SYMPATHISERS: Sympathiser[] = [
   { id: "promethium-guild", name: "Promethium Guild Sympathisers" },

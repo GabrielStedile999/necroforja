@@ -25,7 +25,7 @@ export function EquipFromStashForm({
   if (fighters.length === 0) {
     return (
       <p className="text-xs text-muted">
-        Recrute fighters para poder equipar itens.
+        Recruit fighters to be able to equip items.
       </p>
     );
   }
@@ -36,7 +36,7 @@ export function EquipFromStashForm({
 
       <div className="flex items-end gap-2">
         <div className="flex-1">
-          <Label htmlFor={`equip-fighter-${stashItemId}`}>Equipar em</Label>
+          <Label htmlFor={`equip-fighter-${stashItemId}`}>Equip on</Label>
           <Select
             id={`equip-fighter-${stashItemId}`}
             name="fighterId"
@@ -49,7 +49,7 @@ export function EquipFromStashForm({
           </Select>
         </div>
         <Button type="submit" disabled={pending} variant="outline">
-          {pending ? "Equipando..." : "Equipar"}
+          {pending ? "Equipping..." : "Equip"}
         </Button>
       </div>
 

@@ -6,7 +6,7 @@ import { requireUser } from "@/lib/auth/guards";
 import { Bot } from "lucide-react";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Assistente de Regras" };
+export const metadata: Metadata = { title: "Rules Assistant" };
 export const dynamic = "force-dynamic";
 
 export default async function AssistantPage() {
@@ -19,15 +19,15 @@ export default async function AssistantPage() {
         <div className="flex items-center gap-3">
           <Bot className="h-6 w-6 text-hazard" aria-hidden />
           <h1 className="stencil text-2xl font-bold text-ink">
-            Assistente de Regras
+            Rules Assistant
           </h1>
           <Badge variant="hazard">IA · RAG</Badge>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Pergunte às regras</CardTitle>
-            <span className="ml-auto text-xs text-muted">acesso restrito</span>
+            <CardTitle>Ask the rules</CardTitle>
+            <span className="ml-auto text-xs text-muted">restricted access</span>
           </CardHeader>
           <CardContent>
             <RulesChat />
@@ -35,8 +35,8 @@ export default async function AssistantPage() {
         </Card>
 
         <p className="text-center text-xs text-muted">
-          Respostas baseadas nas notas de regras carregadas pelo Arbitrator, de
-          uso privado entre os jogadores.
+          Answers based on the rule notes loaded by the Arbitrator, for private
+          use among players.
         </p>
       </main>
     </>

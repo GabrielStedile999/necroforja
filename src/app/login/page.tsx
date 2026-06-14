@@ -4,7 +4,7 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Entrar" };
+export const metadata: Metadata = { title: "Sign In" };
 
 export default function LoginPage() {
   return (
@@ -19,10 +19,10 @@ export default function LoginPage() {
       <Card>
         <CardContent className="py-6">
           <h1 className="stencil mb-1 text-xl font-bold text-ink">
-            Acesso restrito
+            Restricted access
           </h1>
           <p className="mb-5 text-sm text-muted">
-            Contas são criadas pelo Arbitrator. Entre com suas credenciais.
+            Accounts are created by the Arbitrator. Sign in with your credentials.
           </p>
           <LoginForm />
         </CardContent>
@@ -32,7 +32,7 @@ export default function LoginPage() {
         href="/"
         className="mt-6 text-center text-xs text-muted hover:text-ink"
       >
-        ← Voltar ao painel público
+        ← Back to public dashboard
       </Link>
     </main>
   );

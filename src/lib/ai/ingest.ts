@@ -1,16 +1,16 @@
 /**
- * Ingestão de regras para o RAG. Gera chunks + embeddings e grava em rule_chunk.
+ * Rules ingestion for RAG. Generates chunks + embeddings and writes to rule_chunk.
  *
- * Fontes:
- *  - content/books/*.jsonl  → texto dos livros, página a página
- *    (cada linha: { "book": string, "page": number, "text": string }).
- *    Os chunks herdam livro + página, para citação oficial verificável.
- *  - content/rules/*.md     → notas/resumos próprios (sem página).
+ * Sources:
+ *  - content/books/*.jsonl  → book text, page by page
+ *    (each line: { "book": string, "page": number, "text": string }).
+ *    Chunks inherit book + page for verifiable official citations.
+ *  - content/rules/*.md     → own notes/summaries (no page number).
  *
- * Uso: configure DATABASE_URL e OPENAI_API_KEY no .env e rode `npm run rules:ingest`.
+ * Usage: configure DATABASE_URL and OPENAI_API_KEY in .env and run `npm run rules:ingest`.
  *
- * ⚠️ IP: content/books/ contém o texto integral dos livros e está no .gitignore.
- * É de uso local/privado (jogadores que possuem os livros); não redistribua.
+ * ⚠️ IP: content/books/ contains the full text of the books and is in .gitignore.
+ * It is for local/private use (players who own the books); do not redistribute.
  */
 import "dotenv/config";
 import { readdir, readFile } from "node:fs/promises";
@@ -37,7 +37,7 @@ async function readDirSafe(dir: string, ext: string): Promise<string[]> {
   }
 }
 
-/** Detecta páginas de índice/sumário (muitos pontilhados) — ruído para o RAG. */
+/** Detects index/table-of-contents pages (many dotted lines) — noise for RAG. */
 function isIndexLike(text: string): boolean {
   return (text.match(/\.{4,}/g)?.length ?? 0) >= 5;
 }
@@ -57,7 +57,7 @@ async function collectBookRecords(): Promise<Record[]> {
         page: number;
         text: string;
       };
-      if (isIndexLike(page.text)) continue; // pula sumário/índice
+      if (isIndexLike(page.text)) continue; // skip table of contents/index
       for (const content of chunkPlain(page.text)) {
         records.push({
           source: file,
@@ -101,13 +101,13 @@ async function ingest() {
 
   if (records.length === 0) {
     console.error(
-      "✗ Nada para ingerir. Adicione content/books/*.jsonl ou content/rules/*.md.",
+      "✗ Nothing to ingest. Add content/books/*.jsonl or content/rules/*.md.",
     );
     process.exit(1);
   }
-  console.log(`→ ${records.length} chunks para indexar.`);
+  console.log(`→ ${records.length} chunks to index.`);
 
-  // Recria a base (idempotente).
+  // Recreates the base (idempotent).
   await db.delete(schema.ruleChunks);
 
   let inserted = 0;
@@ -128,11 +128,11 @@ async function ingest() {
     console.log(`  ✓ ${inserted}/${records.length}`);
   }
 
-  console.log("✔ Ingestão concluída.");
+  console.log("✔ Ingestion complete.");
   process.exit(0);
 }
 
 ingest().catch((err) => {
-  console.error("✗ Erro na ingestão:", err);
+  console.error("✗ Ingestion error:", err);
   process.exit(1);
 });

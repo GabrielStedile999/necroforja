@@ -1,6 +1,6 @@
 /**
- * Cliente Drizzle + Postgres (postgres-js).
- * Conexão única reaproveitada (evita esgotar conexões em serverless).
+ * Drizzle + Postgres client (postgres-js).
+ * Single reused connection (avoids exhausting connections in serverless).
  */
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
@@ -9,10 +9,10 @@ import * as schema from "./schema";
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
-  throw new Error("DATABASE_URL não definida. Copie .env.example para .env.");
+  throw new Error("DATABASE_URL is not defined. Copy .env.example to .env.");
 }
 
-// Reusa a conexão em dev (hot reload) e em serverless.
+// Reuses the connection in dev (hot reload) and in serverless.
 const globalForDb = globalThis as unknown as {
   client?: ReturnType<typeof postgres>;
 };

@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 const SUGGESTIONS = [
-  "Como é calculado o Gang Rating?",
-  "Quantos créditos tenho para fundar a gangue?",
-  "Como funcionam os Sympathisers?",
-  "Quantos ciclos tem a campanha?",
+  "How is the Gang Rating calculated?",
+  "How many credits do I have to found the gang?",
+  "How do Sympathisers work?",
+  "How many cycles does the campaign have?",
 ];
 
 export function RulesChat() {
@@ -30,8 +30,8 @@ export function RulesChat() {
           <div className="flex flex-col items-center gap-4 pt-8 text-center">
             <Bot className="h-10 w-10 text-hazard" aria-hidden />
             <p className="max-w-md text-sm text-muted">
-              Pergunte sobre as regras da campanha. As respostas são baseadas nas
-              notas de regras carregadas, com citação das fontes.
+              Ask about the campaign rules. Answers are based on the loaded rule
+              notes, with source citations.
             </p>
             <div className="flex flex-wrap justify-center gap-2">
               {SUGGESTIONS.map((s) => (
@@ -68,17 +68,17 @@ export function RulesChat() {
         {isLoading && (
           <div className="flex gap-3 text-sm text-muted">
             <Bot className="h-5 w-5 text-hazard" aria-hidden />
-            <span className="animate-pulse">consultando as regras...</span>
+            <span className="animate-pulse">consulting the rules...</span>
           </div>
         )}
         {error && (
           <div className="flex flex-col gap-2 rounded-sm border border-blood/40 bg-blood/15 px-3 py-2 text-sm text-blood">
-            <span>Falha ao responder: {error.message}</span>
+            <span>Failed to respond: {error.message}</span>
             <button
               onClick={() => reload()}
               className="self-start rounded-sm border border-blood/40 px-2 py-1 text-xs hover:bg-blood/20"
             >
-              Tentar novamente
+              Try again
             </button>
           </div>
         )}
@@ -91,8 +91,8 @@ export function RulesChat() {
         <Input
           value={input}
           onChange={handleInputChange}
-          placeholder="Pergunte sobre uma regra..."
-          aria-label="Pergunta"
+          placeholder="Ask about a rule..."
+          aria-label="Question"
         />
         <Button type="submit" disabled={isLoading || !input.trim()}>
           <Send className="h-4 w-4" aria-hidden />

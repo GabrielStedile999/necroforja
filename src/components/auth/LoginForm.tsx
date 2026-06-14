@@ -24,7 +24,7 @@ export function LoginForm() {
         />
       </div>
       <div>
-        <Label htmlFor="password">Senha</Label>
+        <Label htmlFor="password">Password</Label>
         <Input
           id="password"
           name="password"
@@ -41,7 +41,7 @@ export function LoginForm() {
       )}
 
       <Button type="submit" disabled={pending}>
-        {pending ? "Entrando..." : "Entrar"}
+        {pending ? "Signing in..." : "Sign in"}
       </Button>
     </form>
   );

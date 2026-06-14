@@ -2,16 +2,16 @@ import { z } from "zod";
 
 /** Login (Credentials provider). */
 export const loginSchema = z.object({
-  email: z.string().email("E-mail inválido."),
-  password: z.string().min(1, "Informe a senha."),
+  email: z.string().email("Invalid e-mail."),
+  password: z.string().min(1, "Please enter your password."),
 });
 
-/** Admin cria uma conta de jogador + a gangue dele (sem self-signup). */
+/** Admin creates a player account + their gang (no self-signup). */
 export const createPlayerSchema = z.object({
-  displayName: z.string().min(2, "Nome muito curto.").max(60),
-  email: z.string().email("E-mail inválido."),
-  password: z.string().min(8, "Mínimo de 8 caracteres."),
-  gangName: z.string().min(2, "Nome da gangue muito curto.").max(60),
+  displayName: z.string().min(2, "Name too short.").max(60),
+  email: z.string().email("Invalid e-mail."),
+  password: z.string().min(8, "Minimum 8 characters."),
+  gangName: z.string().min(2, "Gang name too short.").max(60),
   house: z.string().min(2).max(60),
 });
 
@@ -42,9 +42,9 @@ export const equipmentCategoryEnum = z.enum([
   "upgrade",
 ]);
 
-/** Adicionar/editar um fighter na gangue. */
+/** Add/edit a fighter in the gang. */
 export const fighterSchema = z.object({
-  name: z.string().min(1, "Informe o nome.").max(60),
+  name: z.string().min(1, "Please enter a name.").max(60),
   type: z.string().min(1).max(80),
   category: fighterCategoryEnum,
   baseCost: z.coerce.number().int().min(0).max(2000),
@@ -62,7 +62,7 @@ export const fighterSchema = z.object({
   int: z.coerce.number().int().min(0).max(12).optional(),
 });
 
-/** Adicionar um item de equipamento a um fighter. */
+/** Add an equipment item to a fighter. */
 export const addEquipmentSchema = z.object({
   fighterId: z.string().uuid(),
   name: z.string().min(1).max(80),
@@ -70,16 +70,16 @@ export const addEquipmentSchema = z.object({
   cost: z.coerce.number().int().min(0).max(2000),
 });
 
-/** Arbitrator registra um desafio por um Sympathiser. */
+/** Arbitrator registers a challenge for a Sympathiser. */
 export const createChallengeSchema = z.object({
   challengerGangId: z.string().uuid(),
-  // pode ser vazio quando o stake é um Sympathiser ainda não controlado
+  // can be empty when the stake is an uncontrolled Sympathiser
   challengedGangId: z
     .string()
     .uuid()
     .optional()
     .or(z.literal("").transform(() => undefined)),
-  sympathiserId: z.string().min(1, "Selecione o Sympathiser em disputa."),
+  sympathiserId: z.string().min(1, "Select the contested Sympathiser."),
   scenario: z.string().max(80).optional(),
 });
 
@@ -90,45 +90,45 @@ export const challengeOutcomeEnum = z.enum([
   "draw",
 ]);
 
-/** Arbitrator resolve um desafio. */
+/** Arbitrator resolves a challenge. */
 export const resolveChallengeSchema = z.object({
   challengeId: z.string().uuid(),
   outcome: challengeOutcomeEnum,
 });
 
-/** Atualiza os créditos do Stash da gangue. */
+/** Updates the gang's Stash credits. */
 export const setStashCreditsSchema = z.object({
   credits: z.coerce
     .number()
     .int()
-    .min(0, "Créditos não podem ser negativos.")
-    .max(99999, "Valor muito alto."),
+    .min(0, "Credits cannot be negative.")
+    .max(99999, "Value too high."),
 });
 
-/** Adiciona um item ao Stash. */
+/** Adds an item to the Stash. */
 export const addStashItemSchema = z.object({
-  name: z.string().min(1, "Informe o nome.").max(80),
+  name: z.string().min(1, "Please enter a name.").max(80),
   category: equipmentCategoryEnum,
   cost: z.coerce.number().int().min(0).max(2000),
-  qty: z.coerce.number().int().min(1, "Qty mínima: 1.").max(99).default(1),
+  qty: z.coerce.number().int().min(1, "Minimum qty: 1.").max(99).default(1),
 });
 
-/** Remove um item do Stash. */
+/** Removes an item from the Stash. */
 export const removeStashItemSchema = z.object({
-  stashItemId: z.string().uuid("ID inválido."),
+  stashItemId: z.string().uuid("Invalid ID."),
 });
 
-/** Move um item do Stash para um fighter (operação atômica). */
+/** Moves an item from the Stash to a fighter (atomic operation). */
 export const equipFromStashSchema = z.object({
-  stashItemId: z.string().uuid("ID do item inválido."),
-  fighterId: z.string().uuid("ID do fighter inválido."),
+  stashItemId: z.string().uuid("Invalid item ID."),
+  fighterId: z.string().uuid("Invalid fighter ID."),
 });
 
-/** Altera o status de um fighter (active/in_recovery/injured/captured/dead). */
+/** Changes a fighter's status (active/in_recovery/injured/captured/dead). */
 export const updateFighterStatusSchema = z.object({
-  fighterId: z.string().uuid("ID do fighter inválido."),
+  fighterId: z.string().uuid("Invalid fighter ID."),
   status: fighterStatusEnum,
-  /** Gangue captora — obrigatório apenas quando status = "captured". */
+  /** Capturing gang — required only when status = "captured". */
   capturedByGangId: z
     .string()
     .uuid()
@@ -136,27 +136,27 @@ export const updateFighterStatusSchema = z.object({
     .or(z.literal("").transform(() => undefined)),
 });
 
-/** Adiciona XP a um fighter (delta positivo). */
+/** Adds XP to a fighter (positive delta). */
 export const addFighterXpSchema = z.object({
-  fighterId: z.string().uuid("ID do fighter inválido."),
+  fighterId: z.string().uuid("Invalid fighter ID."),
   xpDelta: z.coerce
     .number()
     .int()
-    .min(1, "Mínimo 1 XP.")
-    .max(100, "Máximo 100 XP por vez."),
+    .min(1, "Minimum 1 XP.")
+    .max(100, "Maximum 100 XP at a time."),
 });
 
-/** Remove um item equipado de um fighter. */
+/** Removes an equipped item from a fighter. */
 export const removeEquipmentSchema = z.object({
-  fighterId: z.string().uuid("ID do fighter inválido."),
-  equipmentId: z.string().uuid("ID do equipamento inválido."),
+  fighterId: z.string().uuid("Invalid fighter ID."),
+  equipmentId: z.string().uuid("Invalid equipment ID."),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
-/** Admin atribui manualmente um Sympathiser a uma gangue (ou libera). */
+/** Admin manually assigns a Sympathiser to a gang (or releases it). */
 export const assignSympathiserSchema = z.object({
-  sympathiserId: z.string().min(1, "Selecione o Sympathiser."),
-  /** UUID da gangue, ou "" para liberar (marcar como sem controlador). */
+  sympathiserId: z.string().min(1, "Select the Sympathiser."),
+  /** Gang UUID, or "" to release (mark as uncontrolled). */
   gangId: z.string(),
 });
 

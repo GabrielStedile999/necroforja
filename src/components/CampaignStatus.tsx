@@ -37,16 +37,16 @@ export function CampaignStatus({ view }: { view: PublicView }) {
           </div>
           <div className="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-4">
             <Stat
-              label="Ciclo"
+              label="Cycle"
               value={`${campaign.currentCycle}/${campaign.totalCycles}`}
             />
-            <Stat label="Gangues" value={gangs.length} />
+            <Stat label="Gangs" value={gangs.length} />
             <Stat
               label="Sympathisers"
               value={`${controlled}/${sympathisers.length}`}
             />
             <Stat
-              label="Em disputa"
+              label="Contested"
               value={sympathisers.length - controlled}
             />
           </div>

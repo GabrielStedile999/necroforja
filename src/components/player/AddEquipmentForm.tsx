@@ -30,16 +30,16 @@ export function AddEquipmentForm({ fighterId }: { fighterId: string }) {
 
       <div className="grid gap-3 sm:grid-cols-3">
         <div>
-          <Label htmlFor={`eq-name-${fighterId}`}>Nome</Label>
+          <Label htmlFor={`eq-name-${fighterId}`}>Name</Label>
           <Input
             id={`eq-name-${fighterId}`}
             name="name"
-            placeholder="ex.: Boltgun"
+            placeholder="e.g.: Boltgun"
             required
           />
         </div>
         <div>
-          <Label htmlFor={`eq-cat-${fighterId}`}>Categoria</Label>
+          <Label htmlFor={`eq-cat-${fighterId}`}>Category</Label>
           <Select
             id={`eq-cat-${fighterId}`}
             name="category"
@@ -53,7 +53,7 @@ export function AddEquipmentForm({ fighterId }: { fighterId: string }) {
           </Select>
         </div>
         <div>
-          <Label htmlFor={`eq-cost-${fighterId}`}>Custo (c)</Label>
+          <Label htmlFor={`eq-cost-${fighterId}`}>Cost (c)</Label>
           <Input
             id={`eq-cost-${fighterId}`}
             name="cost"
@@ -78,7 +78,7 @@ export function AddEquipmentForm({ fighterId }: { fighterId: string }) {
 
       <div>
         <Button type="submit" disabled={pending} variant="outline">
-          {pending ? "Adicionando..." : "Adicionar equipamento"}
+          {pending ? "Adding..." : "Add equipment"}
         </Button>
       </div>
     </form>

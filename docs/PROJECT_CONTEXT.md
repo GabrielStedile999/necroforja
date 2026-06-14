@@ -1,68 +1,70 @@
 # PROJECT_CONTEXT
 
-Contexto técnico do projeto, escrito para que um assistente possa trabalhar nele
-sem reanalisar tudo. Para o roadmap, ver `IMPLEMENTATION_PLAN.md`. Para decisões
-estratégicas originais, ver `PLANO-TECNICO.md`.
+Technical context for the project, written so that an assistant can work on it
+without re-analysing everything from scratch. For the roadmap, see
+`IMPLEMENTATION_PLAN.md`. For the original strategic decisions, see
+`PLANO-TECNICO.md`.
 
-## 1. O que é
+## 1. What it is
 
-Aplicação web com dois objetivos sobrepostos:
+A web application with two overlapping goals:
 
-1. **Portfólio** de engenharia/product design (Gabriel Stedile).
-2. **Ferramenta real** para arbitrar a campanha de Necromunda *The Aranthian
-   Succession: Cinderak Burning*. O app é, na prática, a ferramenta digital do
-   Arbitrator: gerencia gangues, créditos, Sympathisers, desafios e ranking.
+1. **Portfolio** of engineering / product design (Gabriel Stedile).
+2. **Real tool** for managing the Necromunda *The Aranthian Succession: Cinderak
+   Burning* campaign. The app is, in practice, the Arbitrator's digital tool:
+   manages gangs, credits, Sympathisers, challenges, and the ranking.
 
-Público pequeno (poucos jogadores). Prioridades: performance de renderização,
-segurança, ótima UX mobile (uso em mesa via celular/tablet) e SEO na parte
-pública.
+Small audience (a few players). Priorities: rendering performance, security,
+great mobile UX (used at the table via phone/tablet), and SEO on the public
+section.
 
 ## 2. Stack
 
 - **Next.js 16** (App Router, React 19, Server Components) + **TypeScript strict**
-  (`noUncheckedIndexedAccess` ligado — atenção a acessos indexados).
-- **Tailwind CSS v4** (config CSS-first via `@theme` em `globals.css`) + componentes
-  próprios estilo shadcn (não há dependência de lib de UI).
-- **PostgreSQL** + **Drizzle ORM** (`postgres-js`). Hospedagem pretendida: Supabase
-  (região São Paulo). **pgvector** para o RAG.
-- **Auth.js v5** (`next-auth@5 beta`) com provider **Credentials** + **Argon2id**
-  (`@node-rs/argon2`). Sem self-signup.
-- **IA / RAG:** Vercel **AI SDK v4** (`ai@4`), `@ai-sdk/anthropic` (geração, Claude),
-  `@ai-sdk/openai` (embeddings), `@ai-sdk/react` (`useChat`).
-- **Zod** para validação. **Vitest** para testes. Deploy alvo: **Vercel** (Hobby).
+  (`noUncheckedIndexedAccess` enabled — pay attention to indexed accesses).
+- **Tailwind CSS v4** (CSS-first config via `@theme` in `globals.css`) + custom
+  shadcn-style components (no UI library dependency).
+- **PostgreSQL** + **Drizzle ORM** (`postgres-js`). Intended hosting: Supabase
+  (São Paulo region). **pgvector** for RAG.
+- **Auth.js v5** (`next-auth@5 beta`) with **Credentials** provider + **Argon2id**
+  (`@node-rs/argon2`). No self-signup.
+- **AI / RAG:** Vercel **AI SDK v4** (`ai@4`), `@ai-sdk/anthropic` (generation,
+  Claude), `@ai-sdk/openai` (embeddings), `@ai-sdk/react` (`useChat`).
+- **Zod** for validation. **Vitest** for tests. Deploy target: **Vercel** (Hobby).
 
-Versões fixadas em `package.json`. AI SDK propositalmente na **linha v4** (API
-`useChat` com `input/handleInputChange/handleSubmit/isLoading`, e
-`result.toDataStreamResponse()` na rota). NÃO migrar para v5 sem refatorar.
+Versions pinned in `package.json`. AI SDK intentionally on the **v4 line** (API
+`useChat` with `input/handleInputChange/handleSubmit/isLoading`, and
+`result.toDataStreamResponse()` in the route). Do NOT migrate to v5 without
+refactoring.
 
-## 3. Estrutura (resumo do que cada parte faz)
+## 3. Structure (summary of what each part does)
 
 ```
 src/
-  middleware.ts              # protege /admin (role admin) e /player (autenticado)
-  auth.config.ts             # config Auth.js edge-safe (callbacks authorized/jwt/session)
-  auth.ts                    # NextAuth completo (Credentials + argon2 + DB) — runtime Node
+  middleware.ts              # protects /admin (role admin) and /player (authenticated)
+  auth.config.ts             # Auth.js edge-safe config (authorized/jwt/session callbacks)
+  auth.ts                    # full NextAuth (Credentials + argon2 + DB) — Node runtime
   app/
-    layout.tsx, globals.css  # fontes (Oswald/Inter/JetBrains), metadados, tokens de tema
-    page.tsx                 # landing pública (dynamic). Usa lib/repo.getPublicView()
+    layout.tsx, globals.css  # fonts (Oswald/Inter/JetBrains), metadata, theme tokens
+    page.tsx                 # public landing (dynamic). Uses lib/repo.getPublicView()
     login/                   # page.tsx + actions.ts (authenticate via signIn)
-    dashboard/page.tsx       # despacha admin/player conforme o papel
+    dashboard/page.tsx       # dispatches admin/player based on role
     admin/
-      page.tsx               # contas: lista jogadores, cria conta+gangue, ativa/desativa
+      page.tsx               # accounts: lists players, creates account+gang, activates/deactivates
       actions.ts             # createPlayer, togglePlayerActive (requireAdmin)
       campaign/
-        page.tsx             # painel da campanha: avançar ciclo, criar/resolver desafios
+        page.tsx             # campaign panel: advance cycle, create/resolve challenges
         actions.ts           # createChallenge, resolveChallenge, advanceCycle
     player/
-      page.tsx               # gangue do jogador: roster, Rating/Wealth, link assistente
-      actions.ts             # addFighter, removeFighter, addEquipment (própria gangue)
-      assistant/page.tsx     # chat do assistente de regras (RulesChat)
+      page.tsx               # player's gang: roster, Rating/Wealth, assistant link
+      actions.ts             # addFighter, removeFighter, addEquipment (own gang)
+      assistant/page.tsx     # rules assistant chat (RulesChat)
     api/
-      auth/[...nextauth]/    # handlers do Auth.js
+      auth/[...nextauth]/    # Auth.js handlers
       assistant/route.ts     # POST RAG: auth + rate limit + retrieval + streamText (Claude)
   components/
-    SiteHeader.tsx           # header server, ciente de sessão (login/logout/links por papel)
-    CampaignStatus / GangRankingTable / SympathiserMap / ChallengeLog  # landing (presentational, recebem props)
+    SiteHeader.tsx           # server header, session-aware (login/logout/links by role)
+    CampaignStatus / GangRankingTable / SympathiserMap / ChallengeLog  # landing (presentational, receive props)
     SignOutButton.tsx
     ui/                      # button, card, badge, input(+Label,Select)
     admin/                   # CreatePlayerForm, CreateChallengeForm, ResolveChallengeForm (client, useActionState)
@@ -70,206 +72,216 @@ src/
     auth/LoginForm.tsx
     assistant/RulesChat.tsx  # client, useChat -> /api/assistant
   lib/
-    scoring.ts               # fórmulas oficiais: fighterTotalCost, gangRating, gangWealth, creditsRemaining
+    scoring.ts               # official formulas: fighterTotalCost, gangRating, gangWealth, creditsRemaining
     campaign-rules.ts        # phaseForCycle, nextCycleState, challengeOrder, rollScenario, controlWinner
-    repo.ts                  # getPublicView(): DB se DATABASE_URL, senão dados-semente (fallback)
-    validation.ts            # schemas Zod (login, createPlayer, fighter, equipment, challenge…)
+    repo.ts                  # getPublicView(): DB if DATABASE_URL, otherwise seed data (fallback)
+    validation.ts            # Zod schemas (login, createPlayer, fighter, equipment, challenge…)
     utils.ts                 # cn() (clsx + tailwind-merge)
     auth/                    # password (argon2), guards (requireUser/requireAdmin), session-actions (signOut)
-    data/                    # sympathisers.ts (catálogo 26), campaign.ts (semente: 4 gangues + controle)
-    db/                      # schema.ts, index.ts (cliente), queries.ts, mutations.ts, seed.ts
+    data/                    # sympathisers.ts (26-entry catalogue), campaign.ts (seed: 4 gangs + control)
+    db/                      # schema.ts, index.ts (client), queries.ts, mutations.ts, seed.ts
     ai/                      # chunk.ts, embeddings.ts, retrieval.ts, ingest.ts, rate-limit.ts
   types/
-    index.ts                 # tipos de domínio + view pública (PublicView, GangRankRow, etc.)
-    next-auth.d.ts           # augmenta Session/JWT com id + role
+    index.ts                 # domain types + public view (PublicView, GangRankRow, etc.)
+    next-auth.d.ts           # augments Session/JWT with id + role
 content/
-  books/*.jsonl              # texto dos livros página a página (GITIGNORED — IP). Fonte do RAG
-  rules/*.md                 # notas próprias opcionais (README explica)
-scripts/enable-pgvector.sql  # CREATE EXTENSION vector (rodar 1x no banco)
-tests/                       # scoring, campaign-rules, chunk, fase1 (validação + senha)
+  books/*.jsonl              # book text page by page (GITIGNORED — IP). RAG source
+  rules/*.md                 # optional personal rule notes (README explains)
+scripts/enable-pgvector.sql  # CREATE EXTENSION vector (run once on the database)
+tests/                       # scoring, campaign-rules, chunk, fase1 (validation + password)
 ```
 
-## 4. Como as principais partes funcionam
+## 4. How the main parts work
 
-### Autenticação e autorização
-- `middleware.ts` usa `auth.config.ts` (edge-safe, SEM DB/argon2). O callback
-  `authorized` decide acesso por rota: `/admin` exige `role === "admin"`, `/player`
-  exige sessão.
-- `auth.ts` (runtime Node) tem o provider Credentials: valida com `loginSchema`,
-  busca usuário (`getUserByEmail`), confere senha com `verifyPassword` (argon2).
-- Sessão é **JWT**; `id` e `role` são propagados em callbacks `jwt`/`session`.
-  Tipos aumentados em `types/next-auth.d.ts`.
-- Em Server Actions/Components, usar `requireUser()` / `requireAdmin()` de
+### Authentication and authorisation
+- `middleware.ts` uses `auth.config.ts` (edge-safe, WITHOUT DB/argon2). The
+  `authorized` callback decides access by route: `/admin` requires
+  `role === "admin"`, `/player` requires a session.
+- `auth.ts` (Node runtime) has the Credentials provider: validates with
+  `loginSchema`, looks up the user (`getUserByEmail`), checks the password with
+  `verifyPassword` (argon2).
+- Session is **JWT**; `id` and `role` are propagated in `jwt`/`session` callbacks.
+  Types augmented in `types/next-auth.d.ts`.
+- In Server Actions/Components, use `requireUser()` / `requireAdmin()` from
   `lib/auth/guards.ts`.
 
-### Dados da campanha (DB)
-- Schema em `lib/db/schema.ts`. Tabelas: `campaign`, `app_user`, `gang`, `fighter`,
+### Campaign data (DB)
+- Schema in `lib/db/schema.ts`. Tables: `campaign`, `app_user`, `gang`, `fighter`,
   `equipment`, `fighter_equipment`, `stash_item`, `sympathiser`,
   `sympathiser_control`, `challenge`, `triumph`, `rule_chunk` (pgvector).
-- Leituras em `queries.ts` (mapeiam linhas → tipos de domínio via `toDomainGang`).
-  Escritas/derivados em `mutations.ts` (`recalcGangScores`, `setSympathiserController`,
+- Reads in `queries.ts` (map rows → domain types via `toDomainGang`). Writes /
+  derived values in `mutations.ts` (`recalcGangScores`, `setSympathiserController`,
   `advanceCampaignCycle`).
-- **Rating/Wealth são cacheados** em `gang.rating_cached`/`wealth_cached`,
-  recalculados a cada mutação via `recalcGangScores`. O cálculo-fonte está em
-  `lib/scoring.ts` (funções puras).
+- **Rating/Wealth are cached** in `gang.rating_cached`/`wealth_cached`,
+  recalculated on every mutation via `recalcGangScores`. The source calculation
+  lives in `lib/scoring.ts` (pure functions).
 
-### Landing pública (resiliente)
-- `lib/repo.ts > getPublicView()`: se `DATABASE_URL` existe, lê do banco; se não
-  (ou se as tabelas não existem / erro), cai para os **dados-semente** estáticos
-  (`lib/data/*`). Por isso a landing nunca quebra sem banco.
-- Componentes da landing são **presentational** (recebem `view`/props); não
-  buscam dados sozinhos. A página (`app/page.tsx`) é `dynamic`.
+### Public landing (resilient)
+- `lib/repo.ts > getPublicView()`: if `DATABASE_URL` exists, reads from DB;
+  if not (or if tables don't exist / error), falls back to the **static seed
+  data** (`lib/data/*`). The landing therefore never breaks without a database.
+- Landing components are **presentational** (receive `view`/props); they don't
+  fetch data themselves. The page (`app/page.tsx`) is `dynamic`.
 
-### Mecânica da campanha (Cinderak Burning)
-- 7 ciclos: Great Darkness (1-3) → Downtime (4) → Spark of Rebellion (5-7).
-  `phaseForCycle`/`nextCycleState` em `campaign-rules.ts`.
-- **Sympathisers** = moeda da campanha (26, catálogo em `lib/data/sympathisers.ts`,
-  apenas `id`+`name`). O Arbitrator liga/desliga cada um via `sympathiser.enabled`
-  (action `toggleSympathiser` em `/admin/campaign`); só os **habilitados** aparecem
-  no mapa público e podem ser disputados. NÃO há mais lógica de baralho
-  (card/suit) — foi removida por não fazer sentido no app.
-  Ranking público ordena por nº de Sympathisers controlados, desempate por Rating.
-- **Desafios:** admin cria (`createChallenge`) e resolve (`resolveChallenge`). Ao
-  resolver, `controlWinner` decide quem fica com o Sympathiser e
-  `setSympathiserController` transfere o controle (histórico via `is_current`).
-  Cenário pode ser rolado por `rollScenario` (tabela 2D6 por fase).
+### Campaign mechanics (Cinderak Burning)
+- 7 cycles: Great Darkness (1-3) → Downtime (4) → Spark of Rebellion (5-7).
+  `phaseForCycle`/`nextCycleState` in `campaign-rules.ts`.
+- **Sympathisers** = campaign currency (26, catalogue in
+  `lib/data/sympathisers.ts`, `id`+`name` only). The Arbitrator enables/disables
+  each one via `sympathiser.enabled` (action `toggleSympathiser` in
+  `/admin/campaign`); only **enabled** ones appear on the public map and can be
+  contested. There is NO longer any deck/suit logic — it was removed as it made
+  no sense in the app.
+  Public ranking sorted by number of controlled Sympathisers, tie-broken by
+  Rating.
+- **Challenges:** admin creates (`createChallenge`) and resolves
+  (`resolveChallenge`). On resolution, `controlWinner` decides who gets the
+  Sympathiser and `setSympathiserController` transfers control (history via
+  `is_current`). Scenario can be rolled with `rollScenario` (2D6 table by
+  phase).
 
-### Assistente de Regras (RAG)
-- Rota `POST /api/assistant` (`app/api/assistant/route.ts`): autenticada
-  (`auth()` → 401), com **rate limit** por usuário (`lib/ai/rate-limit.ts`, em
-  memória), recupera trechos (`searchRules`) e gera resposta com Claude
-  (`streamText` → `toDataStreamResponse`).
-- **Pipeline de ingestão** (`npm run rules:ingest` → `lib/ai/ingest.ts`): lê
-  `content/books/*.jsonl` (livro+página) e `content/rules/*.md`; **pula páginas de
-  índice**; quebra em chunks (`chunk.ts`, `chunkPlain` quebra por verbete
-  MAIÚSCULO p/ isolar cada trait/regra); embeddings via OpenAI
-  (`text-embedding-3-small`, 1536 dims); grava em `rule_chunk`.
-- **Retrieval** (`retrieval.ts`): embute a pergunta, busca por distância de
-  cosseno (pgvector), `k=8`, `minSimilarity=0.1` (baixo por ser cross-lingual
-  PT→EN). `citationLabel()` formata "Livro, p. X".
-- O prompt instrui o modelo a responder só com o contexto e fechar com uma seção
-  **"Fontes:"** com livro + página, **sem inventar página**.
+### Rules Assistant (RAG)
+- Route `POST /api/assistant` (`app/api/assistant/route.ts`): authenticated
+  (`auth()` → 401), with **rate limit** per user (`lib/ai/rate-limit.ts`,
+  in-memory), retrieves chunks (`searchRules`), and generates a response with
+  Claude (`streamText` → `toDataStreamResponse`).
+- **Ingestion pipeline** (`npm run rules:ingest` → `lib/ai/ingest.ts`): reads
+  `content/books/*.jsonl` (book+page) and `content/rules/*.md`; **skips index
+  pages**; breaks into chunks (`chunk.ts`, `chunkPlain` breaks by UPPERCASE
+  keyword to isolate each trait/rule); embeddings via OpenAI
+  (`text-embedding-3-small`, 1536 dims); writes to `rule_chunk`.
+- **Retrieval** (`retrieval.ts`): embeds the question, searches by cosine
+  distance (pgvector), `k=8`, `minSimilarity=0.1` (low because of cross-lingual
+  EN→EN). `citationLabel()` formats "Book, p. X".
+- The prompt instructs the model to answer only from the context and close with a
+  **"Sources:"** section with book + page, **without inventing page numbers**.
 
-## 5. Decisões técnicas já tomadas (e por quê)
+## 5. Technical decisions already made (and why)
 
-- **Next.js App Router + Server Components**: SEO (SSR/SSG na parte pública),
-  performance, segredos no servidor. (Ver PLANO-TECNICO seção 2.)
-- **Postgres + Drizzle** (não NoSQL): dados relacionais e integridade; pgvector no
-  mesmo banco serve o RAG. Drizzle pela leveza em serverless.
-- **Auth.js Credentials + Argon2id**, sem self-signup: admin cria contas; menor
-  superfície de ataque; mostra engenharia de auth no portfólio.
-- **AI SDK v4** (não v5): API estável e conhecida (`useChat` clássico,
-  `toDataStreamResponse`). Migrar para v5 exigiria refatorar rota + chat.
-- **Embeddings OpenAI + geração Anthropic**: multi-provider via AI SDK (bom sinal
-  de portfólio). Modelos configuráveis por env.
-- **Livros indexados página a página** (não as notas paráfrase): permite citar
-  **livro + página oficiais**, verificáveis. Texto dos livros fica **gitignored**
+- **Next.js App Router + Server Components**: SEO (SSR/SSG on the public side),
+  performance, server-side secrets. (See PLANO-TECNICO section 2.)
+- **Postgres + Drizzle** (not NoSQL): relational data and integrity; pgvector in
+  the same database serves the RAG. Drizzle for its lightness in serverless.
+- **Auth.js Credentials + Argon2id**, no self-signup: admin creates accounts;
+  smaller attack surface; showcases auth engineering in the portfolio.
+- **AI SDK v4** (not v5): stable and known API (`useChat` classic,
+  `toDataStreamResponse`). Migrating to v5 would require refactoring the route +
+  chat.
+- **OpenAI embeddings + Anthropic generation**: multi-provider via AI SDK (good
+  portfolio signal). Models configurable via env.
+- **Books indexed page-by-page** (not paraphrase notes): allows citing the
+  **official book + page**, which is verifiable. Book text is **gitignored**
   (`/content/books`) — IP.
-- **Rating/Wealth cacheados** no banco para leitura rápida no ranking.
-- **Repo com fallback estático**: landing funciona sem banco conectado.
+- **Rating/Wealth cached** in the database for fast ranking reads.
+- **Repo with static fallback**: landing works without a connected database.
 
-## 6. Problemas já resolvidos (não repetir)
+## 6. Problems already solved (do not repeat)
 
-- **Modelo de IA descontinuado**: `claude-3-5-haiku-latest` (da base de 2025) foi
-  aposentado → falha silenciosa. Padrão atual: **`claude-haiku-4-5`**. Além disso,
-  usar `||` (não `??`) ao ler `ASSISTANT_MODEL` para tratar string vazia no `.env`
-  como "não definido".
-- **Erros de stream invisíveis**: o AI SDK mascara erros por padrão. A rota usa
-  `streamText({ onError })` + `toDataStreamResponse({ getErrorMessage })`, e a UI
-  (`RulesChat`) renderiza `error` com botão "Tentar novamente". Manter isso.
-- **RAG retornava índice em vez da definição**: causado por (a) chunks grandes
-  multi-tema, (b) páginas de índice/sumário, (c) busca cross-lingual estreita.
-  Resolvido com chunking por verbete MAIÚSCULO, filtro `isIndexLike` na ingestão,
-  e `k=8`/`minSimilarity=0.1`.
-- **Citação `[1]` sem referência**: agora o contexto carrega `FONTE: Livro, p. X`
-  e o modelo lista "Fontes:" ao final.
-- **Numeração de página**: calibrada — página impressa = índice do PDF − 1 (nos
-  dois livros). Confirmado (Gang Rating p.92, fundação p.81).
-- **Augmentação de JWT não aplicada em `auth.config`**: no callback `session`,
-  fazer cast (`token.id as string`, `token.role as "admin" | "player"`).
-- **Tabelas estourando o grid na landing**: itens do grid precisam de `min-w-0`
-  (senão a tabela força a coluna a crescer e sobrepõe o mapa). Tabelas largas vão
-  dentro de um wrapper `overflow-x-auto`. Ver `app/page.tsx` e `GangRankingTable`.
-- **Lógica de baralho removida**: `card`/`suit`/`CardSuit`/pgEnum `card_suit` foram
-  retirados de schema, types, data, seed, repo e UI. Sympathisers agora têm só
-  `id`, `name` e `enabled`. Se reaparecer referência a "carta/naipe", é resíduo.
-- **`StashItem.id` ausente no tipo de domínio**: a coluna `stash_item.id` não era
-  exposta em `types/index.ts` nem em `toDomainGang`. Corrigido: `StashItem` agora
-  inclui `id: string`, e `toDomainGang` mapeia `s.id`. Fixtures de teste de
-  scoring foram atualizados para incluir `id` no stash.
+- **Discontinued AI model**: `claude-3-5-haiku-latest` (from the 2025 base) was
+  retired → silent failure. Current default: **`claude-haiku-4-5`**. Also, use
+  `||` (not `??`) when reading `ASSISTANT_MODEL` to treat an empty string in
+  `.env` as "not defined".
+- **Invisible stream errors**: the AI SDK masks errors by default. The route uses
+  `streamText({ onError })` + `toDataStreamResponse({ getErrorMessage })`, and
+  the UI (`RulesChat`) renders `error` with a "Try again" button. Keep this.
+- **RAG was returning the index instead of the definition**: caused by (a) large
+  multi-topic chunks, (b) index/summary pages, (c) narrow cross-lingual search.
+  Fixed with UPPERCASE keyword chunking, `isIndexLike` filter on ingestion, and
+  `k=8`/`minSimilarity=0.1`.
+- **Citation `[1]` without a reference**: the context now carries
+  `SOURCE: Book, p. X` and the model lists "Sources:" at the end.
+- **Page numbering**: calibrated — printed page = PDF index − 1 (in both books).
+  Confirmed (Gang Rating p.92, founding p.81).
+- **JWT augmentation not applied in `auth.config`**: in the `session` callback,
+  cast (`token.id as string`, `token.role as "admin" | "player"`).
+- **Tables overflowing the grid on the landing**: grid items need `min-w-0`
+  (otherwise the table forces the column to grow and overlaps the map). Wide
+  tables go inside an `overflow-x-auto` wrapper. See `app/page.tsx` and
+  `GangRankingTable`.
+- **Deck logic removed**: `card`/`suit`/`CardSuit`/pgEnum `card_suit` were
+  removed from schema, types, data, seed, repo, and UI. Sympathisers now only
+  have `id`, `name`, and `enabled`. If a "card/suit" reference reappears, it is
+  a residue.
+- **`StashItem.id` missing from the domain type**: the `stash_item.id` column
+  was not exposed in `types/index.ts` nor in `toDomainGang`. Fixed: `StashItem`
+  now includes `id: string`, and `toDomainGang` maps `s.id`. Scoring test
+  fixtures were updated to include `id` in the stash.
 
-## 7. Convenções de código
+## 7. Code conventions
 
-- TypeScript **strict**; com `noUncheckedIndexedAccess`, acessos como `arr[0]` são
-  `T | undefined` → usar `!` quando garantido ou checagem.
+- TypeScript **strict**; with `noUncheckedIndexedAccess`, accesses like `arr[0]`
+  are `T | undefined` → use `!` when guaranteed, or add a check.
 - Import alias **`@/*` → `src/*`**.
-- **Server Actions**: arquivo com `"use server"`; retornam estado
-  `{ error?, success? }` para `useActionState`. Sempre validar com Zod e checar
-  autorização (`requireUser`/`requireAdmin`) e propriedade (ex.: fighter pertence à
-  gangue do usuário) ANTES de escrever. Chamar `revalidatePath` após mutação.
-- **Componentes**: presentational recebem dados por props; só os que precisam de
-  estado/efeito têm `"use client"`. Formulários client usam `useActionState`.
-- **Estilo Necromunda**: usar tokens do tema (`bg-void`, `text-hazard`, `text-ink`,
-  `text-muted`, `border-rivet`, `bg-panel`, `text-toxic`, `text-blood`, `text-cyan`),
-  classe `stencil` para títulos. Não introduzir libs de UI.
-- **DB**: leituras em `queries.ts`, escritas/derivados em `mutations.ts`. Após
-  alterar uma gangue, chamar `recalcGangScores(gangId)`.
-- Páginas autenticadas/admin: `export const dynamic = "force-dynamic"`.
-- Idioma da UI e mensagens: **português**.
+- **Server Actions**: file with `"use server"`; return state
+  `{ error?, success? }` for `useActionState`. Always validate with Zod and check
+  authorisation (`requireUser`/`requireAdmin`) and ownership (e.g. fighter
+  belongs to the user's gang) BEFORE writing. Call `revalidatePath` after
+  mutation.
+- **Components**: presentational ones receive data via props; only those that
+  need state/effects have `"use client"`. Client forms use `useActionState`.
+- **Necromunda style**: use theme tokens (`bg-void`, `text-hazard`, `text-ink`,
+  `text-muted`, `border-rivet`, `bg-panel`, `text-toxic`, `text-blood`,
+  `text-cyan`), `stencil` class for headings. Do not introduce UI libraries.
+- **DB**: reads in `queries.ts`, writes/derived values in `mutations.ts`. After
+  changing a gang, call `recalcGangScores(gangId)`.
+- Authenticated/admin pages: `export const dynamic = "force-dynamic"`.
+- UI language and messages: **English**.
 
-## 8. Cuidados importantes para futuras alterações
+## 8. Important cautions for future changes
 
-- **IP / Games Workshop**: o assistente é **privado** (atrás de login). Nunca
-  expor texto de regras/arte na área pública. `content/books/` é gitignored e não
-  deve ser commitado. Citar livro+página é ok; reproduzir o conteúdo publicamente, não.
-- **Edge vs Node**: `middleware.ts`/`auth.config.ts` NÃO podem importar DB nem
-  argon2 (rodam no edge). Lógica que toca banco/cripto fica em `auth.ts`/actions
-  (runtime Node).
-- **Mudou o schema?** Rodar `npm run db:push`. **Mudou o chunking/ingestão ou o
-  conteúdo dos livros?** Rodar `npm run rules:ingest` (recria `rule_chunk`).
-- **pgvector** precisa estar habilitado no banco (`scripts/enable-pgvector.sql`)
-  antes do `db:push`.
-- **Dimensão de embedding** (1536) está acoplada ao modelo
-  `text-embedding-3-small` (`EMBEDDING_DIMENSIONS` no schema). Trocar o modelo de
-  embedding exige migração da coluna `vector` e reingestão.
-- **Não migrar o AI SDK para v5** sem refatorar `route.ts` (resposta de stream) e
-  `RulesChat.tsx` (`useChat`).
-- **Verificação no sandbox**: o registro npm é bloqueado e o `node_modules` é do
-  macOS (binário nativo incompatível com o Linux do sandbox), então `vitest` não
-  roda aqui. Padrão usado: `tsc --noEmit` (com um stub ambiente para
-  `@node-rs/argon2` num `.d.ts` temporário na raiz, removido depois) + runners
-  standalone via `node --experimental-strip-types` para funções puras. Os testes
-  `vitest` rodam na máquina do usuário com `npm test`.
+- **IP / Games Workshop**: the assistant is **private** (behind login). Never
+  expose rule text/art in the public area. `content/books/` is gitignored and
+  must not be committed. Citing book+page is fine; reproducing content publicly
+  is not.
+- **Edge vs Node**: `middleware.ts`/`auth.config.ts` CANNOT import DB or argon2
+  (they run on the edge). Logic that touches the database/crypto stays in
+  `auth.ts`/actions (Node runtime).
+- **Changed the schema?** Run `npm run db:push`. **Changed chunking/ingestion or
+  book content?** Run `npm run rules:ingest` (recreates `rule_chunk`).
+- **pgvector** must be enabled on the database (`scripts/enable-pgvector.sql`)
+  before `db:push`.
+- **Embedding dimension** (1536) is coupled to the `text-embedding-3-small`
+  model (`EMBEDDING_DIMENSIONS` in the schema). Changing the embedding model
+  requires a migration of the `vector` column and re-ingestion.
+- **Do not migrate the AI SDK to v5** without refactoring `route.ts` (stream
+  response) and `RulesChat.tsx` (`useChat`).
+- **Sandbox verification**: the npm registry is blocked and `node_modules` is
+  from macOS (native binary incompatible with the sandbox Linux), so `vitest`
+  does not run there. Pattern used: `tsc --noEmit` (with an env stub for
+  `@node-rs/argon2` in a temporary `.d.ts` at the root, removed afterwards) +
+  standalone runners via `node --experimental-strip-types` for pure functions.
+  `vitest` tests run on the user's machine with `npm test`.
 
-## 9. Scripts e variáveis
+## 9. Scripts and variables
 
 - Scripts: `dev`, `build`, `start`, `lint`, `typecheck`, `test`, `db:push`,
   `db:seed`, `db:studio`, `rules:ingest`.
-- `.env` (ver `.env.example`): `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`,
-  `ANTHROPIC_API_KEY`, `ASSISTANT_MODEL` (= `claude-haiku-4-5`), `OPENAI_API_KEY`,
-  `EMBEDDING_MODEL` (= `text-embedding-3-small`), e as credenciais do seed
-  `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `PLAYER_PASSWORD`.
-- Credenciais de seed: definidas no `.env` (com fallbacks genéricos em `seed.ts`);
-  jogadores ficam `<nome>@campaign.local`. Trocar após o 1º login.
+- `.env` (see `.env.example`): `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`,
+  `ANTHROPIC_API_KEY`, `ASSISTANT_MODEL` (= `claude-haiku-4-5`),
+  `OPENAI_API_KEY`, `EMBEDDING_MODEL` (= `text-embedding-3-small`), and the
+  seed credentials `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `PLAYER_PASSWORD`.
+- Seed credentials: defined in `.env` (with generic fallbacks in `seed.ts`);
+  players are `<name>@campaign.local`. Change after the first login.
 
-## 10. Estado atual
+## 10. Current state
 
-Fases 1–3 do `PLANO-TECNICO.md` entregues (auth+contas, gestão de gangue,
-desafios+ranking vivo, assistente RAG). Features 1, 2, 3 e 4 do
-`IMPLEMENTATION_PLAN.md` entregues (equipar/desequipar fighters, gestão de
-Stash, ciclo de vida do fighter + Downtime, atribuição inicial de Sympathisers).
-Pendências e próximos passos detalhados em `IMPLEMENTATION_PLAN.md`.
+Phases 1–3 of `PLANO-TECNICO.md` delivered (auth+accounts, gang management,
+challenges+live ranking, RAG assistant). Features 1, 2, 3, and 4 of
+`IMPLEMENTATION_PLAN.md` delivered (equip/unequip fighters, Stash management,
+fighter lifecycle + Downtime, initial Sympathiser assignment). Pending items and
+next steps detailed in `IMPLEMENTATION_PLAN.md`.
 
-### Feature 4 — Atribuição inicial de Sympathisers (resumo técnico)
-- Nova action `assignSympathiser` em `app/admin/campaign/actions.ts`:
-  `requireAdmin`, valida `sympathiserId ∈ SYMPATHISERS` e `gangId ∈ campanha`;
-  chama `setSympathiserController` (com gangue) ou `clearSympathiserController`
-  (para liberar).
-- Nova função `clearSympathiserController(sympathiserId)` em
-  `lib/db/mutations.ts`: encerra `isCurrent = true` sem inserir novo registro.
-- Novo schema `assignSympathiserSchema` em `lib/validation.ts`.
-- Novo componente `SympathiserAssignForm.tsx` em `src/components/admin/`: client,
-  `useActionState`, select inline por Sympathiser.
-- Seção "Atribuição de Sympathisers" em `app/admin/campaign/page.tsx`: lista os
-  26 Sympathisers com controlador atual e form por linha. Não altera schema de
-  banco (usa estrutura `sympathiser_control` já existente com `is_current`).
+### Feature 4 — Initial Sympathiser Assignment (technical summary)
+- New action `assignSympathiser` in `app/admin/campaign/actions.ts`:
+  `requireAdmin`, validates `sympathiserId ∈ SYMPATHISERS` and
+  `gangId ∈ campaign`; calls `setSympathiserController` (with a gang) or
+  `clearSympathiserController` (to release).
+- New function `clearSympathiserController(sympathiserId)` in
+  `lib/db/mutations.ts`: ends `isCurrent = true` without inserting a new record.
+- New schema `assignSympathiserSchema` in `lib/validation.ts`.
+- New component `SympathiserAssignForm.tsx` in `src/components/admin/`: client,
+  `useActionState`, inline select per Sympathiser.
+- "Sympathiser Assignment" section in `app/admin/campaign/page.tsx`: lists all
+  26 Sympathisers with the current controller and an inline form per row. Does
+  not change the database schema (uses the existing `sympathiser_control`
+  structure with `is_current`).

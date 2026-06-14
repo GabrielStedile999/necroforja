@@ -31,15 +31,15 @@ export function AddFighterForm() {
     <form ref={formRef} action={formAction} className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-4">
         <div className="sm:col-span-2">
-          <Label htmlFor="name">Nome</Label>
+          <Label htmlFor="name">Name</Label>
           <Input id="name" name="name" required />
         </div>
         <div>
-          <Label htmlFor="type">Tipo</Label>
-          <Input id="type" name="type" placeholder="ex.: Gunner" required />
+          <Label htmlFor="type">Type</Label>
+          <Input id="type" name="type" placeholder="e.g.: Gunner" required />
         </div>
         <div>
-          <Label htmlFor="category">Categoria</Label>
+          <Label htmlFor="category">Category</Label>
           <Select id="category" name="category" defaultValue="ganger">
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>
@@ -49,7 +49,7 @@ export function AddFighterForm() {
           </Select>
         </div>
         <div>
-          <Label htmlFor="baseCost">Custo base (c)</Label>
+          <Label htmlFor="baseCost">Base cost (c)</Label>
           <Input
             id="baseCost"
             name="baseCost"
@@ -74,7 +74,7 @@ export function AddFighterForm() {
 
       <div>
         <Button type="submit" disabled={pending}>
-          {pending ? "Recrutando..." : "Recrutar fighter"}
+          {pending ? "Recruiting..." : "Recruit fighter"}
         </Button>
       </div>
     </form>

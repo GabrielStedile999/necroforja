@@ -1,6 +1,6 @@
 /**
- * Regras puras da Succession Campaign (Cinderak Burning). Sem I/O — testáveis.
- * Estrutura: 7 ciclos → Great Darkness (1-3), Downtime (4), Spark of Rebellion (5-7).
+ * Pure rules of the Succession Campaign (Cinderak Burning). No I/O — testable.
+ * Structure: 7 cycles → Great Darkness (1-3), Downtime (4), Spark of Rebellion (5-7).
  */
 import type { CampaignPhase } from "@/types";
 
@@ -12,14 +12,14 @@ export type ChallengeOutcome =
   | "declined"
   | "draw";
 
-/** Fase correspondente a um ciclo. */
+/** Phase corresponding to a cycle. */
 export function phaseForCycle(cycle: number): CampaignPhase {
   if (cycle <= 3) return "great_darkness";
   if (cycle === 4) return "downtime";
   return "spark_of_rebellion";
 }
 
-/** Próximo estado de ciclo/fase (limitado ao fim da campanha). */
+/** Next cycle/phase state (capped at the end of the campaign). */
 export function nextCycleState(cycle: number): {
   cycle: number;
   phase: CampaignPhase;
@@ -34,36 +34,36 @@ export function nextCycleState(cycle: number): {
 }
 
 /**
- * Ordem dos desafios: ascendente por Gang Rating (a de menor Rating desafia
- * primeiro). Empates mantêm ordem estável.
+ * Challenge order: ascending by Gang Rating (the gang with the lowest Rating
+ * challenges first). Ties maintain stable order.
  */
 export function challengeOrder<T extends { rating: number }>(gangs: T[]): T[] {
   return [...gangs].sort((a, b) => a.rating - b.rating);
 }
 
-/** Rola 2D6. */
+/** Rolls 2D6. */
 export function roll2d6(rng: () => number = Math.random): number {
   const d = () => Math.floor(rng() * 6) + 1;
   return d() + d();
 }
 
 /**
- * Tabela de seleção de cenário (2D6). Onde há duas opções, a primeira vale na
- * fase Great Darkness e a segunda na Spark of Rebellion.
+ * Scenario selection table (2D6). Where there are two options, the first applies
+ * in the Great Darkness phase and the second in the Spark of Rebellion.
  */
 export function scenarioForRoll(
   roll: number,
   phase: CampaignPhase,
 ): string {
   const isSpark = phase === "spark_of_rebellion";
-  if (roll <= 3) return "Escolhe quem tem MAIS Sympathisers";
+  if (roll <= 3) return "Choose who has MORE Sympathisers";
   if (roll <= 5) return isSpark ? "Parley Showdown" : "Fall of Badzones Outpost";
   if (roll <= 7) return isSpark ? "Battle of the Riftways" : "Gunk War";
   if (roll <= 9) return isSpark ? "Street Fight" : "Out of the Storm";
-  return "Escolhe quem tem MENOS Sympathisers";
+  return "Choose who has FEWER Sympathisers";
 }
 
-/** Conveniência: rola e devolve o cenário. */
+/** Convenience: rolls and returns the scenario. */
 export function rollScenario(
   phase: CampaignPhase,
   rng: () => number = Math.random,
@@ -73,9 +73,9 @@ export function rollScenario(
 }
 
 /**
- * Gangue que passa a controlar o Sympathiser em disputa após a resolução.
- * Vitória do desafiante ou recusa → desafiante; vitória do desafiado → desafiado;
- * empate → ninguém muda (null).
+ * Gang that takes control of the contested Sympathiser after resolution.
+ * Challenger win or decline → challenger; challenged win → challenged;
+ * draw → nobody changes (null).
  */
 export function controlWinner(
   outcome: ChallengeOutcome,

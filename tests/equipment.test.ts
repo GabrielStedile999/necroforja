@@ -8,7 +8,7 @@ const VALID_UUID_A = "123e4567-e89b-12d3-a456-426614174000";
 const VALID_UUID_B = "987fcdeb-51a2-43d7-b012-0987654321ab";
 
 describe("addEquipmentSchema", () => {
-  it("aceita dados válidos e faz coerce do custo", () => {
+  it("accepts valid data and coerces the cost", () => {
     const result = addEquipmentSchema.safeParse({
       fighterId: VALID_UUID_A,
       name: "Boltgun",
@@ -22,7 +22,7 @@ describe("addEquipmentSchema", () => {
     }
   });
 
-  it("aceita todas as categorias de equipamento", () => {
+  it("accepts all equipment categories", () => {
     const categories = ["weapon", "wargear", "skill", "armour", "upgrade"] as const;
     for (const category of categories) {
       const r = addEquipmentSchema.safeParse({
@@ -35,7 +35,7 @@ describe("addEquipmentSchema", () => {
     }
   });
 
-  it("rejeita custo negativo", () => {
+  it("rejects negative cost", () => {
     const result = addEquipmentSchema.safeParse({
       fighterId: VALID_UUID_A,
       name: "Boltgun",
@@ -45,7 +45,7 @@ describe("addEquipmentSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejeita custo acima de 2000", () => {
+  it("rejects cost above 2000", () => {
     const result = addEquipmentSchema.safeParse({
       fighterId: VALID_UUID_A,
       name: "Item",
@@ -55,7 +55,7 @@ describe("addEquipmentSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejeita categoria inválida", () => {
+  it("rejects invalid category", () => {
     const result = addEquipmentSchema.safeParse({
       fighterId: VALID_UUID_A,
       name: "Item",
@@ -65,9 +65,9 @@ describe("addEquipmentSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejeita fighterId não-UUID", () => {
+  it("rejects non-UUID fighterId", () => {
     const result = addEquipmentSchema.safeParse({
-      fighterId: "nao-e-uuid",
+      fighterId: "not-a-uuid",
       name: "Item",
       category: "weapon",
       cost: "0",
@@ -75,7 +75,7 @@ describe("addEquipmentSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejeita nome vazio", () => {
+  it("rejects empty name", () => {
     const result = addEquipmentSchema.safeParse({
       fighterId: VALID_UUID_A,
       name: "",
@@ -92,23 +92,23 @@ describe("removeEquipmentSchema", () => {
     equipmentId: VALID_UUID_B,
   };
 
-  it("aceita dois UUIDs válidos", () => {
+  it("accepts two valid UUIDs", () => {
     expect(removeEquipmentSchema.safeParse(validData).success).toBe(true);
   });
 
-  it("rejeita fighterId não-UUID", () => {
+  it("rejects non-UUID fighterId", () => {
     expect(
       removeEquipmentSchema.safeParse({ ...validData, fighterId: "abc" }).success,
     ).toBe(false);
   });
 
-  it("rejeita equipmentId não-UUID", () => {
+  it("rejects non-UUID equipmentId", () => {
     expect(
       removeEquipmentSchema.safeParse({ ...validData, equipmentId: "123" }).success,
     ).toBe(false);
   });
 
-  it("rejeita campos ausentes", () => {
+  it("rejects missing fields", () => {
     expect(
       removeEquipmentSchema.safeParse({ fighterId: VALID_UUID_A }).success,
     ).toBe(false);

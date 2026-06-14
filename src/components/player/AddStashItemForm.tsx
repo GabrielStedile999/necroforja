@@ -28,16 +28,16 @@ export function AddStashItemForm() {
     <form ref={formRef} action={formAction} className="flex flex-col gap-3">
       <div className="grid gap-3 sm:grid-cols-4">
         <div className="sm:col-span-2">
-          <Label htmlFor="stash-item-name">Nome</Label>
+          <Label htmlFor="stash-item-name">Name</Label>
           <Input
             id="stash-item-name"
             name="name"
-            placeholder="ex.: Lasgun"
+            placeholder="e.g.: Lasgun"
             required
           />
         </div>
         <div>
-          <Label htmlFor="stash-item-cat">Categoria</Label>
+          <Label htmlFor="stash-item-cat">Category</Label>
           <Select
             id="stash-item-cat"
             name="category"
@@ -51,7 +51,7 @@ export function AddStashItemForm() {
           </Select>
         </div>
         <div>
-          <Label htmlFor="stash-item-cost">Custo (c)</Label>
+          <Label htmlFor="stash-item-cost">Cost (c)</Label>
           <Input
             id="stash-item-cost"
             name="cost"
@@ -88,7 +88,7 @@ export function AddStashItemForm() {
 
       <div>
         <Button type="submit" disabled={pending} variant="outline">
-          {pending ? "Adicionando..." : "Adicionar ao Stash"}
+          {pending ? "Adding..." : "Add to Stash"}
         </Button>
       </div>
     </form>

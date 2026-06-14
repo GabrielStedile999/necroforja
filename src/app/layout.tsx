@@ -15,15 +15,15 @@ const jetbrains = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "NecroForja — Gestor de Campanhas de Necromunda",
+    default: "NecroForja — Necromunda Campaign Manager",
     template: "%s · NecroForja",
   },
   description:
-    "NecroForja: gestor de campanhas de Necromunda. Acompanhe gangues, Sympathisers e o ranking da campanha em tempo real.",
+    "NecroForja: Necromunda campaign manager. Track gangs, Sympathisers and the campaign ranking in real time.",
   openGraph: {
-    title: "NecroForja — Gestor de Campanhas de Necromunda",
+    title: "NecroForja — Necromunda Campaign Manager",
     description:
-      "Acompanhe gangues, Sympathisers e o ranking da campanha em tempo real.",
+      "Track gangs, Sympathisers and the campaign ranking in real time.",
     type: "website",
   },
   robots: { index: true, follow: true },
@@ -33,7 +33,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="en">
       <body
         className={`${oswald.variable} ${inter.variable} ${jetbrains.variable} antialiased`}
       >

@@ -20,7 +20,7 @@ export function CreatePlayerForm() {
     <form ref={formRef} action={formAction} className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <Label htmlFor="displayName">Jogador</Label>
+          <Label htmlFor="displayName">Player</Label>
           <Input id="displayName" name="displayName" required />
         </div>
         <div>
@@ -28,23 +28,23 @@ export function CreatePlayerForm() {
           <Input id="email" name="email" type="email" required />
         </div>
         <div>
-          <Label htmlFor="password">Senha inicial</Label>
+          <Label htmlFor="password">Initial password</Label>
           <Input
             id="password"
             name="password"
             type="text"
             minLength={8}
-            placeholder="mín. 8 caracteres"
+            placeholder="min. 8 characters"
             required
           />
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <Label htmlFor="gangName">Gangue</Label>
+            <Label htmlFor="gangName">Gang</Label>
             <Input id="gangName" name="gangName" required />
           </div>
           <div>
-            <Label htmlFor="house">Casa</Label>
+            <Label htmlFor="house">House</Label>
             <Input id="house" name="house" required />
           </div>
         </div>
@@ -63,7 +63,7 @@ export function CreatePlayerForm() {
 
       <div>
         <Button type="submit" disabled={pending}>
-          {pending ? "Criando..." : "Criar conta + gangue"}
+          {pending ? "Creating..." : "Create account + gang"}
         </Button>
       </div>
     </form>

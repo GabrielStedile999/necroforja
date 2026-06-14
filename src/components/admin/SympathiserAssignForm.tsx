@@ -16,7 +16,7 @@ export function SympathiserAssignForm({
   gangs,
 }: {
   sympathiserId: string;
-  /** ID da gangue que controla atualmente, ou null se livre. */
+  /** ID of the gang currently in control, or null if free. */
   currentGangId: string | null;
   gangs: GangOption[];
 }) {
@@ -33,7 +33,7 @@ export function SympathiserAssignForm({
         defaultValue={currentGangId ?? ""}
         className="h-8 flex-1 text-xs"
       >
-        <option value="">— livre —</option>
+        <option value="">— free —</option>
         {gangs.map((g) => (
           <option key={g.id} value={g.id}>
             {g.name}
@@ -46,7 +46,7 @@ export function SympathiserAssignForm({
         disabled={pending}
         className="h-8 shrink-0 px-2 text-xs"
       >
-        {pending ? "..." : "Atribuir"}
+        {pending ? "..." : "Assign"}
       </Button>
       {state.error && (
         <span className="text-xs text-blood">{state.error}</span>

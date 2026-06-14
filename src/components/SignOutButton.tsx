@@ -5,7 +5,7 @@ export function SignOutButton() {
   return (
     <form action={signOutAction}>
       <Button variant="ghost" type="submit">
-        Sair
+        Sign Out
       </Button>
     </form>
   );

@@ -26,8 +26,8 @@ export default async function HomePage() {
         </div>
       </main>
       <footer className="border-t border-rivet py-6 text-center text-xs text-muted">
-        Painel da campanha · Projeto de portfólio de Gabriel Stedile · Conteúdo
-        de campanha de uso privado entre os jogadores.
+        Campaign dashboard · Gabriel Stedile's portfolio project · Campaign
+        content for private use among players.
       </footer>
     </>
   );

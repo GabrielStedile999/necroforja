@@ -1,8 +1,8 @@
 /**
- * Seed do banco — popula a campanha Cinderak Burning com os 26 Sympathisers,
- * os 4 jogadores/gangues e o controle inicial de Sympathisers.
+ * Database seed — populates the Cinderak Burning campaign with the 26 Sympathisers,
+ * the 4 players/gangs and the initial Sympathiser control.
  *
- * Uso: configure DATABASE_URL no .env e rode `npm run db:seed`.
+ * Usage: configure DATABASE_URL in .env and run `npm run db:seed`.
  */
 import "dotenv/config";
 import { db, schema } from "./index";
@@ -11,16 +11,16 @@ import { GANGS, CAMPAIGN, SYMPATHISER_CONTROL } from "../data/campaign";
 import { gangRating, gangWealth } from "../scoring";
 import { hashPassword } from "../auth/password";
 
-// Credenciais iniciais do seed — definidas via .env (com fallbacks genéricos).
-// Troque após o primeiro login. Veja .env.example.
+// Initial seed credentials — defined via .env (with generic fallbacks).
+// Change them after the first login. See .env.example.
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "admin@example.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "change-me-admin";
 const PLAYER_PASSWORD = process.env.PLAYER_PASSWORD ?? "change-me-player";
 
 async function seed() {
-  console.log("→ Semeando campanha Cinderak Burning...");
+  console.log("→ Seeding Cinderak Burning campaign...");
 
-  // 1. Campanha
+  // 1. Campaign
   const [campaign] = await db
     .insert(schema.campaigns)
     .values({
@@ -32,10 +32,10 @@ async function seed() {
       endDate: CAMPAIGN.endDate,
     })
     .returning();
-  if (!campaign) throw new Error("Falha ao criar campanha");
-  console.log(`  ✓ Campanha: ${campaign.name}`);
+  if (!campaign) throw new Error("Failed to create campaign");
+  console.log(`  ✓ Campaign: ${campaign.name}`);
 
-  // 2. Sympathisers (catálogo dos 26)
+  // 2. Sympathisers (catalogue of 26)
   await db.insert(schema.sympathisers).values(
     SYMPATHISERS.map((s) => ({
       id: s.id,
@@ -45,7 +45,7 @@ async function seed() {
   );
   console.log(`  ✓ ${SYMPATHISERS.length} Sympathisers`);
 
-  // 3. Admin (você) + jogadores + gangues
+  // 3. Admin (you) + players + gangs
   const [admin] = await db
     .insert(schema.users)
     .values({
@@ -83,10 +83,10 @@ async function seed() {
         wealthCached: gangWealth(g),
       })
       .returning();
-    if (!gang) throw new Error(`Falha ao criar gangue ${g.name}`);
+    if (!gang) throw new Error(`Failed to create gang ${g.name}`);
     gangIdBySlug.set(g.id, gang.id);
 
-    // fighters + equipamento
+    // fighters + equipment
     for (const f of g.fighters) {
       const [fighter] = await db
         .insert(schema.fighters)
@@ -117,11 +117,11 @@ async function seed() {
       }
     }
     console.log(
-      `  ✓ Gangue: ${g.name} (${g.ownerName}) — Rating ${gangRating(g)} / Wealth ${gangWealth(g)}`,
+      `  ✓ Gang: ${g.name} (${g.ownerName}) — Rating ${gangRating(g)} / Wealth ${gangWealth(g)}`,
     );
   }
 
-  // 4. Controle inicial de Sympathisers
+  // 4. Initial Sympathiser control
   for (const [slug, symIds] of Object.entries(SYMPATHISER_CONTROL)) {
     const gangId = gangIdBySlug.get(slug);
     if (!gangId) continue;
@@ -134,16 +134,16 @@ async function seed() {
       });
     }
   }
-  console.log("  ✓ Controle de Sympathisers definido");
+  console.log("  ✓ Sympathiser control defined");
 
-  console.log("\n✔ Seed concluído. Credenciais de acesso:");
-  console.log(`   Admin:    ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
-  console.log(`   Jogadores: <nome>@campaign.local / ${PLAYER_PASSWORD}`);
-  console.log("   (defina ADMIN_EMAIL/ADMIN_PASSWORD/PLAYER_PASSWORD no .env)");
+  console.log("\n✔ Seed complete. Access credentials:");
+  console.log(`   Admin:   ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
+  console.log(`   Players: <name>@campaign.local / ${PLAYER_PASSWORD}`);
+  console.log("   (set ADMIN_EMAIL/ADMIN_PASSWORD/PLAYER_PASSWORD in .env)");
   process.exit(0);
 }
 
 seed().catch((err) => {
-  console.error("✗ Erro no seed:", err);
+  console.error("✗ Seed error:", err);
   process.exit(1);
 });

@@ -27,7 +27,7 @@ import {
 } from "@/lib/scoring";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Minha Gangue" };
+export const metadata: Metadata = { title: "My Gang" };
 export const dynamic = "force-dynamic";
 
 export default async function PlayerPage() {
@@ -40,10 +40,10 @@ export default async function PlayerPage() {
         <SiteHeader />
         <main className="mx-auto max-w-2xl px-4 py-16 text-center">
           <h1 className="stencil text-2xl font-bold text-ink">
-            Nenhuma gangue encontrada
+            No gang found
           </h1>
           <p className="mt-2 text-sm text-muted">
-            Peça ao Arbitrator para vincular uma gangue à sua conta.
+            Ask the Arbitrator to link a gang to your account.
           </p>
         </main>
       </>
@@ -71,7 +71,7 @@ export default async function PlayerPage() {
             <Link href="/player/assistant">
               <Button variant="outline" className="mt-2 gap-2">
                 <Bot className="h-4 w-4" aria-hidden />
-                Assistente de Regras
+                Rules Assistant
               </Button>
             </Link>
           </div>
@@ -85,7 +85,7 @@ export default async function PlayerPage() {
         {symps.length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs uppercase tracking-wider text-muted">
-              Sympathisers controlados:
+              Controlled Sympathisers:
             </span>
             {symps.map((name) => (
               <Badge key={name} variant="toxic">
@@ -99,19 +99,19 @@ export default async function PlayerPage() {
           <CardHeader>
             <CardTitle>Roster ({gang.fighters.length})</CardTitle>
             <span className="ml-auto font-mono text-xs text-muted">
-              orçamento restante: {creditsRemaining(gang)}c
+              remaining budget: {creditsRemaining(gang)}c
             </span>
           </CardHeader>
           <CardContent className="px-0 py-0">
             {gang.fighters.length === 0 ? (
               <p className="px-5 py-6 text-sm text-muted">
-                Nenhum fighter ainda. Recrute o primeiro abaixo.
+                No fighters yet. Recruit the first one below.
               </p>
             ) : (
               <ul className="divide-y divide-rivet/50">
                 {gang.fighters.map((f) => (
                   <li key={f.id} className="flex flex-col">
-                    {/* Cabeçalho do fighter */}
+                    {/* Fighter header */}
                     <div className="flex items-center justify-between gap-3 px-5 py-3">
                       <div>
                         <div className="flex items-center gap-2 font-medium text-ink">
@@ -139,13 +139,13 @@ export default async function PlayerPage() {
                         <form action={removeFighter}>
                           <input type="hidden" name="fighterId" value={f.id} />
                           <Button variant="ghost" type="submit">
-                            Remover fighter
+                            Remove fighter
                           </Button>
                         </form>
                       </div>
                     </div>
 
-                    {/* Equipamentos do fighter */}
+                    {/* Fighter equipment */}
                     {f.equipment.length > 0 && (
                       <ul className="border-t border-rivet/30 px-5 py-2">
                         {f.equipment.map((item) => (
@@ -177,7 +177,7 @@ export default async function PlayerPage() {
                                   type="submit"
                                   className="h-7 px-2 text-xs text-blood hover:text-blood"
                                 >
-                                  Remover
+                                  Remove
                                 </Button>
                               </form>
                             </div>
@@ -186,7 +186,7 @@ export default async function PlayerPage() {
                       </ul>
                     )}
 
-                    {/* Controles: status + XP */}
+                    {/* Controls: status + XP */}
                     <div className="border-t border-rivet/30 bg-void/40 px-5 py-3">
                       <div className="flex flex-wrap gap-6">
                         <div className="flex-1 min-w-0">
@@ -199,17 +199,17 @@ export default async function PlayerPage() {
                         </div>
                         <div>
                           <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
-                            Experiência
+                            Experience
                           </p>
                           <FighterXpForm fighterId={f.id} />
                         </div>
                       </div>
                     </div>
 
-                    {/* Formulário de adicionar equipamento */}
+                    {/* Add equipment form */}
                     <div className="border-t border-rivet/30 bg-void/40 px-5 py-3">
                       <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
-                        Equipar
+                        Equip
                       </p>
                       <AddEquipmentForm fighterId={f.id} />
                     </div>
@@ -220,7 +220,7 @@ export default async function PlayerPage() {
           </CardContent>
         </Card>
 
-        {/* ---- Painel de Stash ----------------------------------------- */}
+        {/* ---- Stash Panel -------------------------------------------- */}
         <Card>
           <CardHeader>
             <CardTitle>Stash</CardTitle>
@@ -229,14 +229,14 @@ export default async function PlayerPage() {
             </span>
           </CardHeader>
           <CardContent className="flex flex-col gap-6">
-            {/* Créditos */}
+            {/* Credits */}
             <StashCreditsForm currentCredits={gang.stashCredits} />
 
-            {/* Itens guardados */}
+            {/* Stored items */}
             {gang.stash.length > 0 ? (
               <div>
                 <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
-                  Itens guardados
+                  Stored items
                 </p>
                 <ul className="divide-y divide-rivet/50">
                   {gang.stash.map((item) => (
@@ -271,7 +271,7 @@ export default async function PlayerPage() {
                               type="submit"
                               className="h-7 px-2 text-xs text-blood hover:text-blood"
                             >
-                              Remover
+                              Remove
                             </Button>
                           </form>
                         </div>
@@ -287,13 +287,13 @@ export default async function PlayerPage() {
                 </ul>
               </div>
             ) : (
-              <p className="text-sm text-muted">Stash vazio.</p>
+              <p className="text-sm text-muted">Stash empty.</p>
             )}
 
-            {/* Adicionar item ao Stash */}
+            {/* Add item to Stash */}
             <div>
               <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
-                Adicionar item
+                Add item
               </p>
               <AddStashItemForm />
             </div>
@@ -302,7 +302,7 @@ export default async function PlayerPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Recrutar fighter</CardTitle>
+            <CardTitle>Recruit fighter</CardTitle>
           </CardHeader>
           <CardContent>
             <AddFighterForm />
