@@ -1,9 +1,33 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { Bot, Send, User } from "lucide-react";
+import { Bot, BookOpen, Send, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+/** Shape of each entry in the `sources` annotation appended by the route. */
+interface SourceEntry {
+  label: string;
+  book: string | null;
+  page: number | null;
+  similarity: number;
+}
+
+/** Extracts the source list from a message's annotations array. */
+function getSources(annotations: unknown[] | undefined): SourceEntry[] {
+  if (!annotations) return [];
+  for (const a of annotations) {
+    if (
+      typeof a === "object" &&
+      a !== null &&
+      "sources" in a &&
+      Array.isArray((a as Record<string, unknown>).sources)
+    ) {
+      return (a as { sources: SourceEntry[] }).sources;
+    }
+  }
+  return [];
+}
 
 const SUGGESTIONS = [
   "How is the Gang Rating calculated?",
@@ -50,20 +74,50 @@ export function RulesChat() {
             </div>
           </div>
         ) : (
-          messages.map((m) => (
-            <div key={m.id} className="flex gap-3">
-              <div className="mt-0.5 shrink-0">
-                {m.role === "user" ? (
-                  <User className="h-5 w-5 text-cyan" aria-hidden />
-                ) : (
-                  <Bot className="h-5 w-5 text-hazard" aria-hidden />
-                )}
+          messages.map((m) => {
+            const sources =
+              m.role === "assistant"
+                ? getSources(m.annotations as unknown[] | undefined)
+                : [];
+
+            return (
+              <div key={m.id} className="flex gap-3">
+                <div className="mt-0.5 shrink-0">
+                  {m.role === "user" ? (
+                    <User className="h-5 w-5 text-cyan" aria-hidden />
+                  ) : (
+                    <Bot className="h-5 w-5 text-hazard" aria-hidden />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="whitespace-pre-wrap text-sm leading-relaxed text-ink">
+                    {m.content}
+                  </div>
+                  {sources.length > 0 && (
+                    <details className="mt-2 rounded-sm border border-rivet bg-panel px-3 py-2 text-xs">
+                      <summary className="flex cursor-pointer items-center gap-1.5 text-muted hover:text-ink">
+                        <BookOpen className="h-3.5 w-3.5" aria-hidden />
+                        Sources consulted ({sources.length})
+                      </summary>
+                      <ul className="mt-2 space-y-1 border-t border-rivet pt-2">
+                        {sources.map((s, i) => (
+                          <li
+                            key={i}
+                            className="flex items-center justify-between gap-4"
+                          >
+                            <span className="text-ink">{s.label}</span>
+                            <span className="shrink-0 font-mono text-muted">
+                              {Math.round(s.similarity * 100)}%
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+                </div>
               </div>
-              <div className="whitespace-pre-wrap text-sm leading-relaxed text-ink">
-                {m.content}
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
         {isLoading && (
           <div className="flex gap-3 text-sm text-muted">

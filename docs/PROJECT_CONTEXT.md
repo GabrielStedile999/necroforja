@@ -143,16 +143,29 @@ tests/                       # scoring, campaign-rules, chunk, fase1 (validation
 ### Rules Assistant (RAG)
 - Route `POST /api/assistant` (`app/api/assistant/route.ts`): authenticated
   (`auth()` → 401), with **rate limit** per user (`lib/ai/rate-limit.ts`,
-  in-memory), retrieves chunks (`searchRules`), and generates a response with
-  Claude (`streamText` → `toDataStreamResponse`).
+  in-memory), retrieves chunks (`searchRulesWithExpansion`), generates a response
+  with Claude (`streamText` → `toDataStreamResponse`), and sends the source list
+  as a **message annotation** via `StreamData`.
 - **Ingestion pipeline** (`npm run rules:ingest` → `lib/ai/ingest.ts`): reads
   `content/books/*.jsonl` (book+page) and `content/rules/*.md`; **skips index
   pages**; breaks into chunks (`chunk.ts`, `chunkPlain` breaks by UPPERCASE
   keyword to isolate each trait/rule); embeddings via OpenAI
   (`text-embedding-3-small`, 1536 dims); writes to `rule_chunk`.
-- **Retrieval** (`retrieval.ts`): embeds the question, searches by cosine
-  distance (pgvector), `k=8`, `minSimilarity=0.1` (low because of cross-lingual
-  EN→EN). `citationLabel()` formats "Book, p. X".
+- **Retrieval** (`retrieval.ts`): three exported entry points:
+  - `searchRules(query, k, minSimilarity)` — single pgvector search (basic).
+  - `expandQuery(query)` — cheap Claude Haiku call that rewrites the query using
+    official Necromunda terminology; returns original string on any error.
+  - `searchRulesWithExpansion(query, k, minSimilarity)` — runs the original and
+    expanded searches in parallel, then calls `mergeChunks` to deduplicate and
+    re-rank. **This is the function used by the route.**
+  - `mergeChunks(a, b, k)` — pure function: deduplicates by first 120 chars of
+    content, re-sorts by similarity, caps at k. Tested in `tests/retrieval.test.ts`.
+  - `citationLabel()` formats "Book, p. X".
+- **StreamData annotation**: the route creates a `StreamData` instance, appends
+  `{ sources: [{ label, book, page, similarity }] }` as a message annotation in
+  `onFinish`, and passes `data` to `toDataStreamResponse`. The client
+  (`RulesChat.tsx`) reads `message.annotations` and renders a collapsible
+  "Sources consulted" panel below each assistant response.
 - The prompt instructs the model to answer only from the context and close with a
   **"Sources:"** section with book + page, **without inventing page numbers**.
 
@@ -266,11 +279,11 @@ tests/                       # scoring, campaign-rules, chunk, fase1 (validation
 ## 10. Current state
 
 Phases 1–3 of `PLANO-TECNICO.md` delivered (auth+accounts, gang management,
-challenges+live ranking, RAG assistant). Features 1–5 of
+challenges+live ranking, RAG assistant). Features 1–6 of
 `IMPLEMENTATION_PLAN.md` delivered (equip/unequip fighters, Stash management,
 fighter lifecycle + Downtime, initial Sympathiser assignment, Triumphs &
-campaign closure). Pending items and next steps detailed in
-`IMPLEMENTATION_PLAN.md`.
+campaign closure, AI assistant improvements). Pending items and next steps
+detailed in `IMPLEMENTATION_PLAN.md`.
 
 ### Feature 5 — Triumphs & Campaign Closure (technical summary)
 - `Campaign` domain type now includes `status: string` (`"active" | "finished"`).
@@ -291,6 +304,25 @@ campaign closure). Pending items and next steps detailed in
 - Tests: `tests/triumphs.test.ts` (8 cases for `awardTriumphSchema`).
 - **No schema migration needed** — the `triumph` table and `campaign.status` column
   already existed in the schema.
+
+### Feature 6 — AI Assistant Improvements (technical summary)
+- `retrieval.ts` gains three new exports: `expandQuery` (Claude Haiku rewrites
+  the query using Necromunda terminology; gracefully falls back on errors),
+  `mergeChunks` (pure dedup+sort, testable), `searchRulesWithExpansion` (runs
+  original + expanded searches in parallel, merges with `mergeChunks`, caps at k).
+- The route now uses `searchRulesWithExpansion` instead of `searchRules`.
+- `StreamData` (from `ai`) wired in the route: appended as
+  `{ sources: [{ label, book, page, similarity }] }` in `onFinish`; `data`
+  passed to `toDataStreamResponse`. `data.close()` called in both `onFinish` and
+  `onError` to avoid a hung stream.
+- `RulesChat.tsx` reads `message.annotations` via a `getSources` helper and
+  renders a `<details>` "Sources consulted" panel (book, page, similarity %) below
+  each assistant message. Uses `BookOpen` icon from lucide-react.
+- Tests: `tests/retrieval.test.ts` (7 cases for `mergeChunks`, 4 for
+  `citationLabel`).
+- **No schema or ingestion changes needed.**
+- **StreamData wiring is not testable in the sandbox** — validate with `tsc` and
+  test manually after deploying.
 
 ### Feature 4 — Initial Sympathiser Assignment (technical summary)
 - New action `assignSympathiser` in `app/admin/campaign/actions.ts`:

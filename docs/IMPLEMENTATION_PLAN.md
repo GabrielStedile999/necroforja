@@ -233,7 +233,7 @@ instead of active panel).
 
 ---
 
-## 6. AI assistant improvements
+## 6. AI assistant improvements ✅ COMPLETED
 
 **Goal.** Increase precision (cross-lingual search) and usability of sources.
 

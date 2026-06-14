@@ -1,7 +1,7 @@
 import { anthropic } from "@ai-sdk/anthropic";
-import { streamText, type CoreMessage } from "ai";
+import { StreamData, streamText, type CoreMessage } from "ai";
 import { auth } from "@/auth";
-import { searchRules, citationLabel } from "@/lib/ai/retrieval";
+import { searchRulesWithExpansion, citationLabel } from "@/lib/ai/retrieval";
 import { rateLimit } from "@/lib/ai/rate-limit";
 
 export const maxDuration = 30;
@@ -27,9 +27,10 @@ export async function POST(req: Request) {
   const query =
     typeof lastUser?.content === "string" ? lastUser.content : "";
 
+  let chunks: Awaited<ReturnType<typeof searchRulesWithExpansion>> = [];
   let context = "(empty)";
   try {
-    const chunks = await searchRules(query, 8);
+    chunks = await searchRulesWithExpansion(query, 8);
     if (chunks.length > 0) {
       context = chunks
         .map((c, i) => `[${i + 1}] SOURCE: ${citationLabel(c)}\n${c.content}`)
@@ -39,6 +40,14 @@ export async function POST(req: Request) {
     // rules base not yet ingested / database unavailable
     context = "(empty)";
   }
+
+  // Structured source list sent to the client as a message annotation.
+  const structuredSources = chunks.map((c) => ({
+    label: citationLabel(c),
+    book: c.book,
+    page: c.page,
+    similarity: Math.round(c.similarity * 100) / 100,
+  }));
 
   const system = `You are the rules assistant for the Necromunda "Cinderak Burning" campaign.
 Answer in English, objectively and USING ONLY the CONTEXT below.
@@ -56,19 +65,29 @@ ${context}`;
   // `||` (not `??`) to treat an empty string in .env as "not defined".
   const model = process.env.ASSISTANT_MODEL?.trim() || "claude-haiku-4-5";
 
+  const data = new StreamData();
+
   const result = streamText({
     model: anthropic(model),
     system,
     messages,
+    onFinish: () => {
+      // Attach the retrieved sources as a structured annotation on the message
+      // so the client can render a "Sources" panel without parsing the text.
+      data.appendMessageAnnotation({ sources: structuredSources });
+      data.close();
+    },
     onError: ({ error }) => {
       // appears in the server terminal for debugging
       console.error("[assistant] streamText error:", error);
+      data.close();
     },
   });
 
   // By default the AI SDK masks stream errors; here we forward them to the client
   // so the UI can display them.
   return result.toDataStreamResponse({
+    data,
     getErrorMessage: (error) =>
       error instanceof Error ? error.message : "Error generating the response.",
   });
