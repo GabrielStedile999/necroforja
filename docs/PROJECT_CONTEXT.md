@@ -255,7 +255,21 @@ tests/                       # scoring, campaign-rules, chunk, fase1 (validaçã
 ## 10. Estado atual
 
 Fases 1–3 do `PLANO-TECNICO.md` entregues (auth+contas, gestão de gangue,
-desafios+ranking vivo, assistente RAG). Features 1, 2 e 3 do `IMPLEMENTATION_PLAN.md`
-entregues (equipar/desequipar fighters, gestão de Stash, ciclo de vida do fighter
-+ Downtime). Pendências e próximos
-passos detalhados em `IMPLEMENTATION_PLAN.md`.
+desafios+ranking vivo, assistente RAG). Features 1, 2, 3 e 4 do
+`IMPLEMENTATION_PLAN.md` entregues (equipar/desequipar fighters, gestão de
+Stash, ciclo de vida do fighter + Downtime, atribuição inicial de Sympathisers).
+Pendências e próximos passos detalhados em `IMPLEMENTATION_PLAN.md`.
+
+### Feature 4 — Atribuição inicial de Sympathisers (resumo técnico)
+- Nova action `assignSympathiser` em `app/admin/campaign/actions.ts`:
+  `requireAdmin`, valida `sympathiserId ∈ SYMPATHISERS` e `gangId ∈ campanha`;
+  chama `setSympathiserController` (com gangue) ou `clearSympathiserController`
+  (para liberar).
+- Nova função `clearSympathiserController(sympathiserId)` em
+  `lib/db/mutations.ts`: encerra `isCurrent = true` sem inserir novo registro.
+- Novo schema `assignSympathiserSchema` em `lib/validation.ts`.
+- Novo componente `SympathiserAssignForm.tsx` em `src/components/admin/`: client,
+  `useActionState`, select inline por Sympathiser.
+- Seção "Atribuição de Sympathisers" em `app/admin/campaign/page.tsx`: lista os
+  26 Sympathisers com controlador atual e form por linha. Não altera schema de
+  banco (usa estrutura `sympathiser_control` já existente com `is_current`).

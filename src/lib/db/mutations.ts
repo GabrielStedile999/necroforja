@@ -87,6 +87,24 @@ export async function applyDowntimeEffects(campaignId: string): Promise<void> {
   }
 }
 
+/**
+ * Remove o controle atual de um Sympathiser sem atribuir um novo (libera-o).
+ * Encerra o registro is_current sem criar um substituto.
+ */
+export async function clearSympathiserController(
+  sympathiserId: string,
+): Promise<void> {
+  await db
+    .update(schema.sympathiserControl)
+    .set({ isCurrent: false })
+    .where(
+      and(
+        eq(schema.sympathiserControl.sympathiserId, sympathiserId),
+        eq(schema.sympathiserControl.isCurrent, true),
+      ),
+    );
+}
+
 /** Avança a campanha um ciclo, ajustando a fase automaticamente. */
 export async function advanceCampaignCycle(campaignId: string) {
   const campaign = await db.query.campaigns.findFirst({

@@ -153,6 +153,14 @@ export const removeEquipmentSchema = z.object({
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
+/** Admin atribui manualmente um Sympathiser a uma gangue (ou libera). */
+export const assignSympathiserSchema = z.object({
+  sympathiserId: z.string().min(1, "Selecione o Sympathiser."),
+  /** UUID da gangue, ou "" para liberar (marcar como sem controlador). */
+  gangId: z.string(),
+});
+
+export type AssignSympathiserInput = z.infer<typeof assignSympathiserSchema>;
 export type CreatePlayerInput = z.infer<typeof createPlayerSchema>;
 export type FighterInput = z.infer<typeof fighterSchema>;
 export type AddEquipmentInput = z.infer<typeof addEquipmentSchema>;

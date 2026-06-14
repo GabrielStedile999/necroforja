@@ -168,7 +168,7 @@ capturados) e iterar. Recalcular Rating quando status muda (mortos saem).
 
 ---
 
-## 4. Admin: atribuição inicial de Sympathisers
+## 4. Admin: atribuição inicial de Sympathisers ✅ CONCLUÍDA
 
 **Objetivo.** Permitir ao Arbitrator definir/ajustar manualmente quem controla
 cada Sympathiser (hoje só muda via resolução de desafio; o estado inicial vem do

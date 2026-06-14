@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CreateChallengeForm } from "@/components/admin/CreateChallengeForm";
 import { ResolveChallengeForm } from "@/components/admin/ResolveChallengeForm";
+import { SympathiserAssignForm } from "@/components/admin/SympathiserAssignForm";
 import {
   getActiveCampaign,
   listGangsBasic,
@@ -157,6 +158,47 @@ export default async function CampaignAdminPage() {
                   </button>
                 </form>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Atribuição de Sympathisers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-3 text-sm text-muted">
+              Defina manualmente quem controla cada Sympathiser — estado inicial
+              ou correção após partida. Alterações refletem no mapa público
+              imediatamente.
+            </p>
+            <div className="flex flex-col divide-y divide-rivet/50">
+              {sympsOrdered.map((s) => {
+                const ctrlGangId = controllerMap[s.id] ?? null;
+                const ctrlName = ctrlGangId
+                  ? (gangName.get(ctrlGangId) ?? null)
+                  : null;
+                return (
+                  <div
+                    key={s.id}
+                    className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2"
+                  >
+                    <span className="w-44 shrink-0 text-sm text-ink">
+                      {s.name.replace(" Sympathisers", "")}
+                    </span>
+                    <span className="w-28 shrink-0 text-xs text-muted">
+                      {ctrlName ?? "livre"}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <SympathiserAssignForm
+                        sympathiserId={s.id}
+                        currentGangId={ctrlGangId}
+                        gangs={gangs}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>

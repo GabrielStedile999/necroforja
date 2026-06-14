@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db, schema } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/guards";
@@ -8,12 +8,15 @@ import { getActiveCampaign } from "@/lib/db/queries";
 import {
   createChallengeSchema,
   resolveChallengeSchema,
+  assignSympathiserSchema,
 } from "@/lib/validation";
 import {
   setSympathiserController,
+  clearSympathiserController,
   advanceCampaignCycle,
   applyDowntimeEffects,
 } from "@/lib/db/mutations";
+import { SYMPATHISERS } from "@/lib/data/sympathisers";
 import { controlWinner, rollScenario, nextCycleState } from "@/lib/campaign-rules";
 
 export type CampaignState = { error?: string; success?: string };
@@ -117,6 +120,56 @@ export async function toggleSympathiser(formData: FormData) {
     .where(eq(schema.sympathisers.id, sympathiserId));
   revalidatePath("/admin/campaign");
   revalidatePath("/");
+}
+
+/**
+ * Atribui manualmente um Sympathiser a uma gangue, ou libera-o (gangId = "").
+ * Encerra o controle atual e cria um novo registro se gangId for fornecido.
+ */
+export async function assignSympathiser(
+  _prev: CampaignState,
+  formData: FormData,
+): Promise<CampaignState> {
+  await requireAdmin();
+
+  const parsed = assignSympathiserSchema.safeParse(
+    Object.fromEntries(formData),
+  );
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+  }
+  const { sympathiserId, gangId } = parsed.data;
+
+  // Validar que o sympathiserId existe no catálogo fixo
+  if (!SYMPATHISERS.find((s) => s.id === sympathiserId)) {
+    return { error: "Sympathiser inválido." };
+  }
+
+  if (gangId === "") {
+    // Liberar: encerrar controle atual sem criar novo
+    await clearSympathiserController(sympathiserId);
+    revalidatePath("/admin/campaign");
+    revalidatePath("/");
+    return { success: "Sympathiser liberado." };
+  }
+
+  // Validar que a gangue pertence à campanha ativa
+  const campaign = await getActiveCampaign();
+  if (!campaign) return { error: "Nenhuma campanha ativa." };
+
+  const gang = await db.query.gangs.findFirst({
+    where: and(
+      eq(schema.gangs.id, gangId),
+      eq(schema.gangs.campaignId, campaign.id),
+    ),
+    columns: { id: true },
+  });
+  if (!gang) return { error: "Gangue inválida." };
+
+  await setSympathiserController(sympathiserId, gangId, campaign.currentCycle);
+  revalidatePath("/admin/campaign");
+  revalidatePath("/");
+  return { success: "Atribuição registrada." };
 }
 
 /** Avança a campanha um ciclo (e ajusta a fase). Ao entrar no ciclo 4 (Downtime),
