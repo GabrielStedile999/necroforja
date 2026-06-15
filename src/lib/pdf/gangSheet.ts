@@ -15,6 +15,7 @@ import {
   rgb,
   type PDFFont,
   type PDFPage,
+  type Color,
 } from "pdf-lib";
 import type { Gang } from "@/types";
 import { gangRating, gangWealth, fighterTotalCost } from "@/lib/scoring";
@@ -88,64 +89,28 @@ export function buildGangSheetData(gang: Gang): GangSheetData {
 }
 
 /* ------------------------------------------------------------------ */
-/*  PDF assembly                                                        */
+/*  PDF assembly — "NecroForja dossier" theme                           */
 /* ------------------------------------------------------------------ */
 
 // A4 at 72 dpi (points)
 const PAGE_W = 595;
 const PAGE_H = 842;
-const MARGIN = 40;
+const MARGIN = 44;
+const PAD = 10; // inner padding of blocks
 
-// Font sizes
-const SIZE_TITLE = 16;
-const SIZE_HEADING = 11;
-const SIZE_BODY = 9;
-const SIZE_SMALL = 8;
+// Theme palette (mirrors the app tokens; light body for printability)
+const C_VOID = rgb(0.043, 0.047, 0.055); // #0B0C0E header/footer bands
+const C_PAPER = rgb(0.98, 0.972, 0.953); // off-white background
+const C_INK = rgb(0.13, 0.13, 0.12); // body text
+const C_LIGHT = rgb(0.902, 0.882, 0.839); // text on dark bands (#E6E1D6)
+const C_HAZARD = rgb(0.949, 0.663, 0.0); // #F2A900 accents
+const C_MUTED = rgb(0.42, 0.41, 0.39);
+const C_RIVET = rgb(0.78, 0.77, 0.74); // hairlines
+const C_BLOOD = rgb(0.631, 0.106, 0.106); // dead / danger
+const C_ROW = rgb(0.965, 0.953, 0.929); // faint zebra panel
 
-// Row height for fighter table lines
-const ROW_H = 16;
-
-// Theme colours
-const C_INK = rgb(0.1, 0.1, 0.1);
-const C_WHITE = rgb(1, 1, 1);
-const C_MUTED = rgb(0.45, 0.45, 0.45);
-const C_BORDER = rgb(0.75, 0.75, 0.75);
-const C_PANEL = rgb(0.12, 0.12, 0.12); // dark header band
-const C_STRIPE = rgb(0.96, 0.96, 0.96); // zebra even rows
-const C_METRIC_BG = rgb(0.92, 0.92, 0.92);
-const C_DEAD = rgb(0.65, 0.1, 0.1);
-
-// Column layout as fractions of the usable width W
-type ColDef = { x: number; w: number };
-const COL_NAME: ColDef = { x: 0, w: 0.24 };
-const COL_TYPECAT: ColDef = { x: 0.24, w: 0.19 };
-const COL_STATUS: ColDef = { x: 0.43, w: 0.11 };
-const COL_XP: ColDef = { x: 0.54, w: 0.05 };
-const COL_EQUIP: ColDef = { x: 0.59, w: 0.28 };
-const COL_COST: ColDef = { x: 0.87, w: 0.13 };
-
-const ALL_COLS: { col: ColDef; label: string }[] = [
-  { col: COL_NAME, label: "Fighter" },
-  { col: COL_TYPECAT, label: "Type / Category" },
-  { col: COL_STATUS, label: "Status" },
-  { col: COL_XP, label: "XP" },
-  { col: COL_EQUIP, label: "Equipment" },
-  { col: COL_COST, label: "Cost" },
-];
-
-/** Clips text to fit within maxWidth points for the given font/size. */
-function clipText(
-  str: string,
-  font: PDFFont,
-  size: number,
-  maxWidth: number,
-): string {
-  if (font.widthOfTextAtSize(str, size) <= maxWidth) return str;
-  let s = str;
-  while (s.length > 0 && font.widthOfTextAtSize(s + "…", size) > maxWidth) {
-    s = s.slice(0, -1);
-  }
-  return s + "…";
+function statusLabel(s: string): string {
+  return s === "in_recovery" ? "recovery" : s;
 }
 
 /**
@@ -158,41 +123,64 @@ export async function buildGangSheetPdf(gang: Gang): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
   const fontReg = await doc.embedFont(StandardFonts.Helvetica);
+  const fontMono = await doc.embedFont(StandardFonts.CourierBold);
 
-  // Mutable page + cursor (y = distance from bottom; decreases as we move down)
-  let page: PDFPage = doc.addPage([PAGE_W, PAGE_H]);
-  let y = PAGE_H - MARGIN; // top of the next element
   const W = PAGE_W - MARGIN * 2;
   const X = MARGIN;
 
-  /** Opens a new page when the remaining space is insufficient. */
+  let page: PDFPage = newPage();
+  let y = PAGE_H - MARGIN;
+
+  /* ---- low-level helpers ----------------------------------- */
+
+  function newPage(): PDFPage {
+    const p = doc.addPage([PAGE_W, PAGE_H]);
+    // paper background
+    p.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: C_PAPER });
+    // footer chrome
+    p.drawLine({
+      start: { x: MARGIN, y: MARGIN - 8 },
+      end: { x: PAGE_W - MARGIN, y: MARGIN - 8 },
+      thickness: 0.5,
+      color: C_RIVET,
+    });
+    p.drawText("NECROFORJA  ·  Cinderak Burning", {
+      x: MARGIN,
+      y: MARGIN - 20,
+      size: 7,
+      font: fontReg,
+      color: C_MUTED,
+    });
+    return p;
+  }
+
   function ensureSpace(needed: number): void {
-    if (y - needed < MARGIN + 30) {
-      page = doc.addPage([PAGE_W, PAGE_H]);
+    if (y - needed < MARGIN + 36) {
+      page = newPage();
       y = PAGE_H - MARGIN;
     }
   }
 
-  type Color = ReturnType<typeof rgb>;
-
-  /** Draws text at the current cursor (or at an explicit y). */
   function txt(
     str: string,
     opts: {
       x?: number;
       y?: number;
       size?: number;
-      bold?: boolean;
+      font?: PDFFont;
       color?: Color;
       maxWidth?: number;
     } = {},
   ): void {
-    const font = opts.bold ? fontBold : fontReg;
-    const size = opts.size ?? SIZE_BODY;
-    const s =
-      opts.maxWidth != null
-        ? clipText(str, font, size, opts.maxWidth)
-        : str;
+    const font = opts.font ?? fontReg;
+    const size = opts.size ?? 9;
+    let s = str;
+    if (opts.maxWidth != null) {
+      while (s.length > 0 && font.widthOfTextAtSize(s, size) > opts.maxWidth) {
+        s = s.slice(0, -1);
+      }
+      if (s.length < str.length) s = s.slice(0, -1) + "…";
+    }
     page.drawText(s, {
       x: opts.x ?? X,
       y: opts.y ?? y,
@@ -202,233 +190,240 @@ export async function buildGangSheetPdf(gang: Gang): Promise<Uint8Array> {
     });
   }
 
-  /** Horizontal rule across the full usable width. */
-  function hline(yPos: number, color: Color = C_BORDER, thickness = 0.5): void {
-    page.drawLine({
-      start: { x: X, y: yPos },
-      end: { x: X + W, y: yPos },
-      thickness,
-      color,
-    });
-  }
-
-  /** Filled rectangle. */
-  function rect(
-    rx: number,
-    ry: number,
-    rw: number,
-    rh: number,
-    color: Color,
-  ): void {
+  function rect(rx: number, ry: number, rw: number, rh: number, color: Color) {
     page.drawRectangle({ x: rx, y: ry, width: rw, height: rh, color });
   }
 
-  /* ---- HEADER BAND ----------------------------------------- */
-  const HEADER_H = 50;
-  rect(X, y - HEADER_H, W, HEADER_H, C_PANEL);
+  function rightText(
+    str: string,
+    rightX: number,
+    yPos: number,
+    size: number,
+    font: PDFFont,
+    color: Color,
+  ): void {
+    const w = font.widthOfTextAtSize(str, size);
+    txt(str, { x: rightX - w, y: yPos, size, font, color });
+  }
 
-  txt(data.gangName, {
-    x: X + 8,
-    y: y - 19,
-    size: SIZE_TITLE,
-    bold: true,
-    color: C_WHITE,
-    maxWidth: W * 0.65,
+  /** Word-wraps a string to fit maxWidth; returns one or more lines. */
+  function wrap(
+    str: string,
+    font: PDFFont,
+    size: number,
+    maxWidth: number,
+  ): string[] {
+    const words = str.split(/\s+/);
+    const lines: string[] = [];
+    let cur = "";
+    for (const word of words) {
+      const test = cur ? `${cur} ${word}` : word;
+      if (cur && font.widthOfTextAtSize(test, size) > maxWidth) {
+        lines.push(cur);
+        cur = word;
+      } else {
+        cur = test;
+      }
+    }
+    if (cur) lines.push(cur);
+    return lines.length ? lines : [""];
+  }
+
+  /** Dark section band with an amber tick + uppercase amber label. */
+  function sectionBand(label: string): void {
+    const h = 22;
+    ensureSpace(h + 14);
+    rect(X, y - h, W, h, C_VOID);
+    rect(X, y - h, 4, h, C_HAZARD); // left accent tick
+    txt(label.toUpperCase(), {
+      x: X + 14,
+      y: y - 15,
+      size: 10,
+      font: fontBold,
+      color: C_HAZARD,
+    });
+    y -= h + 14;
+  }
+
+  /* ---- HEADER ---------------------------------------------- */
+  const HEAD_H = 74;
+  rect(X, y - HEAD_H, W, HEAD_H, C_VOID);
+  rect(X, y - HEAD_H, W, 4, C_HAZARD); // hazard base line
+
+  txt(data.gangName.toUpperCase(), {
+    x: X + 16,
+    y: y - 32,
+    size: 22,
+    font: fontBold,
+    color: C_LIGHT,
+    maxWidth: W * 0.7,
   });
-
   txt(`${data.house}  ·  ${data.ownerName}`, {
-    x: X + 8,
-    y: y - 37,
-    size: SIZE_SMALL,
-    color: rgb(0.65, 0.65, 0.65),
+    x: X + 16,
+    y: y - 52,
+    size: 9,
+    font: fontReg,
+    color: C_HAZARD,
+    maxWidth: W * 0.7,
   });
+  rightText("GANG ROSTER", X + W - 16, y - 26, 9, fontBold, C_LIGHT);
+  rightText(
+    `Generated ${data.generatedAt}`,
+    X + W - 16,
+    y - 40,
+    7.5,
+    fontReg,
+    C_MUTED,
+  );
+  y -= HEAD_H + 18;
 
-  const dateStr = `Generated ${data.generatedAt}`;
-  const dateW = fontReg.widthOfTextAtSize(dateStr, SIZE_SMALL);
-  txt(dateStr, {
-    x: X + W - dateW - 8,
-    y: y - 37,
-    size: SIZE_SMALL,
-    color: rgb(0.5, 0.5, 0.5),
-  });
-
-  y -= HEADER_H + 4;
-
-  /* ---- METRICS BAND ---------------------------------------- */
-  const METRIC_H = 28;
-  rect(X, y - METRIC_H, W, METRIC_H, C_METRIC_BG);
-
+  /* ---- METRICS --------------------------------------------- */
+  const MH = 48;
   const metrics: { label: string; value: string }[] = [
     { label: "Rating", value: String(data.rating) },
     { label: "Wealth", value: String(data.wealth) },
-    { label: "Stash Credits", value: `${data.stashCredits}c` },
+    { label: "Stash", value: `${data.stashCredits}c` },
     { label: "Reputation", value: String(data.reputation) },
   ];
-
-  const mColW = W / metrics.length;
-  for (let mi = 0; mi < metrics.length; mi++) {
-    const m = metrics[mi]!;
-    const mx = X + mi * mColW + 8;
-    txt(m.label, {
-      x: mx,
-      y: y - 10,
-      size: SIZE_SMALL - 1,
+  const cw = W / metrics.length;
+  // outline
+  page.drawRectangle({
+    x: X,
+    y: y - MH,
+    width: W,
+    height: MH,
+    borderColor: C_RIVET,
+    borderWidth: 1,
+  });
+  metrics.forEach((m, i) => {
+    const cx = X + i * cw;
+    rect(cx, y - 3, cw, 3, C_HAZARD); // top accent per cell
+    if (i > 0) {
+      page.drawLine({
+        start: { x: cx, y: y - 3 },
+        end: { x: cx, y: y - MH },
+        thickness: 0.5,
+        color: C_RIVET,
+      });
+    }
+    txt(m.label.toUpperCase(), {
+      x: cx + 12,
+      y: y - 20,
+      size: 7,
+      font: fontBold,
       color: C_MUTED,
     });
     txt(m.value, {
-      x: mx,
-      y: y - 22,
-      size: SIZE_HEADING,
-      bold: true,
+      x: cx + 12,
+      y: y - 40,
+      size: 17,
+      font: fontMono,
       color: C_INK,
     });
+  });
+  y -= MH + 20;
+
+  /* ---- ROSTER (fighter blocks) ----------------------------- */
+  sectionBand(`Roster · ${data.fighters.length} fighters`);
+
+  if (data.fighters.length === 0) {
+    txt("No fighters yet.", { size: 9, color: C_MUTED });
+    y -= 18;
   }
 
-  y -= METRIC_H + 10;
-
-  /* ---- ROSTER ---------------------------------------------- */
-  txt("ROSTER", { size: SIZE_HEADING, bold: true });
-  hline(y - SIZE_HEADING - 2, C_INK, 0.8);
-  y -= SIZE_HEADING + 8;
-
-  // Column header row
-  rect(X, y - ROW_H, W, ROW_H, rgb(0.82, 0.82, 0.82));
-  for (const { col, label } of ALL_COLS) {
-    txt(label, {
-      x: X + W * col.x + 3,
-      y: y - ROW_H + 4,
-      size: SIZE_SMALL - 1,
-      bold: true,
-      color: C_MUTED,
-    });
-  }
-  y -= ROW_H;
-
-  // Fighter rows
   for (let fi = 0; fi < data.fighters.length; fi++) {
     const f = data.fighters[fi]!;
-    const equipCount = Math.max(1, f.equipment.length);
-    const rowH = equipCount * ROW_H;
+    const accent = f.isAlive ? C_HAZARD : C_BLOOD;
+    const nameColor = f.isAlive ? C_INK : C_MUTED;
 
-    ensureSpace(rowH + 2);
+    const equipStr =
+      f.equipment.length === 0
+        ? "Equipment: —"
+        : "Equipment: " +
+          f.equipment.map((e) => `${e.name} (${e.cost}c)`).join(",  ");
+    const equipLines = wrap(equipStr, fontReg, 8.5, W - PAD * 2 - 8);
 
-    if (fi % 2 === 0) {
-      rect(X, y - rowH, W, rowH, C_STRIPE);
-    }
+    const blockH = PAD + 15 + 13 + equipLines.length * 11 + PAD;
+    ensureSpace(blockH + 8);
 
-    const baseY = y - ROW_H + 4; // text baseline for the first line
-    const tColor: Color = f.isAlive ? C_INK : C_MUTED;
+    // panel + left accent stripe
+    rect(X, y - blockH, W, blockH, C_ROW);
+    rect(X, y - blockH, 3, blockH, accent);
 
-    // Fighter name
+    const innerX = X + PAD + 8;
+    let yy = y - PAD - 10;
+
+    // line 1: name + total cost
     txt(f.name, {
-      x: X + W * COL_NAME.x + 3,
-      y: baseY,
-      size: SIZE_BODY,
-      bold: true,
-      color: tColor,
-      maxWidth: W * COL_NAME.w - 6,
+      x: innerX,
+      y: yy,
+      size: 11,
+      font: fontBold,
+      color: nameColor,
+      maxWidth: W - PAD * 2 - 90,
     });
+    rightText(`${f.totalCost}c`, X + W - PAD, yy, 11, fontMono, nameColor);
+    yy -= 15;
 
-    // Type / Category
-    txt(`${f.type} / ${f.category}`, {
-      x: X + W * COL_TYPECAT.x + 3,
-      y: baseY,
-      size: SIZE_SMALL,
-      color: tColor,
-      maxWidth: W * COL_TYPECAT.w - 6,
+    // line 2: meta
+    const metaColor = f.status === "dead" ? C_BLOOD : C_MUTED;
+    txt(`${f.type}  ·  ${f.category}  ·  ${statusLabel(f.status)}  ·  XP ${f.xp}`, {
+      x: innerX,
+      y: yy,
+      size: 8.5,
+      font: fontReg,
+      color: metaColor,
+      maxWidth: W - PAD * 2 - 16,
     });
+    yy -= 13;
 
-    // Status
-    const statusLabel =
-      f.status === "in_recovery" ? "recovery" : f.status;
-    txt(statusLabel, {
-      x: X + W * COL_STATUS.x + 3,
-      y: baseY,
-      size: SIZE_SMALL,
-      color: f.status === "dead" ? C_DEAD : tColor,
-      maxWidth: W * COL_STATUS.w - 6,
-    });
-
-    // XP
-    txt(String(f.xp), {
-      x: X + W * COL_XP.x + 3,
-      y: baseY,
-      size: SIZE_SMALL,
-      color: tColor,
-    });
-
-    // Equipment lines (stacked)
-    if (f.equipment.length === 0) {
-      txt("—", {
-        x: X + W * COL_EQUIP.x + 3,
-        y: baseY,
-        size: SIZE_SMALL,
-        color: C_MUTED,
+    // equipment (wrapped)
+    for (const line of equipLines) {
+      txt(line, {
+        x: innerX,
+        y: yy,
+        size: 8.5,
+        font: fontReg,
+        color: f.isAlive ? rgb(0.25, 0.25, 0.24) : C_MUTED,
       });
-    } else {
-      for (let ei = 0; ei < f.equipment.length; ei++) {
-        const e = f.equipment[ei]!;
-        txt(`${e.name} (${e.cost}c)`, {
-          x: X + W * COL_EQUIP.x + 3,
-          y: y - (ei + 1) * ROW_H + 4,
-          size: SIZE_SMALL,
-          color: tColor,
-          maxWidth: W * COL_EQUIP.w - 6,
-        });
-      }
+      yy -= 11;
     }
 
-    // Total cost (right-aligned within its column)
-    const costStr = `${f.totalCost}c`;
-    const costW = fontBold.widthOfTextAtSize(costStr, SIZE_SMALL);
-    txt(costStr, {
-      x: X + W * (COL_COST.x + COL_COST.w) - costW - 4,
-      y: baseY,
-      size: SIZE_SMALL,
-      bold: true,
-      color: tColor,
-    });
-
-    hline(y - rowH, C_BORDER);
-    y -= rowH;
+    y -= blockH + 8; // breathing room between fighters
   }
 
   /* ---- STASH ----------------------------------------------- */
-  y -= 12;
-  ensureSpace(60);
+  y -= 6;
+  sectionBand("Stash");
 
-  txt("STASH", { size: SIZE_HEADING, bold: true });
-  hline(y - SIZE_HEADING - 2, C_INK, 0.8);
-  y -= SIZE_HEADING + 8;
-
-  txt(`Credits: ${data.stashCredits}c`, { size: SIZE_BODY });
-  y -= ROW_H;
+  txt(`Credits: ${data.stashCredits}c`, {
+    size: 9,
+    font: fontBold,
+    color: C_INK,
+  });
+  y -= 16;
 
   if (data.stashItems.length === 0) {
-    txt("No items in Stash.", { size: SIZE_BODY, color: C_MUTED });
-    y -= ROW_H;
+    txt("No items in Stash.", { size: 8.5, color: C_MUTED });
+    y -= 14;
   } else {
     for (const item of data.stashItems) {
-      ensureSpace(ROW_H);
-      const qtyStr = item.qty > 1 ? ` ×${item.qty}` : "";
-      txt(`${item.name}  ·  ${item.category}  ·  ${item.cost}c${qtyStr}`, {
-        x: X + 12,
-        size: SIZE_BODY,
+      ensureSpace(14);
+      const qty = item.qty > 1 ? `  ×${item.qty}` : "";
+      txt(`•  ${item.name}`, {
+        x: X + 6,
+        size: 8.5,
+        color: C_INK,
+        maxWidth: W * 0.6,
+      });
+      txt(`${item.category}  ·  ${item.cost}c${qty}`, {
+        x: X + W * 0.6,
+        size: 8.5,
         color: C_MUTED,
       });
-      y -= ROW_H;
+      y -= 14;
     }
   }
-
-  /* ---- FOOTER ---------------------------------------------- */
-  y -= 16;
-  ensureSpace(20);
-  hline(y, C_BORDER);
-  y -= 12;
-  txt("Necromunda: The Aranthian Succession — Cinderak Burning Campaign", {
-    size: SIZE_SMALL - 1,
-    color: rgb(0.55, 0.55, 0.55),
-  });
 
   return doc.save();
 }
