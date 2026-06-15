@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality:
+    name: Typecheck · Lint · Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+  # Opcional: descomente para validar o build de produção em cada PR.
+  # O `next build` carrega os módulos de rota; como `db/index.ts` exige
+  # DATABASE_URL na importação, passamos valores DUMMY (não há conexão em build,
+  # pois as páginas autenticadas são dynamic e só consultam em request time).
+  #
+  # build:
+  #   name: Build
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 20
+  #         cache: npm
+  #     - run: npm ci
+  #     - run: npm run build
+  #       env:
+  #         DATABASE_URL: postgres://user:pass@localhost:5432/db
+  #         AUTH_SECRET: dummy-build-secret-not-used

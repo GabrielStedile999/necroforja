@@ -1,0 +1,39 @@
+name: "✨ Feature / melhoria"
+description: Propor uma nova funcionalidade ou melhoria
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Objetivo
+      description: Que problema isto resolve? Para quem?
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Comportamento esperado
+      description: Como deve funcionar do ponto de vista do usuário.
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: Arquivos prováveis
+      description: Onde a mudança deve acontecer (rotas, components, lib...).
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Critérios de aceite
+      placeholder: |
+        - [ ] ...
+        - [ ] typecheck + testes verdes
+  - type: dropdown
+    id: type
+    attributes:
+      label: Tipo
+      options:
+        - feature
+        - melhoria de UX
+        - tech-debt / refactor
+        - documentação

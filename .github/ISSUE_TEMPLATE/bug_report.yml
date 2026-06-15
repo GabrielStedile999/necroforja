@@ -1,0 +1,38 @@
+name: "🐞 Bug report"
+description: Relatar um comportamento incorreto
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: O que aconteceu?
+      description: Descreva o bug de forma objetiva.
+      placeholder: Ao resolver um desafio, o controle do Sympathiser não muda...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      placeholder: |
+        1. Entrar como Arbitrator
+        2. Ir em /admin/campaign
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamento esperado
+    validations:
+      required: true
+  - type: input
+    id: area
+    attributes:
+      label: Área afetada
+      placeholder: "landing | admin | player | assistente (IA) | auth | banco"
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexto adicional
+      description: Navegador, screenshots, logs do console/servidor, etc.
