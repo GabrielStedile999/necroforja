@@ -1,37 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { WifiOff } from "lucide-react";
 
 /**
  * Displays a persistent banner at the top of the viewport when the browser
  * has no network connection.
  *
- * Behaviour:
- *  - Reads navigator.onLine on mount to catch the initial state.
- *  - Listens to the "online" / "offline" window events for live updates.
- *  - When offline: warns that the roster may be stale and that mutations
- *    (adding fighters, editing equipment, etc.) require a connection.
+ * Uses `useSyncExternalStore` to read the browser's online/offline state — the
+ * idiomatic way to subscribe to an external source without setState-in-effect.
+ * The server snapshot assumes "online" so nothing renders during SSR.
  */
+function subscribe(callback: () => void): () => void {
+  window.addEventListener("online", callback);
+  window.addEventListener("offline", callback);
+  return () => {
+    window.removeEventListener("online", callback);
+    window.removeEventListener("offline", callback);
+  };
+}
+
 export function OfflineBanner() {
-  const [offline, setOffline] = useState(false);
+  const online = useSyncExternalStore(
+    subscribe,
+    () => navigator.onLine, // client snapshot
+    () => true, // server snapshot (assume online during SSR)
+  );
 
-  useEffect(() => {
-    // Initialise from the current network state.
-    setOffline(!navigator.onLine);
-
-    const handleOnline = () => setOffline(false);
-    const handleOffline = () => setOffline(true);
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, []);
-
-  if (!offline) return null;
+  if (online) return null;
 
   return (
     <div
