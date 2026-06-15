@@ -279,12 +279,11 @@ tests/                       # scoring, campaign-rules, chunk, fase1 (validation
 ## 10. Current state
 
 Phases 1–3 of `PLANO-TECNICO.md` delivered (auth+accounts, gang management,
-challenges+live ranking, RAG assistant). Features 1–9 of
+challenges+live ranking, RAG assistant). All 10 features of
 `IMPLEMENTATION_PLAN.md` delivered (equip/unequip fighters, Stash management,
 fighter lifecycle + Downtime, initial Sympathiser assignment, Triumphs &
 campaign closure, AI assistant improvements, PDF gang sheet export, PWA,
-SEO & Lighthouse). Pending items and next steps detailed in
-`IMPLEMENTATION_PLAN.md`.
+SEO & Lighthouse, hardening). All tests passing (158/158).
 
 ### Feature 5 — Triumphs & Campaign Closure (technical summary)
 - `Campaign` domain type now includes `status: string` (`"active" | "finished"`).
@@ -347,6 +346,50 @@ SEO & Lighthouse). Pending items and next steps detailed in
   to `NextResponse` to satisfy TypeScript's `BodyInit` constraint.
 - **No schema changes.** No `db:push` or `rules:ingest` needed.
 - Tests: `tests/gang-sheet.test.ts` (11 cases for `buildGangSheetData`).
+
+### Feature 10 — Hardening: Durable Rate Limit, Integration Tests, Observability (technical summary)
+
+- **`src/lib/ai/rate-limit.ts`** rewritten:
+  - `rateLimit(key, limit?, windowSec?)` is now **`async`**. Returns
+    `Promise<boolean>`.
+  - When `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are set:
+    delegates to `@upstash/ratelimit` (`Ratelimit.slidingWindow`) + `@upstash/redis`.
+    Counts accurately across multiple serverless instances (no reset on cold
+    start).
+  - Otherwise: falls back to the existing in-memory sliding window
+    (`inMemoryRateLimit`), now exported for testing.
+  - Singleton `_upstash` is created once per Node.js instance and reused.
+  - Install with `npm install @upstash/ratelimit @upstash/redis` and set
+    `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` in `.env`.
+    Without the env vars the app continues to use in-memory (zero config change
+    needed for local dev).
+- **`src/lib/logger.ts`** (new): structured JSON logger — thin wrapper around
+  `console` that emits `{ ts, level, msg, ...ctx }` per line. On Vercel,
+  function logs capture stdout/stderr, making these entries queryable in the
+  dashboard. No external dependency.
+- **`src/app/api/assistant/route.ts`** updated:
+  - `rateLimit()` is now awaited.
+  - `logger.warn` on 401 (unauthenticated) — includes `x-forwarded-for` IP.
+  - `logger.warn` on 429 (rate limited) — includes `userId`.
+  - `logger.error` on `streamText` error — includes `userId` and error message.
+    Replaces the bare `console.error`.
+- **`src/proxy.ts`** convention note: the file is edge-safe and must never
+  import DB or argon2. See §8.
+- **Tests**:
+  - `tests/rate-limit.test.ts` — 9 Vitest cases for `inMemoryRateLimit`:
+    allow up to limit, block at limit+1, sliding window reset (fake timers),
+    partial expiry, key isolation, limit=1, short window.
+  - `tests/create-player.test.ts` — 7 Vitest cases for the `createPlayer`
+    Server Action using `vi.mock` / `vi.hoisted` for `@/lib/db`,
+    `@/lib/db/queries`, `@/lib/auth/guards`, `@/lib/auth/password`, `next/cache`.
+    Covers: short password, invalid email, duplicate email, no active campaign,
+    DB insert failure, happy path inserts user+gang, password is never stored
+    in plain text.
+- **Total tests**: 158 passing (15 test files). `tsc --noEmit` → 0 errors.
+- **User commands**: `npm install @upstash/ratelimit @upstash/redis` (one-time,
+  for Upstash support). `npm test` to run the full suite.
+
+---
 
 ### Feature 9 — SEO & Lighthouse Audit (technical summary)
 

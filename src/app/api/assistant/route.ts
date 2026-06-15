@@ -3,6 +3,7 @@ import { StreamData, streamText, type CoreMessage } from "ai";
 import { auth } from "@/auth";
 import { searchRulesWithExpansion, citationLabel } from "@/lib/ai/retrieval";
 import { rateLimit } from "@/lib/ai/rate-limit";
+import { logger } from "@/lib/logger";
 
 export const maxDuration = 30;
 
@@ -11,11 +12,21 @@ export const maxDuration = 30;
  * Retrieves relevant chunks via pgvector and responds with Claude, citing sources.
  */
 export async function POST(req: Request) {
+  // ---- Authentication ------------------------------------------------
   const session = await auth();
   if (!session?.user) {
+    logger.warn("Unauthenticated request to /api/assistant", {
+      ip: req.headers.get("x-forwarded-for") ?? "unknown",
+    });
     return new Response("Not authenticated.", { status: 401 });
   }
-  if (!rateLimit(session.user.id)) {
+
+  // ---- Rate limiting (async — supports Upstash in production) --------
+  const allowed = await rateLimit(session.user.id);
+  if (!allowed) {
+    logger.warn("Rate limit exceeded on /api/assistant", {
+      userId: session.user.id,
+    });
     return new Response("Too many questions in a short time. Please wait a moment.", {
       status: 429,
     });
@@ -78,8 +89,10 @@ ${context}`;
       data.close();
     },
     onError: ({ error }) => {
-      // appears in the server terminal for debugging
-      console.error("[assistant] streamText error:", error);
+      logger.error("streamText error in /api/assistant", {
+        userId: session.user.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
       data.close();
     },
   });

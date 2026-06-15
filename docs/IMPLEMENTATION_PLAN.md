@@ -338,7 +338,7 @@ not tank metrics — consider ISR where possible.
 
 ---
 
-## 10. Hardening: integration tests, durable rate limit, observability
+## 10. Hardening: integration tests, durable rate limit, observability ✅ COMPLETED
 
 **Goal.** Production robustness and a quality signal in the portfolio.
 
