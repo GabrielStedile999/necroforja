@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, useEffect } from "react";
+import { useActionState, useState } from "react";
 import { updateFighterStatus, type PlayerState } from "@/app/player/actions";
 import { Button } from "@/components/ui/button";
 import { Label, Select } from "@/components/ui/input";
@@ -33,15 +33,18 @@ export function UpdateFighterStatusForm({
     {},
   );
 
-  // Controls display of the capturing gang selector
+  // Controls display of the capturing gang selector.
   const [showCapture, setShowCapture] = useState(
     currentStatus === "captured",
   );
 
-  // Synchronise with the status received from the server after re-render
-  useEffect(() => {
+  // Reset the selector when the status from the server changes — React's
+  // "adjust state during render" pattern (no effect, no cascading render).
+  const [prevStatus, setPrevStatus] = useState(currentStatus);
+  if (currentStatus !== prevStatus) {
+    setPrevStatus(currentStatus);
     setShowCapture(currentStatus === "captured");
-  }, [currentStatus]);
+  }
 
   return (
     <form action={formAction} className="flex flex-col gap-2">
