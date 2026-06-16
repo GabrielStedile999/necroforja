@@ -1,25 +1,25 @@
-<!-- Título do PR no padrão Conventional Commits, ex.: "feat: equipar fighters" -->
+<!-- PR title in Conventional Commits format, e.g.: "feat: equip fighters" -->
 
-## O que muda
-<!-- Resumo objetivo da mudança e o porquê. -->
+## What changes
+<!-- Objective summary of the change and why. -->
 
-## Issue relacionada
+## Related issue
 Closes #
 
-## Tipo
-- [ ] feat (nova funcionalidade)
-- [ ] fix (correção de bug)
+## Type
+- [ ] feat (new feature)
+- [ ] fix (bug fix)
 - [ ] refactor / tech-debt
 - [ ] docs
 - [ ] chore
 
 ## Checklist
-- [ ] `npm run typecheck` sem erros
-- [ ] `npm run lint` sem erros
-- [ ] `npm test` verde
-- [ ] Respeitei edge vs Node, AI SDK v4 e validação/autorização (ver `docs/PROJECT_CONTEXT.md`)
-- [ ] Rodei `db:push` / `rules:ingest` se mexi em schema/ingestão
-- [ ] Atualizei docs/CHANGELOG se necessário
+- [ ] `npm run typecheck` passes with no errors
+- [ ] `npm run lint` passes with no errors
+- [ ] `npm test` is green
+- [ ] Respected edge vs Node, AI SDK v4 and validation/authorisation (see `docs/PROJECT_CONTEXT.md`)
+- [ ] Ran `db:push` / `rules:ingest` if schema/ingestion was touched
+- [ ] Updated docs/CHANGELOG if necessary
 
-## Como testar
-<!-- Passos para o revisor validar. Screenshots se for UI. -->
+## How to test
+<!-- Steps for the reviewer to validate. Screenshots if UI. -->

@@ -1,50 +1,50 @@
-# Publicar o NecroForja no GitHub
+# Publishing NecroForja on GitHub
 
-Guia rápido para subir o repositório. (Pode apagar este arquivo depois.)
+Quick guide to pushing the repository. (You can delete this file afterwards.)
 
-## Descrição (campo "About" do repositório)
+## Description (repository "About" field)
 
-> NecroForja — gestor de campanhas de Necromunda. Painel público (ranking +
-> Sympathisers), área do jogador (gangue, fighters, créditos) e assistente de
-> regras com IA (RAG). Next.js 16 · TypeScript · Drizzle/Postgres · Auth.js · AI SDK.
+> NecroForja — Necromunda campaign manager. Public dashboard (ranking +
+> Sympathisers), player area (gang, fighters, credits) and AI rules assistant
+> (RAG). Next.js 16 · TypeScript · Drizzle/Postgres · Auth.js · AI SDK.
 
-## Topics (tags do repositório)
+## Topics (repository tags)
 
 ```
 nextjs  react  typescript  tailwindcss  drizzle-orm  postgresql  pgvector
 authjs  ai-sdk  rag  server-components  supabase  tabletop  portfolio
 ```
 
-> O topic `necromunda` é opcional (uso descritivo/nominativo, ajuda a descoberta).
-> Mantenha a marca **fora do nome do repositório e do domínio** — apenas como
-> menção descritiva. Ver a nota de IP no README.
+> The `necromunda` topic is optional (descriptive/nominative use, helps discovery).
+> Keep the trademark **out of the repository name and domain** — use it only as a
+> descriptive mention. See the IP notice in the README.
 
-## Antes do primeiro push — checklist
+## Before the first push — checklist
 
-- [x] `.env` está no `.gitignore` (segredos NÃO vão para o repo).
-- [x] `content/books/` (texto integral dos livros, © Games Workshop) está
-      ignorado — uso local/privado.
-- [x] Sem segredos hardcoded no código (`src/`).
-- [ ] Conferir que o `.env` real **não** foi commitado (`git status` antes do push).
+- [x] `.env` is in `.gitignore` (secrets do NOT go to the repo).
+- [x] `content/books/` (full text of the books, © Games Workshop) is ignored —
+      local/private use.
+- [x] No hardcoded secrets in code (`src/`).
+- [ ] Confirm the real `.env` was **not** committed (`git status` before push).
 
-## Comandos
+## Commands
 
 ```bash
-cd "caminho/para/Portfolio"
+cd "path/to/Portfolio"
 
 git init
 git add .
-git status                      # confirme: .env e content/books NÃO listados
-git commit -m "feat: NecroForja — gestor de campanhas de Necromunda (MVP fases 1-3)"
+git status                      # confirm: .env and content/books are NOT listed
+git commit -m "feat: NecroForja — Necromunda campaign manager (MVP phases 1-3)"
 
 git branch -M main
-git remote add origin git@github.com:SEU_USUARIO/necroforja.git
+git remote add origin git@github.com:YOUR_USERNAME/necroforja.git
 git push -u origin main
 ```
 
-## Sugestão de seções para o README no GitHub (já cobertas)
+## Suggested README sections for GitHub (already covered)
 
-- Stack, como rodar, scripts, autenticação, assistente de IA (RAG), roadmap e a
-  nota de IP — tudo já está no `README.md`.
-- Para impressionar em portfólio: adicione 2–3 screenshots (landing, painel do
-  Arbitrator, chat do assistente) e, quando publicar, o link do deploy na Vercel.
+- Stack, how to run, scripts, authentication, AI rules assistant (RAG), roadmap,
+  and the IP notice — all in `README.md`.
+- For portfolio impact: add 2–3 screenshots (landing, Arbitrator panel, assistant
+  chat) and, once deployed, the Vercel deploy link.

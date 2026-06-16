@@ -1,36 +1,36 @@
 # Changelog
 
-Todas as mudanças relevantes deste projeto. Formato baseado em
-[Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e versionamento
-[SemVer](https://semver.org/lang/pt-BR/).
+All notable changes to this project. Format based on
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
+[SemVer](https://semver.org/) versioning.
 
 ## [Unreleased]
 
-### Alterado
-- **Ficha de gangue em PDF** redesenhada: layout em "dossiê" espaçado com tema
-  NecroForja (header escuro + linha hazard, métricas em mono, blocos de fighter
-  com tarja lateral, equipamento com quebra de linha, mortos destacados).
+### Changed
+- **PDF gang sheet** redesigned: "dossier" spaced layout with NecroForja theme
+  (dark header + hazard stripe, metrics in mono, fighter blocks with side band,
+  equipment with line breaks, dead fighters highlighted).
 
-### Adicionado
-- Gestão de equipamento e Stash do jogador (equipar/desequipar, mover do Stash).
-- Ciclo de vida do fighter (status/XP) e efeitos de Downtime.
-- Atribuição manual de Sympathisers e on/off pelo Arbitrator.
-- Triumphs e encerramento de campanha.
-- Melhorias do assistente de IA (recuperação) e rate limit durável (Upstash).
-- Exportação de ficha de gangue em PDF.
-- PWA (instalável) e ajustes de SEO/Lighthouse.
-- Testes de integração e endurecimento geral.
+### Added
+- Player equipment and Stash management (equip/unequip, move from Stash).
+- Fighter lifecycle (status/XP) and Downtime effects.
+- Manual Sympathiser assignment by the Arbitrator.
+- Triumphs and campaign closure.
+- AI assistant improvements (retrieval) and durable rate limit (Upstash).
+- PDF gang sheet export.
+- PWA (installable) and SEO/Lighthouse adjustments.
+- Integration tests and general hardening.
 
-> Atualize esta seção a cada PR. Ao publicar uma versão, mova os itens para uma
-> seção versionada (ex.: `## [0.2.0] - 2026-07-01`).
+> Update this section with every PR. When publishing a version, move items to a
+> versioned section (e.g. `## [0.2.0] - 2026-07-01`).
 
 ## [0.1.0] - 2026-06-15
 
-### Adicionado
-- **Fase 1:** autenticação (Auth.js v5 + Argon2id), criação de contas pelo
-  admin, edição de gangue com recálculo de Rating/Wealth, rotas protegidas.
-- **Fase 2:** desafios por Sympathiser (registro/resolução com transferência de
-  controle), avanço de ciclo/fase, painel do Arbitrator, ranking vivo na landing.
-- **Fase 3:** assistente de regras com IA (RAG) — pgvector + embeddings + Claude,
-  citando livro e página oficiais; ingestão de `content/`.
-- Identidade visual "tom Necromunda" e marca **NecroForja**.
+### Added
+- **Phase 1:** authentication (Auth.js v5 + Argon2id), admin account creation,
+  gang editing with Rating/Wealth recalculation, protected routes.
+- **Phase 2:** Sympathiser challenges (registration/resolution with control
+  transfer), cycle/phase advancement, Arbitrator panel, live ranking on the landing.
+- **Phase 3:** AI rules assistant (RAG) — pgvector + embeddings + Claude,
+  citing official book and page; `content/` ingestion.
+- "Necromunda tone" visual identity and **NecroForja** brand.

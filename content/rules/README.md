@@ -1,30 +1,30 @@
-# Base de conhecimento do assistente (RAG)
+# Assistant Knowledge Base (RAG)
 
-O assistente responde a partir de duas fontes, indexadas por `npm run rules:ingest`:
+The assistant answers from two sources, indexed by `npm run rules:ingest`:
 
-## 1. Livros oficiais — `content/books/*.jsonl` (fonte principal)
+## 1. Official books — `content/books/*.jsonl` (primary source)
 
-Cada linha é uma página do livro, no formato:
+Each line is a page from a book, in the format:
 
 ```json
 { "book": "Necromunda: Core Rulebook (2023)", "page": 92, "text": "..." }
 ```
 
-Os chunks herdam **livro + página**, então cada resposta cita a referência
-oficial (ex.: *Core Rulebook (2023), p. 92*) — fácil de conferir no livro.
+Chunks inherit **book + page**, so each response cites the official reference
+(e.g. *Core Rulebook (2023), p. 92*) — easy to verify in the book.
 
-> Esses arquivos são gerados a partir dos PDFs (texto por página) e ficam no
-> **`.gitignore`** (`/content/books`). São de uso **local/privado** dos jogadores
-> que possuem os livros — © Games Workshop. Não redistribua.
+> These files are generated from the PDFs (text per page) and are in the
+> **`.gitignore`** (`/content/books`). They are for **local/private** use by
+> players who own the books — © Games Workshop. Do not redistribute.
 
-## 2. Notas próprias — `content/rules/*.md` (opcional)
+## 2. Custom notes — `content/rules/*.md` (optional)
 
-Resumos/paráfrases seus. São indexados sem número de página (a citação cai para
-"arquivo — seção"). Use só se quiser complementar os livros.
+Your own summaries/paraphrases. Indexed without a page number (the citation falls
+back to "file — section"). Use only to supplement the books.
 
-## Atualizar a base
+## Updating the knowledge base
 
 ```bash
-# requer DATABASE_URL e OPENAI_API_KEY no .env
-npm run rules:ingest   # recria a base (idempotente)
+# requires DATABASE_URL and OPENAI_API_KEY in .env
+npm run rules:ingest   # rebuilds the base (idempotent)
 ```

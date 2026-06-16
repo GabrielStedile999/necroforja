@@ -1,105 +1,108 @@
-# Deploy — Vercel + Supabase
+# Deployment — Vercel + Supabase
 
-Guia para colocar o NecroForja no ar. Custo inicial: **US$ 0/mês**
-(Vercel Hobby + Supabase Free). Tempo estimado: ~30–45 min.
+Guide to deploying NecroForja. Initial cost: **US$ 0/month**
+(Vercel Hobby + Supabase Free). Estimated time: ~30–45 min.
 
-> ⚠️ Vercel **Hobby** é só uso **não comercial** — um portfólio se enquadra. Se um
-> dia virar produto pago/com anúncios, migrar para Pro (US$ 20/mês) ou Cloudflare.
+> ⚠️ Vercel **Hobby** is for **non-commercial** use only — a portfolio qualifies.
+> If it ever becomes a paid product or carries ads, upgrade to Pro (US$ 20/month)
+> or move to Cloudflare.
 
-## Pré-requisitos
+## Prerequisites
 
-- Repositório no GitHub (público recomendado para portfólio).
-- Contas: [Vercel](https://vercel.com), [Supabase](https://supabase.com) e,
-  opcional, [Upstash](https://upstash.com) (rate limit durável).
-- Chaves de IA: `OPENAI_API_KEY` (embeddings) e `ANTHROPIC_API_KEY` (geração).
+- Repository on GitHub (public recommended for portfolio).
+- Accounts: [Vercel](https://vercel.com), [Supabase](https://supabase.com), and
+  optionally [Upstash](https://upstash.com) (durable rate limiting).
+- AI keys: `OPENAI_API_KEY` (embeddings) and `ANTHROPIC_API_KEY` (generation).
 
 ---
 
-## 1. Banco — Supabase
+## 1. Database — Supabase
 
-1. **Create project** → escolha a região **South America (São Paulo)**.
-2. Habilite o pgvector: **SQL Editor** → cole o conteúdo de
+1. **Create project** → choose the **South America (São Paulo)** region.
+2. Enable pgvector: **SQL Editor** → paste the content of
    `scripts/enable-pgvector.sql` (`CREATE EXTENSION IF NOT EXISTS vector;`) → Run.
-3. Pegue **duas** connection strings em **Project Settings → Database**:
-   - **Pooled** (Transaction, porta **6543**) → será o `DATABASE_URL` da app em
-     produção. Acrescente `?pgbouncer=true&connection_limit=1` ao final. Use esta
-     porque o Vercel é serverless (muitas conexões curtas).
-   - **Direct** (porta **5432**) → use só para rodar migrações/seed da sua máquina.
+3. Get **two** connection strings from **Project Settings → Database**:
+   - **Pooled** (Transaction, port **6543**) → this becomes `DATABASE_URL` for the
+     production app. Append `?pgbouncer=true&connection_limit=1`. Use this because
+     Vercel is serverless (many short-lived connections).
+   - **Direct** (port **5432**) → use only for running migrations/seed from your
+     machine.
 
 ---
 
-## 2. Migrar, semear e indexar (da sua máquina, contra o banco de produção)
+## 2. Migrate, seed and ingest (from your machine, against the production database)
 
-> A **ingestão de regras roda localmente**, porque `content/books/` está
-> gitignored (IP) e não existe no servidor. Ela grava os vetores no banco de
-> produção; depois a app só lê.
+> **Rule ingestion runs locally**, because `content/books/` is gitignored (IP)
+> and does not exist on the server. It writes vectors to the production database;
+> the app only reads them afterwards.
 
-Crie um `.env` local apontando para o banco de produção (use a string **direct**
-para isto) e rode:
+Create a local `.env` pointing to the production database (use the **direct**
+string for this) and run:
 
 ```bash
-# DATABASE_URL = string DIRECT (porta 5432) do Supabase
-npm run db:push        # cria as tabelas (pgvector já habilitado no passo 1)
-npm run db:seed        # campanha + Sympathisers + contas (usa ADMIN_EMAIL etc.)
-npm run rules:ingest   # embeddings dos livros → rule_chunk (precisa OPENAI_API_KEY)
+# DATABASE_URL = DIRECT string (port 5432) from Supabase
+npm run db:push        # creates tables (pgvector already enabled in step 1)
+npm run db:seed        # campaign + Sympathisers + accounts (uses ADMIN_EMAIL etc.)
+npm run rules:ingest   # book embeddings → rule_chunk (requires OPENAI_API_KEY)
 ```
 
-Defina antes, no mesmo `.env`: `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `PLAYER_PASSWORD`
-(ver `.env.example`). Guarde as credenciais — são o seu acesso de Arbitrator.
+Set in the same `.env` beforehand: `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `PLAYER_PASSWORD`
+(see `.env.example`). Save these credentials — they are your Arbitrator access.
 
 ---
 
 ## 3. App — Vercel
 
-1. **Add New → Project** → importe o repositório do GitHub. Framework é
-   detectado automaticamente (Next.js); não mude nada no build.
-2. **Environment Variables** (Production) — adicione:
+1. **Add New → Project** → import the GitHub repository. Framework is detected
+   automatically (Next.js); do not change the build settings.
+2. **Environment Variables** (Production) — add:
 
-   | Variável | Valor |
+   | Variable | Value |
    |---|---|
-   | `DATABASE_URL` | string **pooled** (6543, com `?pgbouncer=true&connection_limit=1`) |
-   | `AUTH_SECRET` | gere com `npx auth secret` |
-   | `AUTH_URL` | a URL pública (ex.: `https://necroforja.vercel.app`) |
-   | `ANTHROPIC_API_KEY` | sua chave |
+   | `DATABASE_URL` | **pooled** string (6543, with `?pgbouncer=true&connection_limit=1`) |
+   | `AUTH_SECRET` | generate with `npx auth secret` |
+   | `AUTH_URL` | the public URL (e.g. `https://necroforja.vercel.app`) |
+   | `ANTHROPIC_API_KEY` | your key |
    | `ASSISTANT_MODEL` | `claude-haiku-4-5` |
-   | `OPENAI_API_KEY` | sua chave |
+   | `OPENAI_API_KEY` | your key |
    | `EMBEDDING_MODEL` | `text-embedding-3-small` |
-   | `UPSTASH_REDIS_REST_URL` / `_TOKEN` | (opcional) rate limit durável |
+   | `UPSTASH_REDIS_REST_URL` / `_TOKEN` | (optional) durable rate limiting |
 
-   > `ADMIN_*` / `PLAYER_PASSWORD` **não** são necessárias na Vercel — só foram
-   > usadas no seed local (passo 2).
-3. **Deploy.** Ao terminar, ajuste `AUTH_URL` para a URL final (se mudou) e
-   refaça o deploy.
-
----
-
-## 4. Verificação pós-deploy
-
-- Abrir a URL → a landing pública carrega (ranking + mapa de Sympathisers).
-- `/login` com as credenciais do Arbitrator → cai em `/admin`.
-- `/admin/campaign` → criar/resolver um desafio reflete na landing.
-- `/player/assistant` → perguntar uma regra retorna resposta com **livro + página**.
+   > `ADMIN_*` / `PLAYER_PASSWORD` are **not** needed on Vercel — they were only
+   > used for the local seed (step 2).
+3. **Deploy.** When done, update `AUTH_URL` to the final URL (if it changed) and
+   redeploy.
 
 ---
 
-## 5. Domínio próprio (quando registrar)
+## 4. Post-deploy verification
 
-Vercel → Project → **Settings → Domains** → adicionar `necroforja.com.br` (ou
-`.gg`). Configure os registros DNS conforme as instruções da Vercel e atualize
-`AUTH_URL` para o domínio final.
+- Open the URL → the public landing loads (ranking + Sympathiser map).
+- `/login` with Arbitrator credentials → lands on `/admin`.
+- `/admin/campaign` → create/resolve a challenge and it reflects on the landing.
+- `/player/assistant` → ask a rule question and get a response with **book + page**.
 
 ---
 
-## Gotchas (já tratados ou a observar)
+## 5. Custom domain (when you register one)
 
-- **Pooler vs direct:** app usa a string **pooled** (6543); migrações usam a
-  **direct** (5432). Misturar causa erros de conexão em serverless.
-- **pgvector:** habilite a extensão **antes** do `db:push`, senão a criação da
-  tabela `rule_chunk` falha.
-- **Supabase Free pausa após ~7 dias** sem atividade. Para uma campanha
-  intermitente, crie um **Vercel Cron** (ou tarefa agendada) que faz um GET na
-  landing 1x/dia para manter o projeto "acordado".
-- **Ingestão de regras:** sempre local (os livros não vão para o repo/servidor).
-  Rode `rules:ingest` da sua máquina sempre que mudar o chunking ou o conteúdo.
-- **Build sem DATABASE_URL:** o `next build` da Vercel terá a env definida, então
-  ok. Em CI local sem banco, use um `DATABASE_URL` dummy só para o build.
+Vercel → Project → **Settings → Domains** → add `necroforja.com.br` (or `.gg`).
+Configure DNS records per Vercel's instructions and update `AUTH_URL` to the
+final domain.
+
+---
+
+## Gotchas (already handled or to watch out for)
+
+- **Pooler vs direct:** the app uses the **pooled** string (6543); migrations use
+  the **direct** string (5432). Mixing them causes connection errors in serverless.
+- **pgvector:** enable the extension **before** `db:push`, otherwise the
+  `rule_chunk` table creation fails.
+- **Supabase Free pauses after ~7 days** of inactivity. For an intermittent
+  campaign, create a **Vercel Cron** (or scheduled task) that GETs the landing
+  once/day to keep the project "awake".
+- **Rule ingestion:** always runs locally (books never go to the repo/server).
+  Re-run `rules:ingest` from your machine whenever you change chunking or content.
+- **Build without DATABASE_URL:** Vercel's `next build` will have the env set, so
+  it's fine. For local CI without a database, use a dummy `DATABASE_URL` just for
+  the build.

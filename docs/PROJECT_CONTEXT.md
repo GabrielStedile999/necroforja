@@ -3,7 +3,7 @@
 Technical context for the project, written so that an assistant can work on it
 without re-analysing everything from scratch. For the roadmap, see
 `IMPLEMENTATION_PLAN.md`. For the original strategic decisions, see
-`PLANO-TECNICO.md`.
+`TECHNICAL_PLAN.md`.
 
 ## 1. What it is
 
@@ -238,6 +238,10 @@ tests/                       # scoring, campaign-rules, chunk, fase1 (validation
 - **DB**: reads in `queries.ts`, writes/derived values in `mutations.ts`. After
   changing a gang, call `recalcGangScores(gangId)`.
 - Authenticated/admin pages: `export const dynamic = "force-dynamic"`.
+- **Language:** English is the **only** language for all project artifacts — code
+  comments, commit messages, PR titles, GitHub issue titles/bodies, documentation,
+  and in-app text. This rule applies regardless of the language used in conversation;
+  all output that enters the repository must be in English.
 - UI language and messages: **English**.
 
 ## 8. Important cautions for future changes

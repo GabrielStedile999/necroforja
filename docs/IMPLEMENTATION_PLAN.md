@@ -36,6 +36,8 @@ Replace `<NUMBER>` with the desired feature and paste the prompt below:
 ```
 You will implement ONE feature in this project (Next.js 16 + TS + Drizzle +
 Auth.js + RAG). Work only within the feature's scope; do not refactor the rest.
+All output that enters the repository must be in English (code comments, commit
+messages, documentation, in-app text).
 
 Before coding, read IN FULL:
 - PROJECT_CONTEXT.md  (stack, structure, conventions, already-solved problems)
@@ -44,7 +46,7 @@ Before coding, read IN FULL:
 
 Non-negotiable rules (from PROJECT_CONTEXT §6 and §8):
 - Do NOT migrate the AI SDK to v5 (the code depends on the v4 API).
-- middleware.ts / auth.config.ts are edge-safe: do not import DB or argon2 there.
+- proxy.ts / auth.config.ts are edge-safe: do not import DB or argon2 there.
 - When reading env, use `||` (not `??`) to treat "" as absent.
 - Validate input with Zod; check requireUser/requireAdmin AND ownership
   (e.g.: the resource belongs to the user's gang) BEFORE writing.
