@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Native Node.js addons (NAPI/Rust) cannot be bundled by webpack.
+  // Declaring them here tells Next.js to require() them at runtime instead.
+  serverExternalPackages: ["@node-rs/argon2"],
   // Imagens externas (arte própria hospedada no Supabase Storage, por ex.)
   images: {
     remotePatterns: [
