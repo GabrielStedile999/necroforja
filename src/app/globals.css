@@ -137,7 +137,7 @@ body {
   .ncf-nav-inner    { height: 62px !important; padding: 0 20px !important; }
   .ncf-wrap         { padding-left: 24px !important; padding-right: 24px !important; }
   .ncf-section      { padding-top: 66px !important; padding-bottom: 66px !important; }
-  .ncf-hero         { min-height: 86vh !important; background-position: 68% center !important; }
+  .ncf-hero         { min-height: 86vh !important; max-height: none !important; background-size: auto 100% !important; background-position: 68% center !important; }
   .ncf-hero-gradient{ background: linear-gradient(180deg,rgba(5,3,4,.18) 0%,rgba(5,3,4,.46) 42%,rgba(5,3,4,.92) 100%) !important; }
   .ncf-hero-content { padding: 0 24px 56px !important; }
   .ncf-hero-deco    { display: none !important; }
@@ -154,6 +154,7 @@ body {
 @media (max-width: 620px) {
   .ncf-wrap         { padding-left: 16px !important; padding-right: 16px !important; }
   .ncf-section      { padding-top: 50px !important; padding-bottom: 50px !important; }
+  .ncf-hero         { min-height: 78vh !important; max-height: none !important; background-size: auto 100% !important; background-position: 70% center !important; }
   .ncf-hero-content { padding: 0 16px 46px !important; }
   .ncf-h1           { font-size: 60px !important; white-space: normal !important; overflow-wrap: break-word; line-height: .92 !important; }
   .ncf-hero-tagline { letter-spacing: 5px !important; font-size: 13px !important; }

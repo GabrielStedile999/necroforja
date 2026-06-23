@@ -114,7 +114,7 @@ export default function SiteNav() {
               {/* Link columns */}
               <div className="flex flex-1 gap-[64px]">
                 <div>
-                  <div className="mb-5 font-mono text-[11px] tracking-[3px] text-hazard">// OVERVIEW</div>
+                  <div className="mb-5 font-mono text-[11px] tracking-[3px] text-hazard">{'// OVERVIEW'}</div>
                   <div className="flex flex-col gap-[15px]">
                     {["Game Overview","How to Play","Gang & Forge Systems","Roadmap","Patch Notes"].map((l) => (
                       <span key={l} className={s.megaLink}>{l}</span>
@@ -122,7 +122,7 @@ export default function SiteNav() {
                   </div>
                 </div>
                 <div>
-                  <div className="mb-5 font-mono text-[11px] tracking-[3px] text-cyan">// MODES</div>
+                  <div className="mb-5 font-mono text-[11px] tracking-[3px] text-cyan">{'// MODES'}</div>
                   <div className="flex flex-col gap-[15px]">
                     {["Campaign","Territory War","Skirmish","Co-op Raids","Public Dashboard"].map((l) => (
                       <span key={l} className={s.megaLink}>{l}</span>
@@ -154,7 +154,7 @@ export default function SiteNav() {
 
               {/* Houses grid */}
               <div className="flex-1">
-                <div className="mb-[22px] font-mono text-[11px] tracking-[3px] text-cyan">// THE FIVE HOUSES</div>
+                <div className="mb-[22px] font-mono text-[11px] tracking-[3px] text-cyan">{'// THE FIVE HOUSES'}</div>
                 <div className="grid grid-cols-2 gap-x-[40px] gap-y-[14px]">
                   {FIVE_HOUSES.map((h) => (
                     <div key={h.name} className={s.houseRow}>
@@ -208,7 +208,7 @@ export default function SiteNav() {
 
           {/* Body */}
           <div className="relative z-[2] flex flex-col px-5 pb-10 pt-2">
-            <div className="my-5 mb-1 font-mono text-[11px] tracking-[3px] text-hazard">// NAVIGATE</div>
+            <div className="my-5 mb-1 font-mono text-[11px] tracking-[3px] text-hazard">{'// NAVIGATE'}</div>
 
             {[
               { num: "01", label: "GAME" },
@@ -223,7 +223,7 @@ export default function SiteNav() {
               </div>
             ))}
 
-            <div className="mb-[14px] mt-[30px] font-mono text-[11px] tracking-[3px] text-cyan">// THE FIVE HOUSES</div>
+            <div className="mb-[14px] mt-[30px] font-mono text-[11px] tracking-[3px] text-cyan">{'// THE FIVE HOUSES'}</div>
             <div className="flex flex-col gap-3">
               {FIVE_HOUSES.map((h) => (
                 <div key={h.name} onClick={closeNav} className={s.mobileHouseRow}>

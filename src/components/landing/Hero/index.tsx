@@ -8,12 +8,13 @@ import s from "./Hero.module.scss";
 export default function Hero() {
   return (
     <div
-      className={`
-        ncf-hero
-        relative flex min-h-screen items-end overflow-hidden
-        bg-[#0a0507] bg-cover [background-position:right_center]
-      `}
-      style={{ backgroundImage: "url(/hero.png)" }}
+      className="ncf-hero relative flex min-h-screen max-h-screen items-end overflow-hidden bg-[#0a0507]"
+      style={{
+        backgroundImage: "url(/hero.png)",
+        backgroundSize: "auto 100%",
+        backgroundPosition: "right center",
+        backgroundRepeat: "no-repeat",
+      }}
     >
       {/* Left-to-right gradient (text legibility) */}
       <div className={`ncf-hero-gradient absolute inset-0 z-[1] ${s.heroGradient}`} />

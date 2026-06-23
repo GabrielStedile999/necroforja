@@ -1,6 +1,7 @@
 // Hero — styles that can't be expressed cleanly with Tailwind utilities alone.
 // Covers text-shadow on the H1, gradient overlays, and CTA hover effects.
 
+
 /* ── H1 neon glow ── */
 .heroTitle {
   text-shadow: 0 0 34px #ff2d6f, 0 0 4px rgba(255, 255, 255, 0.4);
