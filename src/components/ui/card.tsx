@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-/** "Metal sheet" panel — rivet border, dark background. */
+/** Panel card — rivet border, dark background, chamfered corners. */
 export function Card({
   className,
   ...props
@@ -8,7 +8,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-sm border border-rivet bg-panel shadow-lg shadow-black/40",
+        "border border-rivet bg-panel shadow-lg shadow-black/50 clip-chamfer",
         className,
       )}
       {...props}

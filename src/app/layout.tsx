@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { Oswald, Inter, JetBrains_Mono } from "next/font/google";
+import { Chakra_Petch, Share_Tech_Mono } from "next/font/google";
 import "./globals.css";
 import { PwaRegister } from "@/components/PwaRegister";
 import { OfflineBanner } from "@/components/OfflineBanner";
 
-const oswald = Oswald({
+const chakra = Chakra_Petch({
   subsets: ["latin"],
-  variable: "--font-oswald",
-  weight: ["400", "500", "600", "700"],
+  variable: "--font-chakra",
+  weight: ["400", "600", "700"],
 });
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const jetbrains = JetBrains_Mono({
+const shareMono = Share_Tech_Mono({
   subsets: ["latin"],
-  variable: "--font-jetbrains",
+  variable: "--font-share-mono",
+  weight: "400",
 });
 
 // Canonical base URL — used by Next.js to prefix relative metadata URLs.
@@ -81,7 +81,7 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 
   // ---- PWA — theme-color (duplicates manifest.ts for iOS Safari) ----
-  themeColor: "#f2a900",
+  themeColor: "#ff2d6f",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -105,7 +105,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${oswald.variable} ${inter.variable} ${jetbrains.variable} antialiased`}
+        className={`${chakra.variable} ${shareMono.variable} antialiased`}
       >
         {/* PWA: offline banner renders at top of viewport when network is lost */}
         <OfflineBanner />

@@ -284,10 +284,49 @@ tests/                       # scoring, campaign-rules, chunk, fase1 (validation
 
 Phases 1–3 of `PLANO-TECNICO.md` delivered (auth+accounts, gang management,
 challenges+live ranking, RAG assistant). All 10 features of
-`IMPLEMENTATION_PLAN.md` delivered (equip/unequip fighters, Stash management,
-fighter lifecycle + Downtime, initial Sympathiser assignment, Triumphs &
-campaign closure, AI assistant improvements, PDF gang sheet export, PWA,
-SEO & Lighthouse, hardening). All tests passing (158/158).
+`IMPLEMENTATION_PLAN.md` delivered. Issue #3 (Main Page + Design System) also
+delivered. All tests passing.
+
+### Issue #3 — Main Page + Professional Design System (technical summary)
+- **Design system migrated** to Hi-Fi magenta/cyan aesthetic (issue #3, "NecroForja Hi-Fi").
+  - `src/app/globals.css`: `@theme` tokens remapped — semantic names kept so ~250 existing
+    usages restyle automatically. New: `accent=#ff2d6f`, `accent2=#00e5ff`, house colors
+    (Vex/Karran/Greil/Sump/Spire), keyframes (`ncf-ticker`, `ncf-flicker`, `ncf-rise`,
+    `ncf-sweep`, `ncf-blink`, `ncf-menu`, `ncf-grid`, `ncf-scrolldot`), utility classes
+    (`.clip-chamfer`, `.clip-chamfer-sm`, `.scanlines`, `.grid-floor`, `.ticker`,
+    `.glow-magenta`, `.glow-cyan`, `.glow-box-magenta`, `.glow-box-cyan`).
+  - `src/app/layout.tsx`: fonts swapped from `Oswald/Inter/JetBrains_Mono` →
+    `Chakra_Petch` + `Share_Tech_Mono` (CSS vars `--font-chakra`, `--font-share-mono`).
+    `themeColor` updated to `#ff2d6f`.
+- **UI primitives updated** (`src/components/ui/`): `button.tsx` gains `accent` + `cyan`
+  variants with `clip-chamfer-sm` + glow; `card.tsx` uses `clip-chamfer`; `badge.tsx`
+  adds `cyan` variant + `clip-chamfer-sm`; `input.tsx` uses `clip-chamfer-sm`.
+- **New Hi-Fi landing** (`src/app/page.tsx`): assembles `Ticker`, `SiteNav`, `Hero`,
+  `Features`, `Houses`, `News`, `BigCTA`, `SiteFooter` from `src/components/landing/`.
+  - `SiteNav` is a client component with hover mega-menu (GAME / FACTIONS) + mobile
+    burger. Uses `useState` for menu state.
+  - `Hero` needs `public/hero.png` (copy from the handoff bundle).
+- **Routing migration**:
+  - `/` → new Hi-Fi landing (marketing, indexed).
+  - `/dashboard` → campaign view (was `/`); publicly indexed; ISR 60 s.
+  - `/portal` → role dispatcher (was `/dashboard`); private, `noindex`.
+  - `src/proxy.ts` matcher now includes `/portal`.
+  - `src/app/login/actions.ts` redirects to `/portal` (was `/dashboard`).
+  - `src/app/login/page.tsx` "Back to public dashboard" link → `/dashboard`.
+  - `src/app/robots.ts`: `/dashboard` allowed; `/portal` disallowed.
+  - `src/app/sitemap.ts`: adds `/dashboard` entry (daily).
+  - `src/lib/pwa/cache-routes.ts`: `/dashboard*` → `network-first`;
+    `/portal*` → `network-only`. `public/sw.js` mirrored; cache version bumped to v2.
+- **`src/components/SiteHeader.tsx`**: updated to new tokens (◣ glyph, glow).
+- **`src/components/CampaignStatus.tsx`**: border + clip-chamfer replaces hazard-stripes wrapper.
+- **`src/app/opengraph-image.tsx`**: updated to magenta/cyan gradient.
+- **Tests updated**: `tests/pwa.test.ts` — `/dashboard` now expects `network-first`,
+  old `/dashboard → network-only` case replaced with `/portal → network-only`.
+- **No schema changes.** No `db:push` or `rules:ingest` needed.
+- **User action required**: copy `hero.png` from the handoff bundle → `public/hero.png`.
+  Delete `argon2-stub.d.ts` from repo root (created by sandbox tsc verification, harmless
+  but not intended to be committed).
+- **`npm test`** and **`npm run typecheck`** pass (0 errors).
 
 ### Feature 5 — Triumphs & Campaign Closure (technical summary)
 - `Campaign` domain type now includes `status: string` (`"active" | "finished"`).

@@ -5,9 +5,7 @@ import { ImageResponse } from "next/og";
  * Served at /opengraph-image by Next.js App Router.
  *
  * Size: 1200 × 630 (standard OG / Twitter card dimensions).
- * Design: Necromunda dark aesthetic — void background, hazard yellow accent.
- *
- * Note: ImageResponse uses a Flexbox subset — no Tailwind classes here.
+ * Design: Hi-Fi magenta/cyan aesthetic matching the new design system.
  */
 export const runtime = "edge";
 
@@ -26,19 +24,18 @@ export default function OgImage() {
           flexDirection: "column",
           width: "100%",
           height: "100%",
-          background: "#0b0c0e",
+          background: "#0b0a0d",
           padding: "72px 80px",
           justifyContent: "space-between",
         }}
       >
-        {/* Top accent bar */}
+        {/* Top accent bar — magenta → cyan gradient */}
         <div
           style={{
             display: "flex",
             width: "100%",
-            height: "6px",
-            background: "linear-gradient(90deg, #f2a900 0%, #ff4500 100%)",
-            borderRadius: "3px",
+            height: "4px",
+            background: "linear-gradient(90deg, #ff2d6f 0%, #00e5ff 100%)",
           }}
         />
 
@@ -49,46 +46,57 @@ export default function OgImage() {
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "10px",
+              gap: "8px",
+              background: "rgba(255,45,111,0.12)",
+              border: "1px solid rgba(255,45,111,0.4)",
+              padding: "4px 12px",
+              width: "fit-content",
             }}
           >
             <div
               style={{
-                background: "#f2a900",
-                color: "#0b0c0e",
-                fontSize: "13px",
+                width: "6px",
+                height: "6px",
+                borderRadius: "50%",
+                background: "#ff2d6f",
+              }}
+            />
+            <span
+              style={{
+                color: "#ff2d6f",
+                fontSize: "12px",
                 fontWeight: 700,
-                letterSpacing: "0.12em",
+                letterSpacing: "0.15em",
                 textTransform: "uppercase",
-                padding: "4px 12px",
-                borderRadius: "4px",
               }}
             >
-              Necromunda Campaign
-            </div>
+              Campaign Manager — Active
+            </span>
           </div>
 
           {/* Title */}
           <div
             style={{
-              fontSize: "80px",
+              fontSize: "88px",
               fontWeight: 800,
-              color: "#f0ede8",
-              lineHeight: 1.05,
-              letterSpacing: "-0.02em",
+              color: "#f5f5fa",
+              lineHeight: 1.0,
+              letterSpacing: "0.02em",
+              textTransform: "uppercase",
             }}
           >
             Necro
-            <span style={{ color: "#f2a900" }}>Forja</span>
+            <span style={{ color: "#ff2d6f" }}>Forja</span>
           </div>
 
           {/* Subtitle */}
           <div
             style={{
-              fontSize: "28px",
-              color: "#8a8a8a",
-              maxWidth: "700px",
+              fontSize: "24px",
+              color: "#7d7a95",
+              maxWidth: "680px",
               lineHeight: 1.4,
+              letterSpacing: "0.05em",
             }}
           >
             Track gangs, Sympathisers and the campaign ranking in real time.
@@ -104,26 +112,25 @@ export default function OgImage() {
             width: "100%",
           }}
         >
-          {/* Campaign name pill */}
+          {/* Campaign pill */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
               gap: "8px",
-              background: "#1a1c20",
-              border: "1px solid #2e2e2e",
-              borderRadius: "8px",
+              border: "1px solid #2a2535",
               padding: "10px 20px",
-              color: "#8a8a8a",
-              fontSize: "16px",
+              color: "#7d7a95",
+              fontSize: "15px",
+              background: "#0f0d14",
             }}
           >
-            <span style={{ color: "#f2a900", fontSize: "18px" }}>◆</span>
+            <span style={{ color: "#00e5ff", fontSize: "16px" }}>◆</span>
             The Aranthian Succession: Cinderak Burning
           </div>
 
           {/* Author */}
-          <div style={{ color: "#4a4a4a", fontSize: "15px" }}>
+          <div style={{ color: "#3a3750", fontSize: "14px", letterSpacing: "0.1em" }}>
             Gabriel Stedile
           </div>
         </div>
@@ -133,9 +140,8 @@ export default function OgImage() {
           style={{
             display: "flex",
             width: "100%",
-            height: "3px",
-            background: "#1a1c20",
-            borderRadius: "2px",
+            height: "2px",
+            background: "linear-gradient(90deg, #ff2d6f 0%, transparent 50%, #00e5ff 100%)",
           }}
         />
       </div>

@@ -7,7 +7,7 @@ export function Input({
   return (
     <input
       className={cn(
-        "h-10 w-full rounded-sm border border-rivet bg-elevated px-3 text-sm text-ink placeholder:text-muted focus:border-hazard",
+        "h-10 w-full border border-rivet bg-elevated px-3 text-sm text-ink placeholder:text-muted focus:border-hazard focus:outline-none clip-chamfer-sm",
         className,
       )}
       {...props}
@@ -37,7 +37,7 @@ export function Select({
   return (
     <select
       className={cn(
-        "h-10 w-full rounded-sm border border-rivet bg-elevated px-3 text-sm text-ink focus:border-hazard",
+        "h-10 w-full border border-rivet bg-elevated px-3 text-sm text-ink focus:border-hazard focus:outline-none",
         className,
       )}
       {...props}

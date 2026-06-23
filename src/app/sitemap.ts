@@ -1,9 +1,8 @@
 import type { MetadataRoute } from "next";
 
 /**
- * Sitemap — only the public landing is indexable.
- * Authenticated pages (/admin, /player) are excluded and already
- * protected by middleware + noindex metadata.
+ * Sitemap — public pages only: / and /dashboard.
+ * Authenticated pages (/admin, /player, /portal) are excluded.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   const siteUrl =
@@ -13,8 +12,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: siteUrl,
       lastModified: new Date(),
-      changeFrequency: "daily",
+      changeFrequency: "weekly",
       priority: 1,
+    },
+    {
+      url: `${siteUrl}/dashboard`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.9,
     },
   ];
 }

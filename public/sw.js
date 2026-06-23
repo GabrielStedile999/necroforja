@@ -3,15 +3,15 @@
  *
  * Caching strategy (mirrors src/lib/pwa/cache-routes.ts):
  *
- *   network-only   /api/*, /admin*, /login*, /dashboard*, /_next/data/*
+ *   network-only   /api/*, /admin*, /login*, /portal*, /_next/data/*
  *   cache-first    /_next/static/*, /icons/*, /icon.svg, /favicon.ico
- *   network-first  /player*, / (and everything else)
+ *   network-first  /dashboard*, /player*, / (and everything else)
  *
  * Bump CACHE_VERSION when making breaking changes to the SW so that old
  * caches are purged on activation.
  */
 
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const CACHE_NAME = `necroforja-${CACHE_VERSION}`;
 
 /* ------------------------------------------------------------------ */
@@ -23,7 +23,7 @@ function isNetworkOnly(pathname) {
     pathname.startsWith("/api/") ||
     pathname.startsWith("/admin") ||
     pathname.startsWith("/login") ||
-    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/portal") ||
     pathname.startsWith("/_next/data/")
   );
 }

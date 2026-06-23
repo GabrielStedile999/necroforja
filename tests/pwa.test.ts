@@ -24,9 +24,9 @@ describe("getCacheStrategy", () => {
     expect(getCacheStrategy("/login?callbackUrl=/player")).toBe("network-only");
   });
 
-  it("returns network-only for /dashboard routes", () => {
-    expect(getCacheStrategy("/dashboard")).toBe("network-only");
-    expect(getCacheStrategy("/dashboard/overview")).toBe("network-only");
+  it("returns network-only for /portal (role dispatcher — always fresh)", () => {
+    expect(getCacheStrategy("/portal")).toBe("network-only");
+    expect(getCacheStrategy("/portal/extra")).toBe("network-only");
   });
 
   it("returns network-only for /_next/data/ routes", () => {
@@ -59,8 +59,13 @@ describe("getCacheStrategy", () => {
 
   // ---- network-first -------------------------------------------------
 
-  it("returns network-first for / (root)", () => {
+  it("returns network-first for / (root landing)", () => {
     expect(getCacheStrategy("/")).toBe("network-first");
+  });
+
+  it("returns network-first for /dashboard (public campaign view)", () => {
+    expect(getCacheStrategy("/dashboard")).toBe("network-first");
+    expect(getCacheStrategy("/dashboard/overview")).toBe("network-first");
   });
 
   it("returns network-first for /player routes", () => {
@@ -76,20 +81,17 @@ describe("getCacheStrategy", () => {
   // ---- edge cases / boundary checks ----------------------------------
 
   it("does NOT treat /admintools as network-only (startsWith exact prefix)", () => {
-    // /admintools starts with /admin so it IS network-only — this is correct
-    // behaviour: conservative, keeps sensitive-looking paths network-only.
+    // /admintools starts with /admin so it IS network-only — conservative default.
     expect(getCacheStrategy("/admintools")).toBe("network-only");
   });
 
   it("does NOT treat /icon.svg/extra as cache-first (exact-match variants)", () => {
-    // /icon.svg/extra does not match any cache-first exact rule and is not
-    // under a cache-first prefix → falls through to network-first.
+    // /icon.svg/extra does not match any cache-first exact rule → network-first.
     expect(getCacheStrategy("/icon.svg/extra")).toBe("network-first");
   });
 
   it("treats /api (no trailing slash) as network-first — only /api/ prefix is network-only", () => {
-    // getCacheStrategy matches /api/ with trailing slash; /api alone is not a
-    // match → falls through to network-first (safe default).
+    // getCacheStrategy matches /api/ with trailing slash; /api alone → network-first.
     expect(getCacheStrategy("/api")).toBe("network-first");
   });
 });

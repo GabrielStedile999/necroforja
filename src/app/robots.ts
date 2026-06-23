@@ -3,8 +3,8 @@ import type { MetadataRoute } from "next";
 /**
  * Robots.txt generation.
  *
- * Only the public landing (/) should be indexed.
- * Authenticated and internal routes stay private.
+ * Public pages: / (marketing landing), /dashboard (live campaign view).
+ * Private: /admin, /player, /portal (role dispatcher), /api/, /login.
  */
 export default function robots(): MetadataRoute.Robots {
   const siteUrl =
@@ -14,12 +14,12 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: "/",
+        allow: ["/", "/dashboard"],
         disallow: [
           "/admin",
           "/player",
+          "/portal",
           "/api/",
-          "/dashboard",
           "/login",
         ],
       },

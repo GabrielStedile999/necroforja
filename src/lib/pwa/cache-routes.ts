@@ -17,20 +17,20 @@ export type CacheStrategy =
  * - `/api/*`            → network-only  (Server Actions / REST mutations)
  * - `/admin*`           → network-only  (sensitive admin data)
  * - `/login*`           → network-only  (auth pages must always be fresh)
- * - `/dashboard*`       → network-only  (role-dispatch redirect — always fresh)
+ * - `/portal*`          → network-only  (role-dispatch redirect — always fresh)
  * - `/_next/data/*`     → network-only  (Next.js dynamic data routes)
  * - `/_next/static/*`   → cache-first   (content-hashed bundles)
  * - `/icons/*`, `/icon.svg`, `/favicon.ico` → cache-first (static public assets)
- * - `/player*`, `/`     → network-first (show latest; offline fallback to cache)
+ * - `/dashboard*`, `/player*`, `/` → network-first (public navigable pages)
  * - everything else     → network-first (safe default)
  */
 export function getCacheStrategy(pathname: string): CacheStrategy {
-  // Never cache authenticated mutations or administrative pages
+  // Never cache auth, admin, or the role-dispatcher portal
   if (
     pathname.startsWith("/api/") ||
     pathname.startsWith("/admin") ||
     pathname.startsWith("/login") ||
-    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/portal") ||
     pathname.startsWith("/_next/data/")
   ) {
     return "network-only";
@@ -46,6 +46,6 @@ export function getCacheStrategy(pathname: string): CacheStrategy {
     return "cache-first";
   }
 
-  // All navigable pages (public landing and authenticated player view) → network-first
+  // All navigable pages (landing, dashboard, player) → network-first
   return "network-first";
 }

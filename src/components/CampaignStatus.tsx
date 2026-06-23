@@ -23,8 +23,8 @@ export function CampaignStatus({ view }: { view: PublicView }) {
   const controlled = sympathisers.filter((s) => s.controllerGangId).length;
 
   return (
-    <section className="hazard-stripes rounded-sm p-[2px]">
-      <div className="rounded-sm bg-panel px-6 py-6">
+    <section className="border border-hazard/30 bg-panel clip-chamfer scanlines">
+      <div className="px-6 py-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <Badge variant="hazard">{PHASE_LABEL[campaign.phase]}</Badge>

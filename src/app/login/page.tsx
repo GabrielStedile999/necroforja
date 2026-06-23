@@ -32,7 +32,7 @@ export default function LoginPage() {
       </Card>
 
       <Link
-        href="/"
+        href="/dashboard"
         className="mt-6 text-center text-xs text-muted hover:text-ink"
       >
         ← Back to public dashboard
