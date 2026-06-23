@@ -1,0 +1,228 @@
+// SiteNav — component-specific styles that go beyond Tailwind's reach.
+// Covers hover transitions, text-shadow on logo glyph, and mega-panel slide-in.
+
+/* Logo glyph glow */
+.logoGlyph {
+  text-shadow: 0 0 12px #ff2d6f;
+}
+
+/* Primary nav links — hover + active underline */
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 11px;
+  cursor: pointer;
+  color: rgba(245, 245, 250, 0.7);
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s;
+
+  &:hover {
+    color: #fff;
+  }
+
+  &.active {
+    color: #fff;
+  }
+}
+
+/* Simple text nav links (WORLD, NEWS, DASHBOARD) */
+.navText {
+  padding: 9px 11px;
+  cursor: pointer;
+  color: rgba(245, 245, 250, 0.7);
+  border-bottom: 2px solid transparent;
+  text-decoration: none;
+  transition: color 0.15s;
+
+  &:hover {
+    color: #fff;
+  }
+}
+
+/* Utility cluster items */
+.utilItem {
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+
+  &:hover {
+    color: #fff;
+  }
+}
+
+.searchBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(245, 245, 250, 0.7);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+
+  &:hover {
+    border-color: #00e5ff;
+    color: #00e5ff;
+  }
+}
+
+/* PLAY FREE chamfer button */
+.playFreeBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 18px;
+  background: #ff2d6f;
+  color: #0a0a0c;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  clip-path: polygon(0 0, 100% 0, 100% 70%, calc(100% - 10px) 100%, 0 100%);
+  box-shadow: 0 0 18px rgba(255, 45, 111, 0.4);
+  cursor: pointer;
+  text-decoration: none;
+  transition: filter 0.15s;
+
+  &:hover {
+    filter: brightness(1.12);
+  }
+}
+
+/* Mobile burger */
+.burger {
+  display: none; // overridden by .ncf-burger at 1080px
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #f5f5fa;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  flex: none;
+
+  &:hover {
+    border-color: #ff2d6f;
+    color: #ff2d6f;
+  }
+}
+
+/* Mobile close button */
+.mobileClose {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #f5f5fa;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+
+  &:hover {
+    border-color: #ff2d6f;
+    color: #ff2d6f;
+  }
+}
+
+/* Mobile PLAY FREE button */
+.mobilePlayBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 17px;
+  background: #ff2d6f;
+  color: #0a0a0c;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 2px;
+  clip-path: polygon(0 0, 100% 0, 100% 76%, calc(100% - 12px) 100%, 0 100%);
+  box-shadow: 0 0 22px rgba(255, 45, 111, 0.4);
+  cursor: pointer;
+  text-decoration: none;
+  margin-top: 18px;
+  transition: filter 0.15s;
+
+  &:hover {
+    filter: brightness(1.12);
+  }
+}
+
+/* Mobile nav item */
+.mobileNavItem {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 15px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  cursor: pointer;
+  transition: color 0.15s;
+
+  &:hover {
+    color: #ff2d6f;
+  }
+}
+
+/* Mega-panel link */
+.megaLink {
+  font-size: 15px;
+  color: rgba(245, 245, 250, 0.78);
+  cursor: pointer;
+  transition: color 0.15s;
+
+  &:hover {
+    color: #fff;
+  }
+}
+
+/* Mega-panel PLAY FREE button */
+.megaPlayBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: #ff2d6f;
+  color: #0a0a0c;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 2px;
+  clip-path: polygon(0 0, 100% 0, 100% 70%, calc(100% - 9px) 100%, 0 100%);
+  text-decoration: none;
+  transition: filter 0.15s;
+
+  &:hover {
+    filter: brightness(1.12);
+  }
+}
+
+/* Factions compare link */
+.compareLink {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: #00e5ff;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+/* House row in factions mega */
+.houseRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 0;
+  cursor: pointer;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 0.85;
+  }
+}
+
+/* House row in mobile menu */
+.mobileHouseRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+}

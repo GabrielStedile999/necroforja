@@ -190,3 +190,121 @@ body {
 .ncf-house-card-gre:hover  { border-color: rgba(255,138,61,.45)  !important; }
 .ncf-house-card-sum:hover  { border-color: rgba(89,227,107,.45)  !important; }
 .ncf-house-card-spi:hover  { border-color: rgba(176,123,255,.45) !important; }
+
+/* ===================================================================
+   EXTENDED UTILITY CLASSES
+   Used by landing components as replacements for inline styles.
+   =================================================================== */
+
+/* ── Clip-path shapes ── */
+.clip-btn        { clip-path: polygon(0 0,100% 0,100% 70%,calc(100% - 10px) 100%,0 100%); }
+.clip-btn-72     { clip-path: polygon(0 0,100% 0,100% 72%,calc(100% - 14px) 100%,0 100%); }
+.clip-btn-76     { clip-path: polygon(0 0,100% 0,100% 76%,calc(100% - 12px) 100%,0 100%); }
+.clip-card       { clip-path: polygon(0 0,100% 0,100% 100%,14px 100%,0 calc(100% - 14px)); }
+.clip-card-br-16 { clip-path: polygon(0 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%); }
+.clip-card-bl-16 { clip-path: polygon(0 0,100% 0,100% 100%,16px 100%,0 calc(100% - 16px)); }
+.clip-media-bl   { clip-path: polygon(0 0,100% 0,100% 100%,24px 100%,0 calc(100% - 24px)); }
+.clip-media-br   { clip-path: polygon(0 0,100% 0,100% calc(100% - 24px),calc(100% - 24px) 100%,0 100%); }
+
+/* ── Text-shadow (glow) — not available as Tailwind utility ── */
+.text-glow-hero  { text-shadow: 0 0 34px #ff2d6f, 0 0 4px rgba(255,255,255,.4); }
+.text-glow-cta   { text-shadow: 0 0 30px #ff2d6f; }
+.text-glow-logo  { text-shadow: 0 0 12px #ff2d6f; }
+
+/* ── Box-shadow glows ── */
+.shadow-nav      { box-shadow: 0 1px 0 rgba(255,45,111,.12), 0 18px 40px rgba(0,0,0,.4); }
+.shadow-mega     { box-shadow: 0 30px 60px rgba(0,0,0,.6); }
+.shadow-cta-magenta-sm { box-shadow: 0 0 18px rgba(255,45,111,.4); }
+.shadow-cta-magenta    { box-shadow: 0 0 30px rgba(255,45,111,.45); }
+.shadow-cta-magenta-lg { box-shadow: 0 0 34px rgba(255,45,111,.5); }
+.shadow-bar-vex  { box-shadow: 0 0 14px rgba(255,45,111,.7); }
+.shadow-bar-kar  { box-shadow: 0 0 14px rgba(0,229,255,.7); }
+.shadow-bar-gre  { box-shadow: 0 0 14px rgba(255,138,61,.7); }
+.shadow-bar-sum  { box-shadow: 0 0 14px rgba(89,227,107,.7); }
+.shadow-bar-spi  { box-shadow: 0 0 14px rgba(176,123,255,.7); }
+.shadow-dot-magenta  { box-shadow: 0 0 10px #ff2d6f; }
+.shadow-dot-magenta2 { box-shadow: 0 0 12px #ff2d6f; }
+.shadow-dot-cyan     { box-shadow: 0 0 12px #00e5ff; }
+.shadow-particle-m   { box-shadow: 0 0 8px #ff2d6f; }
+.shadow-particle-c   { box-shadow: 0 0 8px #00e5ff; }
+
+/* ── Perspective grid floors ── */
+.grid-hero {
+  background-image: linear-gradient(#ff2d6f 1px,transparent 1px),linear-gradient(90deg,#ff2d6f 1px,transparent 1px);
+  background-size: 64px 64px;
+  transform: perspective(460px) rotateX(64deg);
+  transform-origin: bottom;
+}
+.grid-cta {
+  background-image: linear-gradient(#ff2d6f 1px,transparent 1px),linear-gradient(90deg,#ff2d6f 1px,transparent 1px);
+  background-size: 60px 60px;
+  transform: perspective(420px) rotateX(64deg);
+  transform-origin: bottom;
+}
+.grid-mobile-menu {
+  background-image: linear-gradient(#ff2d6f 1px,transparent 1px),linear-gradient(90deg,#ff2d6f 1px,transparent 1px);
+  background-size: 54px 54px;
+  transform: perspective(420px) rotateX(64deg);
+  transform-origin: bottom;
+}
+.grid-factions-panel {
+  background-image: linear-gradient(#00e5ff 1px,transparent 1px),linear-gradient(90deg,#00e5ff 1px,transparent 1px);
+  background-size: 34px 34px;
+  transform: perspective(300px) rotateX(60deg);
+  transform-origin: bottom;
+}
+.grid-feature-cyan {
+  background-image: linear-gradient(#00e5ff 1px,transparent 1px),linear-gradient(90deg,#00e5ff 1px,transparent 1px);
+  background-size: 46px 46px;
+  transform: perspective(360px) rotateX(60deg);
+  transform-origin: bottom;
+}
+.grid-feature-magenta {
+  background-image: linear-gradient(#ff2d6f 1px,transparent 1px),linear-gradient(90deg,#ff2d6f 1px,transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ── Scanlines overlays ── */
+.scanlines-hero {
+  background: repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) 2px,rgba(0,0,0,.22) 3px,rgba(0,0,0,0) 4px);
+}
+.scanlines-dark {
+  background: repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) 2px,rgba(0,0,0,.25) 3px,rgba(0,0,0,0) 4px);
+}
+
+/* ── Diagonal stripe patterns ── */
+.stripe-hazard-top {
+  background: repeating-linear-gradient(45deg,#ff2d6f 0,#ff2d6f 14px,#0a0a0c 14px,#0a0a0c 28px);
+}
+.stripe-game-featured {
+  background: repeating-linear-gradient(115deg,transparent,transparent 8px,rgba(255,45,111,.12) 9px,transparent 10px);
+}
+.stripe-thumb-magenta {
+  background: repeating-linear-gradient(115deg,transparent,transparent 7px,rgba(255,45,111,.14) 8px,transparent 9px);
+}
+.stripe-thumb-magenta-16 {
+  background: repeating-linear-gradient(115deg,transparent,transparent 7px,rgba(255,45,111,.16) 8px,transparent 9px);
+}
+.stripe-thumb-cyan {
+  background: repeating-linear-gradient(115deg,transparent,transparent 7px,rgba(0,229,255,.14) 8px,transparent 9px);
+}
+.stripe-trailer {
+  background: repeating-linear-gradient(115deg,transparent,transparent 6px,rgba(0,229,255,.12) 7px,transparent 8px);
+}
+
+/* ── Writing mode ── */
+.writing-vertical { writing-mode: vertical-rl; }
+
+/* ── Named animation utilities ── */
+.animate-blink     { animation: ncf-blink 1.4s steps(1) infinite; }
+.animate-scrolldot { animation: ncf-scrolldot 1.8s ease-in-out infinite; }
+.animate-ticker    { animation: ncf-ticker 26s linear infinite; }
+.animate-flicker   { animation: ncf-flicker 5s steps(1) infinite; }
+.animate-ncf-menu  { animation: ncf-menu .16s ease both; }
+.animate-sweep     { animation: ncf-sweep 4s linear infinite; }
+.animate-grid-hero { animation: ncf-grid 4.5s linear infinite; }
+.animate-grid-cta  { animation: ncf-grid 5s linear infinite; }
+.animate-rise-1    { animation: ncf-rise 9s   linear 0s   infinite; }
+.animate-rise-2    { animation: ncf-rise 11s  linear .8s  infinite; }
+.animate-rise-3    { animation: ncf-rise 8s   linear 1.6s infinite; }
+.animate-rise-4    { animation: ncf-rise 12s  linear .4s  infinite; }

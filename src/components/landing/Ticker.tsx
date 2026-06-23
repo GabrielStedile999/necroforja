@@ -1,44 +1,21 @@
 /**
- * Ticker — scrolling marquee bar at the top of the landing.
- * Exact translation from NecroForja - Hi-Fi.dc.html.
+ * Ticker — scrolling magenta marquee bar at the top of the landing.
  */
-export default function Ticker() {
-  const items = [
-    "● SEASON 2 LIVE",
-    "THE ARANTHIAN SUCCESSION",
-    "14,212 GANGERS ONLINE",
-    "SUMP SEA EXPANSION — OUT NOW",
-    "SPIRE THRONE: CONTESTED",
-  ];
+const ITEMS = [
+  "● SEASON 2 LIVE",
+  "THE ARANTHIAN SUCCESSION",
+  "14,212 GANGERS ONLINE",
+  "SUMP SEA EXPANSION — OUT NOW",
+  "SPIRE THRONE: CONTESTED",
+];
 
-  // Doubled for seamless infinite loop (translateX(-50%))
-  const all = [...items, ...items];
+export default function Ticker() {
+  // Doubled for seamless loop (animation moves -50%)
+  const all = [...ITEMS, ...ITEMS];
 
   return (
-    <div
-      style={{
-        height: "32px",
-        display: "flex",
-        alignItems: "center",
-        overflow: "hidden",
-        background: "#ff2d6f",
-        color: "#0a0a0c",
-        fontFamily: "'Share Tech Mono', monospace",
-        fontSize: "12px",
-        letterSpacing: "1px",
-        whiteSpace: "nowrap",
-        position: "relative",
-        zIndex: 30,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          gap: "46px",
-          paddingLeft: "46px",
-          animation: "ncf-ticker 26s linear infinite",
-        }}
-      >
+    <div className="relative z-30 flex h-8 items-center overflow-hidden bg-hazard font-mono text-xs tracking-[1px] whitespace-nowrap text-[#0a0a0c]">
+      <div className="flex gap-[46px] pl-[46px] animate-ticker">
         {all.map((item, i) => (
           <span key={i}>{item}</span>
         ))}
