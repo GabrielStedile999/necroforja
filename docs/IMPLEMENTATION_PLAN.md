@@ -25,13 +25,16 @@ refinements.
 ## Handoff prompt (copy/paste)
 
 Use this to delegate **one feature at a time** to an implementing model (Claude
-Code, Codex/Cursor, etc.). Prerequisite: the implementor needs **direct
-repository access** (read/write files) — does not work well in pure chat.
-Recommended: intermediate model (Sonnet/GPT-5) for mechanical features; reserve
-a stronger model (or its review) for #6 (AI/RAG), #8 (PWA), and #10 (tests).
-Open a **new context per feature** to spend fewer tokens.
+via Cowork, Claude Code, Codex/Cursor, etc.). Prerequisite: the implementor
+needs **direct repository access** (read/write files) — does not work well in
+pure chat. Open a **new context per feature** to spend fewer tokens.
 
-Replace `<NUMBER>` with the desired feature and paste the prompt below:
+**New workflow (GitHub issues):** create a new issue using the template at
+`.github/ISSUE_TEMPLATE/feature.md`, then paste the prompt below replacing
+`<ISSUE_NUMBER>` with the issue number. The implementor fetches the issue spec
+directly from GitHub.
+
+Replace `<ISSUE_NUMBER>` with the GitHub issue number and paste the prompt below:
 
 ```
 You will implement ONE feature in this project (Next.js 16 + TS + Drizzle +
@@ -40,9 +43,11 @@ All output that enters the repository must be in English (code comments, commit
 messages, documentation, in-app text).
 
 Before coding, read IN FULL:
-- PROJECT_CONTEXT.md  (stack, structure, conventions, already-solved problems)
-- The "## <NUMBER>." section of IMPLEMENTATION_PLAN.md (the feature to implement)
-- The "Conventions valid for all features" block at the top of IMPLEMENTATION_PLAN.md
+- docs/PROJECT_CONTEXT.md  (stack, structure, conventions, already-solved problems)
+- GitHub issue #<ISSUE_NUMBER> at https://github.com/GabrielStedile999/necroforja/issues/<ISSUE_NUMBER>
+  (fetch via https://api.github.com/repos/GabrielStedile999/necroforja/issues/<ISSUE_NUMBER>
+  if you have web access, or ask the user to paste the issue body)
+- The "Conventions valid for all features" block at the top of docs/IMPLEMENTATION_PLAN.md
 
 Non-negotiable rules (from PROJECT_CONTEXT §6 and §8):
 - Do NOT migrate the AI SDK to v5 (the code depends on the v4 API).
@@ -55,13 +60,13 @@ Non-negotiable rules (from PROJECT_CONTEXT §6 and §8):
   `export const dynamic = "force-dynamic"`.
 
 Deliver:
-1. The complete feature implementation, following the "Likely files".
+1. The complete feature implementation, following the "Likely files" in the issue.
 2. `npm run typecheck` WITHOUT errors. (In the sandbox, if @node-rs/argon2 or
    the @ai-sdk/* packages don't install, create a temporary ambient .d.ts
    declaring them, run tsc, and remove the stub afterwards — see PROJECT_CONTEXT §8.)
 3. New Vitest tests for the pure logic introduced; do not break the existing ones.
-4. Meet the "Acceptance criteria" for the feature.
-5. Update PROJECT_CONTEXT.md if the schema, conventions, or behaviour changed.
+4. Meet the "Acceptance criteria" listed in the issue.
+5. Update docs/PROJECT_CONTEXT.md if the schema, conventions, or behaviour changed.
 6. A final summary: what changed, and the commands that I (the user) need to run
    on my machine (e.g.: `npm run db:push`, `npm run rules:ingest`, `npm test`).
 
@@ -69,9 +74,8 @@ Do not run db:push/seed/ingest yourself (they depend on my database/keys); just
 tell me when they are needed. Ask if anything in the scope is ambiguous.
 ```
 
-> Tip: once the feature passes (tsc + tests + acceptance criteria), ask the
-> implementor to update this file marking the feature as complete, so the next
-> iteration starts clean.
+> Tip: once the feature passes (tsc + tests + acceptance criteria), close the
+> GitHub issue and label it `completed`.
 
 ---
 
