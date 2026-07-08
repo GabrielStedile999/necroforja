@@ -47,7 +47,7 @@ export default function SiteFooter() {
               <span className="font-bold tracking-[5px] text-[17px]">NECROFORJA</span>
             </div>
             <p className="m-0 max-w-[260px] text-[13px] leading-[1.6] text-[rgba(245,245,250,.45)]">
-              Tales of Necromunda — The Aranthian Succession. A free-to-play war for the underhive.
+              Tales of Necromunda — The Aranthian Succession. A tabletop war of miniatures, dice and paint for the underhive.
             </p>
           </div>
 

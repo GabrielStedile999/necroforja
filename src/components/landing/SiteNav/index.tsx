@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useState } from "react";
 import s from "./SiteNav.module.scss";
 
-const FIVE_HOUSES = [
-  { name: "House Vex",    sub: "The Rustsaints · Zealot",       color: "#ff2d6f", shadow: "rgba(255,45,111,.6)"  },
-  { name: "Clan Karran",  sub: "The Splice-Born · Cybertech",   color: "#00e5ff", shadow: "rgba(0,229,255,.6)"   },
-  { name: "House Greil",  sub: "The Ironbound · Bulwark",       color: "#ff8a3d", shadow: "rgba(255,138,61,.6)"  },
-  { name: "The Sump-Born",sub: "Toxin Cults · Toxin",           color: "#59e36b", shadow: "rgba(89,227,107,.6)"  },
-  { name: "Spire Exiles", sub: "The Disinherited · Control",    color: "#b07bff", shadow: "rgba(176,123,255,.6)" },
+const GREAT_HOUSES = [
+  { name: "House Cawdor",   sub: "Faith & Fire · Zealot",        color: "#ffc23d", shadow: "rgba(255,194,61,.6)"  },
+  { name: "House Delaque",  sub: "Shadow & Secrets · Psychoteric", color: "#b07bff", shadow: "rgba(176,123,255,.6)" },
+  { name: "House Escher",   sub: "Blades & Venom · Toxin",       color: "#ff2d6f", shadow: "rgba(255,45,111,.6)"  },
+  { name: "House Goliath",  sub: "Muscle & Fury · Brawn",        color: "#ff8a3d", shadow: "rgba(255,138,61,.6)"  },
+  { name: "House Orlock",   sub: "Iron & Road · Versatile",      color: "#59e36b", shadow: "rgba(89,227,107,.6)"  },
+  { name: "House Van Saar", sub: "Tech & Precision · Marksman",  color: "#00e5ff", shadow: "rgba(0,229,255,.6)"   },
 ];
 
 export default function SiteNav() {
@@ -85,11 +86,7 @@ export default function SiteNav() {
               EN ▾
             </span>
 
-            <Link href="/login" className={`font-mono text-xs tracking-[1px] text-[rgba(245,245,250,.7)] no-underline ${s.utilItem}`}>
-              SIGN IN
-            </Link>
-
-            <Link href="/dashboard" className={s.playFreeBtn}>PLAY FREE</Link>
+            <Link href="/login" className={s.playFreeBtn}>SIGN IN</Link>
           </div>
 
           {/* Burger — mobile */}
@@ -116,7 +113,7 @@ export default function SiteNav() {
                 <div>
                   <div className="mb-5 font-mono text-[11px] tracking-[3px] text-hazard">{'// OVERVIEW'}</div>
                   <div className="flex flex-col gap-[15px]">
-                    {["Game Overview","How to Play","Gang & Forge Systems","Roadmap","Patch Notes"].map((l) => (
+                    {["Game Overview","How to Play","Gang & Forge Systems","Lore & Setting","Campaign Journal"].map((l) => (
                       <span key={l} className={s.megaLink}>{l}</span>
                     ))}
                   </div>
@@ -124,7 +121,7 @@ export default function SiteNav() {
                 <div>
                   <div className="mb-5 font-mono text-[11px] tracking-[3px] text-cyan">{'// MODES'}</div>
                   <div className="flex flex-col gap-[15px]">
-                    {["Campaign","Territory War","Skirmish","Co-op Raids","Public Dashboard"].map((l) => (
+                    {["Campaign","Territory War","Skirmish","Ash Wastes","Public Dashboard"].map((l) => (
                       <span key={l} className={s.megaLink}>{l}</span>
                     ))}
                   </div>
@@ -138,9 +135,9 @@ export default function SiteNav() {
                   <div className="mb-[10px] font-mono text-[11px] tracking-[2px] text-hazard">FEATURED · S2</div>
                   <div className="mb-2 text-[24px] font-bold leading-[1.05]">The Aranthian Succession</div>
                   <div className="mb-5 max-w-[300px] text-[13px] leading-[1.55] text-[rgba(245,245,250,.6)]">
-                    Five Houses. One empty spire throne. The season ends in 14d 06h.
+                    Many gangs. One dying world. The campaign season is live on the table.
                   </div>
-                  <Link href="/dashboard" className={s.megaPlayBtn}>PLAY FREE →</Link>
+                  <Link href="/login" className={s.megaPlayBtn}>SIGN IN →</Link>
                 </div>
               </div>
             </div>
@@ -154,9 +151,9 @@ export default function SiteNav() {
 
               {/* Houses grid */}
               <div className="flex-1">
-                <div className="mb-[22px] font-mono text-[11px] tracking-[3px] text-cyan">{'// THE FIVE HOUSES'}</div>
+                <div className="mb-[22px] font-mono text-[11px] tracking-[3px] text-cyan">{'// THE GREAT HOUSES'}</div>
                 <div className="grid grid-cols-2 gap-x-[40px] gap-y-[14px]">
-                  {FIVE_HOUSES.map((h) => (
+                  {GREAT_HOUSES.map((h) => (
                     <div key={h.name} className={s.houseRow}>
                       <span className="h-[34px] w-1 shrink-0" style={{ background: h.color, boxShadow: `0 0 10px ${h.shadow}` }} />
                       <div>
@@ -223,9 +220,9 @@ export default function SiteNav() {
               </div>
             ))}
 
-            <div className="mb-[14px] mt-[30px] font-mono text-[11px] tracking-[3px] text-cyan">{'// THE FIVE HOUSES'}</div>
+            <div className="mb-[14px] mt-[30px] font-mono text-[11px] tracking-[3px] text-cyan">{'// THE GREAT HOUSES'}</div>
             <div className="flex flex-col gap-3">
-              {FIVE_HOUSES.map((h) => (
+              {GREAT_HOUSES.map((h) => (
                 <div key={h.name} onClick={closeNav} className={s.mobileHouseRow}>
                   <span className="h-[30px] w-1 shrink-0" style={{ background: h.color, boxShadow: `0 0 10px ${h.shadow}` }} />
                   <div>
@@ -244,11 +241,10 @@ export default function SiteNav() {
                 SEARCH
               </span>
               <span className="cursor-pointer">EN ▾</span>
-              <Link href="/login" onClick={closeNav} className="cursor-pointer text-[rgba(245,245,250,.7)] no-underline">SIGN IN</Link>
             </div>
 
-            <Link href="/dashboard" onClick={closeNav} className={s.mobilePlayBtn}>
-              PLAY FREE →
+            <Link href="/login" onClick={closeNav} className={s.mobilePlayBtn}>
+              SIGN IN →
             </Link>
           </div>
         </div>

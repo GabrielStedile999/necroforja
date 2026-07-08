@@ -25,8 +25,8 @@ export default function Features() {
             {/* Roster rows */}
             <div className="absolute bottom-7 left-7 right-7 flex flex-col gap-[10px]">
               {[
-                { name: "VEX, THE RUSTSAINT",  level: "LV 24", leftColor: "#ff2d6f", bg: "linear-gradient(135deg,#ff2d6f,#3a1020)" },
-                { name: 'KARRAN-9 "SPLICE"',   level: "LV 19", leftColor: "#00e5ff", bg: "linear-gradient(135deg,#00e5ff,#0a2a30)" },
+                { name: "VEX, THE RUSTSAINT",  level: "230 ¢", leftColor: "#ff2d6f", bg: "linear-gradient(135deg,#ff2d6f,#3a1020)" },
+                { name: 'KARRAN-9 "SPLICE"',   level: "185 ¢", leftColor: "#00e5ff", bg: "linear-gradient(135deg,#00e5ff,#0a2a30)" },
                 { name: "+ RECRUIT FIGHTER",   level: "320 ¢", leftColor: "rgba(255,255,255,.2)", bg: "linear-gradient(135deg,#444,#111)" },
               ].map((row) => (
                 <div key={row.name} className="flex items-center gap-3 bg-white/[0.04] px-[14px] py-[11px]"
@@ -47,7 +47,7 @@ export default function Features() {
               Recruit fighters, bolt on cybernetics, and scavenge the forge for gear. Every scar, weapon, and upgrade persists across the entire campaign.
             </p>
             <div className="ncf-feature-tags flex flex-wrap gap-[10px]">
-              {["DEEP CUSTOMIZATION", "PERSISTENT INJURIES", "5 HOUSES"].map((tag) => (
+              {["DEEP CUSTOMIZATION", "PERSISTENT INJURIES", "17 GANGS"].map((tag) => (
                 <span key={tag} className="border border-white/[0.14] px-[14px] py-2 font-mono text-xs tracking-[1px] text-[rgba(245,245,250,.7)]">
                   {tag}
                 </span>
@@ -88,7 +88,7 @@ export default function Features() {
             <span className="mb-[14px] font-mono text-[13px] tracking-[3px] text-cyan">02 / WORLD</span>
             <h3 className="ncf-feature-h m-0 mb-4 text-[48px] font-bold leading-none tracking-[1px]">A LIVING UNDERHIVE</h3>
             <p className="m-0 mb-[26px] max-w-[460px] text-[17px] leading-[1.65] text-[rgba(245,245,250,.6)]">
-              Territory shifts in real time as thousands fight for control. Seasons rewrite the map, alliances rise and burn, and the spire throne is always in play.
+              Territory shifts after every battle on the table. Campaign seasons rewrite the map, alliances rise and burn, and the spire throne is always in play.
             </p>
             <div className="ncf-feature-tags flex flex-wrap justify-end gap-[10px]">
               {["LIVE TERRITORY WAR", "SEASONAL MAP"].map((tag) => (
