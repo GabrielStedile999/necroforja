@@ -64,7 +64,7 @@ export default function SiteNav() {
               FACTIONS <span className="text-[9px] opacity-70">▼</span>
             </span>
 
-            <span onMouseEnter={() => setMenu(null)} className={s.navText}>WORLD</span>
+            <Link href="/lore" onMouseEnter={() => setMenu(null)} className={`${s.navText} no-underline`}>WORLD</Link>
             <span onMouseEnter={() => setMenu(null)} className={s.navText}>NEWS</span>
             <Link href="/dashboard" onMouseEnter={() => setMenu(null)} className={s.navText}>DASHBOARD</Link>
           </nav>
@@ -113,9 +113,13 @@ export default function SiteNav() {
                 <div>
                   <div className="mb-5 font-mono text-[11px] tracking-[3px] text-hazard">{'// OVERVIEW'}</div>
                   <div className="flex flex-col gap-[15px]">
-                    {["Game Overview","How to Play","Gang & Forge Systems","Lore & Setting","Campaign Journal"].map((l) => (
-                      <span key={l} className={s.megaLink}>{l}</span>
-                    ))}
+                    {["Game Overview","How to Play","Gang & Forge Systems","Lore & Setting","Campaign Journal"].map((l) =>
+                      l === "Lore & Setting" ? (
+                        <Link key={l} href="/lore" className={`${s.megaLink} no-underline`}>{l}</Link>
+                      ) : (
+                        <span key={l} className={s.megaLink}>{l}</span>
+                      ),
+                    )}
                   </div>
                 </div>
                 <div>
@@ -210,15 +214,22 @@ export default function SiteNav() {
             {[
               { num: "01", label: "GAME" },
               { num: "02", label: "FACTIONS" },
-              { num: "03", label: "WORLD" },
+              { num: "03", label: "WORLD", href: "/lore" },
               { num: "04", label: "NEWS" },
-              { num: "05", label: "DASHBOARD" },
-            ].map((item) => (
-              <div key={item.num} onClick={closeNav} className={s.mobileNavItem}>
-                <span className="font-mono text-xs text-[rgba(245,245,250,.35)]">{item.num}</span>
-                <span className="text-[28px] font-bold tracking-[1px]">{item.label}</span>
-              </div>
-            ))}
+              { num: "05", label: "DASHBOARD", href: "/dashboard" },
+            ].map((item) =>
+              item.href ? (
+                <Link key={item.num} href={item.href} onClick={closeNav} className={`${s.mobileNavItem} no-underline text-ink`}>
+                  <span className="font-mono text-xs text-[rgba(245,245,250,.35)]">{item.num}</span>
+                  <span className="text-[28px] font-bold tracking-[1px]">{item.label}</span>
+                </Link>
+              ) : (
+                <div key={item.num} onClick={closeNav} className={s.mobileNavItem}>
+                  <span className="font-mono text-xs text-[rgba(245,245,250,.35)]">{item.num}</span>
+                  <span className="text-[28px] font-bold tracking-[1px]">{item.label}</span>
+                </div>
+              ),
+            )}
 
             <div className="mb-[14px] mt-[30px] font-mono text-[11px] tracking-[3px] text-cyan">{'// THE GREAT HOUSES'}</div>
             <div className="flex flex-col gap-3">

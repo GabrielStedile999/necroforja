@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 /**
- * Sitemap — public pages only: / and /dashboard.
+ * Sitemap — public pages only: /, /lore and /dashboard.
  * Authenticated pages (/admin, /player, /portal) are excluded.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -14,6 +14,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 1,
+    },
+    {
+      url: `${siteUrl}/lore`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.8,
     },
     {
       url: `${siteUrl}/dashboard`,

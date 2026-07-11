@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Permite redirecionar o diretório de build (útil em sandboxes/CI).
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   // Native Node.js addons (NAPI/Rust) cannot be bundled by webpack.
   // Declaring them here tells Next.js to require() them at runtime instead.
   serverExternalPackages: ["@node-rs/argon2"],
@@ -10,6 +12,8 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "*.supabase.co" },
     ],
+    // Qualidades permitidas para next/image (90 usada nas figuras do lore)
+    qualities: [75, 90],
   },
   // Cabeçalhos de segurança básicos (ver seção 9 do PLANO-TECNICO.md)
   async headers() {
