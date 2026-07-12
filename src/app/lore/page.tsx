@@ -30,7 +30,7 @@ export const metadata: Metadata = {
 export default function LorePage() {
   return (
     <div
-      className="relative w-full overflow-x-hidden text-ink"
+      className="relative w-full overflow-x-clip text-ink"
       style={{
         background: "#0b0a0d",
         backgroundImage:

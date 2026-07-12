@@ -35,9 +35,8 @@ export default function LoreCTA() {
             </span>
           </Link>
 
-          {/* TODO: apontar para a página How to Play quando existir (issue #7) */}
           <Link
-            href="/#game"
+            href="/how-to-play"
             className="clip-card-br-16 group relative block overflow-hidden border border-hazard/30 bg-[linear-gradient(150deg,#1a1020,#0a0810)] p-7 no-underline transition-colors hover:border-hazard"
           >
             <div className="mb-2 font-mono text-[11px] tracking-[2px] text-hazard">HOW TO PLAY</div>
