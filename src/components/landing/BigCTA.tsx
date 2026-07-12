@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 /**
  * "ENTER THE UNDERHIVE" — full-width call-to-action strip.
  * Tailwind layout + globals.css stripe/grid utilities.
@@ -25,10 +27,12 @@ export default function BigCTA() {
         </h2>
 
         <div className="flex flex-wrap justify-center gap-[18px]">
-          {/* TODO: point to the How to Play page once it exists (issue #7) */}
-          <div className="inline-flex items-center px-[46px] py-[18px] text-[18px] font-bold tracking-[3px] text-[#0a0a0c] bg-hazard cursor-pointer no-underline clip-btn-72 shadow-cta-magenta-lg transition-[filter] hover:brightness-[1.12]">
+          <Link
+            href="/how-to-play"
+            className="inline-flex items-center px-[46px] py-[18px] text-[18px] font-bold tracking-[3px] text-[#0a0a0c] bg-hazard cursor-pointer no-underline clip-btn-72 shadow-cta-magenta-lg transition-[filter] hover:brightness-[1.12]"
+          >
             HOW TO START
-          </div>
+          </Link>
 
           {/* TODO: point to the Gangs page once it exists (issue #8) */}
           <div className="inline-flex cursor-pointer items-center border border-white/[0.22] px-[42px] py-[18px] text-[18px] font-semibold tracking-[3px] text-ink transition-[border-color] hover:border-cyan">

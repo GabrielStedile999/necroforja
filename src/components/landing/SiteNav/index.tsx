@@ -116,6 +116,8 @@ export default function SiteNav() {
                     {["Game Overview","How to Play","Gang & Forge Systems","Lore & Setting","Campaign Journal"].map((l) =>
                       l === "Lore & Setting" ? (
                         <Link key={l} href="/lore" className={`${s.megaLink} no-underline`}>{l}</Link>
+                      ) : l === "How to Play" ? (
+                        <Link key={l} href="/how-to-play" className={`${s.megaLink} no-underline`}>{l}</Link>
                       ) : (
                         <span key={l} className={s.megaLink}>{l}</span>
                       ),
@@ -213,10 +215,11 @@ export default function SiteNav() {
 
             {[
               { num: "01", label: "GAME" },
-              { num: "02", label: "FACTIONS" },
-              { num: "03", label: "WORLD", href: "/lore" },
-              { num: "04", label: "NEWS" },
-              { num: "05", label: "DASHBOARD", href: "/dashboard" },
+              { num: "02", label: "HOW TO PLAY", href: "/how-to-play" },
+              { num: "03", label: "FACTIONS" },
+              { num: "04", label: "WORLD", href: "/lore" },
+              { num: "05", label: "NEWS" },
+              { num: "06", label: "DASHBOARD", href: "/dashboard" },
             ].map((item) =>
               item.href ? (
                 <Link key={item.num} href={item.href} onClick={closeNav} className={`${s.mobileNavItem} no-underline text-ink`}>
