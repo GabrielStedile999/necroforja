@@ -54,7 +54,7 @@ function StepWalker({ steps, accent }: { steps: readonly CombatStep[]; accent: s
 				</span>
 				<div>
 					<div className="mb-2 text-[18px] font-bold uppercase leading-[1.1] tracking-[0.5px]">{step.title}</div>
-					<p className="m-0 text-[14px] leading-[1.7] text-[rgba(245,245,250,.68)]">{step.text}</p>
+					<p className="m-0 text-justify text-[14px] leading-[1.7] text-[rgba(245,245,250,.68)]">{step.text}</p>
 				</div>
 			</div>
 
@@ -148,7 +148,7 @@ function WoundCalculator({ accent }: { accent: string }) {
 			<div className="mb-1 font-mono text-[11px] tracking-[3px]" style={{ color: accent }}>
 				{"// "}CALCULADORA TO WOUND
 			</div>
-			<p className="m-0 mb-6 text-[13px] leading-[1.6] text-[rgba(245,245,250,.55)]">
+			<p className="m-0 mb-6 text-justify text-[13px] leading-[1.6] text-[rgba(245,245,250,.55)]">
 				Strength da arma contra Toughness do alvo — o dado mostra o que você
 				precisa rolar para ferir.
 			</p>
@@ -236,7 +236,7 @@ export default function CombatFlow({ accent }: { accent: string }) {
 					)}
 
 					{tab === "fight" && (
-						<p className="m-0 mt-8 border-l-2 border-cyan bg-[rgba(0,229,255,.05)] p-4 pl-5 text-[13px] leading-[1.65] text-[rgba(245,245,250,.65)]">
+						<p className="m-0 mt-8 border-l-2 border-cyan bg-[rgba(0,229,255,.05)] p-4 pl-5 text-justify text-[13px] leading-[1.65] text-[rgba(245,245,250,.65)]">
 							Corpo a corpo é mortal para os dois lados: quem apanha e sobrevive
 							engaged <strong className="text-ink">bate de volta</strong> na mesma
 							ativação. Faça as contas antes de dar charge.
@@ -265,7 +265,7 @@ export default function CombatFlow({ accent }: { accent: string }) {
 										<div className="text-[13px] font-bold uppercase tracking-[0.5px]" style={{ color: d.color }}>
 											{d.name}
 										</div>
-										<div className="text-[12.5px] leading-[1.55] text-[rgba(245,245,250,.6)]">{d.text}</div>
+										<div className="text-justify text-[12.5px] leading-[1.55] text-[rgba(245,245,250,.6)]">{d.text}</div>
 									</div>
 								</div>
 							))}

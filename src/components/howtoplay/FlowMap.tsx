@@ -25,7 +25,7 @@ export default function FlowMap() {
 				<h2 className="m-0 mb-4 text-[clamp(28px,4vw,44px)] font-bold uppercase leading-[1.02] tracking-[1px]">
 					As 3 grandes fases
 				</h2>
-				<p className="m-0 mb-[48px] max-w-[720px] text-[15px] leading-[1.75] text-[rgba(245,245,250,.65)]">
+				<p className="m-0 mb-[48px] max-w-[720px] text-justify text-[15px] leading-[1.75] text-[rgba(245,245,250,.65)]">
 					Todo jogo de Necromunda acontece nesta ordem. Clique em uma fase para
 					pular direto para o checklist dela.
 				</p>
@@ -71,7 +71,7 @@ export default function FlowMap() {
 									<div className="mb-3 font-mono text-[10px] tracking-[2px]" style={{ color: hex }}>
 										{phase.sub}
 									</div>
-									<p className="m-0 mb-4 min-h-[63px] text-[13px] leading-[1.6] text-[rgba(245,245,250,.6)]">
+									<p className="m-0 mb-4 min-h-[63px] text-justify text-[13px] leading-[1.6] text-[rgba(245,245,250,.6)]">
 										{phase.text}
 									</p>
 									<span

@@ -25,7 +25,7 @@ export const HTP_CHAPTERS: HtpChapter[] = [
 export const HTP_INTRO = {
 	image: "criminal",
 	kicker: "// HOW TO PLAY",
-	lead: "Toda batalha no Underhive segue o mesmo ritual.",
+	lead: "Toda batalha em Necromunda segue o mesmo ritual.",
 	body:
 		"Necromunda é um jogo de escaramuça: duas gangues de miniaturas, um tabuleiro denso de terreno, dados e decisões brutais. Este guia percorre o fluxo completo de uma partida — do aperto de mãos antes da batalha até o relatório ao Arbitrator — em checklists que você pode marcar direto da mesa.",
 	close: "BASEADO NO NECROMUNDA CORE RULEBOOK (2023) · PÁGINAS CITADAS EM CADA PASSO",
@@ -34,7 +34,6 @@ export const HTP_INTRO = {
 /** Legenda "como ler este guia" (caixa do documento original). */
 export const HOW_TO_READ = [
 	{ icon: "checklist", title: "Checklists", text: "Passos práticos que você marca conforme executa — o progresso fica salvo enquanto a página está aberta." },
-	{ icon: "box", title: "Caixas de destaque", text: "Ciano = informação · rosa = regra-chave ou atenção. As mesmas convenções do documento de mesa." },
 	{ icon: "ref", title: "Referências", text: "Cada passo aponta a página do Core Rulebook (2023) onde a regra completa está: (pg. XX)." },
 ];
 
@@ -60,8 +59,8 @@ export const START_KIT: KitItem[] = [
 		id: "livro",
 		icon: "book",
 		tag: "ESSENCIAL",
-		title: "Necromunda Core Rulebook (2023)",
-		text: "O livro de regras central. Todas as referências de página deste guia apontam para ele. Para a campanha, o suplemento The Aranthian Succession: Cinderak Burning entra em cena.",
+		title: "Core Rulebook + livro da sua gangue",
+		text: "O livro de regras central. Todas as referências de página deste guia apontam para ele. Já o livro da sua gangue (House of Blades, Chains, Iron…) traz as regras, fighters e equipamentos específicos da Casa que você escolheu.",
 	},
 	{
 		id: "dados",
@@ -87,9 +86,9 @@ export const START_KIT: KitItem[] = [
 	{
 		id: "terreno",
 		icon: "terrain",
-		tag: "A MESA",
+		tag: "RECOMENDADO",
 		title: "Terreno — muito terreno",
-		text: "O Underhive é vertical e claustrofóbico. Passarelas, torres, contêineres e ruínas: quanto mais denso o tabuleiro, melhor o jogo. Zone Mortalis (corredores) ou Sector Mechanicus (plataformas).",
+		text: "O Underhive é vertical e claustrofóbico. Passarelas, torres, contêineres e ruínas: quanto mais denso o tabuleiro, melhor o jogo. Zone Mortalis (corredores), Sector Mechanicus (plataformas) — ou, nos Ash Wastes, rodovias e ruínas abertas.",
 	},
 ];
 
@@ -187,7 +186,7 @@ export const PRE_BATTLE_STEPS: HtpStep[] = [
 		ref: "pg. 98",
 		items: [
 			"Em skirmish: jogadores escolhem; em desempate, role off.",
-			"Em campanha (Succession Campaign): role 2D6 na Scenario Selection Table (Cinderak Burning, pg. 60).",
+			"Em campanha (Succession Campaign): utilize Scenario Selection Table ou instruções do árbitro.",
 			"Defina Atacante/Defensor: desafiante = atacante em campanha; em skirmish, D6 maior escolhe quem é o quê.",
 			"Home Turf Advantage: verifique se o cenário concede ao defensor (afeta Bottle).",
 		],
@@ -395,14 +394,39 @@ export const ACTIVATION_FLOW = [
 	{ title: "Verificar Status", text: "Standing & Active / Engaged, Prone & Pinned / Seriously Injured, Broken — isso define as ações disponíveis." },
 	{ title: "Verificar Conditions", text: "Broken, Webbed, Blind, Insane… — algumas impõem ação obrigatória ou penalidades." },
 	{ title: "Mudar facing (opcional)", text: "Se Standing, antes de declarar ações." },
-	{ title: "1ª ação", text: "Declare e resolva. Mensure distâncias só quando a regra pedir." },
+	{ title: "1ª ação", text: "Declare e resolva." },
 	{ title: "2ª ação", text: "Se a primeira não foi Double." },
 	{ title: "Aplicar mudanças de Status", text: "Ex.: Take Cover deixou o fighter Prone & Pinned." },
 	{ title: "Remover Ready", text: "A ativação terminou — o modelo não age de novo neste round." },
 ];
 
+/** Guia de ações do jogo — tipo: S = Simple, B = Basic, D = Double. */
+export type GameAction = { name: string; type: "S" | "B" | "D"; effect: string };
+
+export const GAME_ACTIONS: GameAction[] = [
+	{ name: "Aim", type: "B", effect: "+1 no hit ao próximo Shoot desta ativação." },
+	{ name: "Blind Fire", type: "D", effect: "Prone: atira em 360°, -2 ao acerto." },
+	{ name: "Charge", type: "D", effect: "Move M + D3″; se terminar engaged → Fight free." },
+	{ name: "Coup de Grace", type: "S", effect: "Finaliza inimigo Prone & SI a ≤1″ (Out of Action)." },
+	{ name: "Crawl", type: "D", effect: "Prone: move ½M (única ação se Prone & SI)." },
+	{ name: "Fight", type: "B", effect: "Ataques de corpo a corpo (engaged)." },
+	{ name: "Move", type: "S", effect: "Move até M; pode escalar, cruzar vãos e pular." },
+	{ name: "Reload", type: "S", effect: "Teste de Ammo p/ remover Out of Ammo." },
+	{ name: "Retreat", type: "B", effect: "Teste de Initiative; passou = Move D6″ (inimigos podem reagir)." },
+	{ name: "Running for Cover", type: "D", effect: "Broken: Standing 2D6″M / Prone ½M, rumo a cobertura." },
+	{ name: "Shoot", type: "B", effect: "Ataque à distância." },
+	{ name: "Stand Up", type: "B", effect: "De Prone & Pinned volta a Standing & Active." },
+	{ name: "Take Cover", type: "B", effect: "Move ½M e fica Prone & Pinned." },
+];
+
+export const ACTION_TYPE_COLOR: Record<GameAction["type"], { color: string; label: string }> = {
+	S: { color: "#59e36b", label: "Simple" },
+	B: { color: "#00e5ff", label: "Basic" },
+	D: { color: "#ff8a3d", label: "Double" },
+};
+
 export const ACTION_TYPES = [
-	{ name: "Simple", desc: "Pode repetir na mesma ativação (ex.: 2 Moves).", color: "#59e36b" },
+	{ name: "Simple", desc: "Pode repetir na mesma ativação.", color: "#59e36b" },
 	{ name: "Basic", desc: "Uma vez por ativação.", color: "#00e5ff" },
 	{ name: "Double", desc: "Usa as DUAS ações da ativação.", color: "#ff8a3d" },
 	{ name: "Free", desc: "Não gasta ação; 1× por ativação; não pode ter o mesmo nome de um Basic feito nesta ativação.", color: "#b07bff" },
@@ -415,7 +439,7 @@ export type CombatStep = { title: string; text: string };
 export const SHOOT_STEPS: CombatStep[] = [
 	{ title: "Prioridade de alvo", text: "Mire o inimigo elegível MAIS PRÓXIMO. Para outro alvo, teste Cool (2D6 ≥ Cool). Exceções: alvo Prone & SI ou mais difícil de acertar pode ser ignorado." },
 	{ title: "Declarar o tiro", text: "Escolha a arma e o alvo." },
-	{ title: "Medir alcance", text: "Além do Long range = erro automático (mas role o Firepower dice mesmo assim)." },
+	{ title: "Medir alcance", text: "Confirme long or short range da arma" },
 	{ title: "Hit roll", text: "Teste de BS (1D6 ≥ BS) com modificadores: cobertura parcial -1, total -2; Accuracy ±; alvo Engaged -1; alvo Prone a Long -1; ponto no terreno -2. Natural 1 = falha." },
 	{ title: "Resolver hits", text: "Siga a sequência de resolução (wound → save → damage). Modelo Standing & Active atingido por tiro fica Prone & Pinned." },
 	{ title: "Firepower dice", text: "Se sair o símbolo de Ammo, faça teste de Ammo. Falhou = arma Out of Ammo (precisa de Reload)." },

@@ -76,7 +76,7 @@ export default function HtpCTA() {
 								<div className="mb-2 text-[21px] font-bold uppercase leading-[1.05] text-ink">
 									{card.title}
 								</div>
-								<div className="mb-5 text-[13px] leading-[1.55] text-[rgba(245,245,250,.6)]">
+								<div className="mb-5 text-justify text-[13px] leading-[1.55] text-[rgba(245,245,250,.6)]">
 									{card.text}
 								</div>
 								<span
@@ -108,7 +108,7 @@ export default function HtpCTA() {
 								<div className="mb-1 font-mono text-[12px] tracking-[2px] text-ink group-hover:text-cyan">
 									{r.label} ↗
 								</div>
-								<div className="text-[12.5px] leading-[1.55] text-[rgba(245,245,250,.55)]">{r.text}</div>
+								<div className="text-justify text-[12.5px] leading-[1.55] text-[rgba(245,245,250,.55)]">{r.text}</div>
 							</a>
 						))}
 					</div>

@@ -70,7 +70,7 @@ function Chapter({
 					<span className="h-px flex-1 bg-white/[0.1]" />
 				</div>
 				{intro && (
-					<p className="m-0 mb-[44px] max-w-[760px] text-[15px] leading-[1.75] text-[rgba(245,245,250,.65)]">
+					<p className="m-0 mb-[44px] max-w-[760px] text-justify text-[15px] leading-[1.75] text-[rgba(245,245,250,.65)]">
 						{intro}
 					</p>
 				)}
@@ -83,7 +83,7 @@ function Chapter({
 export default function HowToPlayPage() {
 	return (
 		<div
-			className="relative w-full overflow-x-hidden text-ink"
+			className="relative w-full overflow-x-clip text-ink"
 			style={{
 				background: "#0b0a0d",
 				backgroundImage:

@@ -11,13 +11,6 @@ function LegendIcon({ name }: { name: string }) {
 				<path d="M8 12l3 3 5-6" />
 			</svg>
 		);
-	if (name === "box")
-		return (
-			<svg {...common}>
-				<rect x="3" y="5" width="18" height="14" rx="1" />
-				<line x1="3" y1="9" x2="21" y2="9" />
-			</svg>
-		);
 	return (
 		<svg {...common}>
 			<path d="M4 19V5a2 2 0 0 1 2-2h13v18H6a2 2 0 0 1-2-2z" />
@@ -67,7 +60,7 @@ export default function HtpHero() {
 				</p>
 
 				{/* Como ler este guia */}
-				<div className="grid gap-4 md:grid-cols-3">
+				<div className="grid gap-4 md:grid-cols-2">
 					{HOW_TO_READ.map((item) => (
 						<div
 							key={item.title}
@@ -77,7 +70,7 @@ export default function HtpHero() {
 								<LegendIcon name={item.icon} />
 								<span className="font-mono text-[11px] tracking-[3px]">{item.title.toUpperCase()}</span>
 							</div>
-							<p className="m-0 text-[13px] leading-[1.6] text-[rgba(245,245,250,.62)]">{item.text}</p>
+							<p className="m-0 text-justify text-[13px] leading-[1.6] text-[rgba(245,245,250,.62)]">{item.text}</p>
 						</div>
 					))}
 				</div>

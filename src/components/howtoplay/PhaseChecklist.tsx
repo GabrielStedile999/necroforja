@@ -122,7 +122,7 @@ export default function PhaseChecklist({
 												<span className="mt-[2px] shrink-0 font-mono text-[11px]" style={{ color: accent }}>
 													☐
 												</span>
-												<span>{item}</span>
+												<span className="text-justify">{item}</span>
 											</li>
 										))}
 									</ul>
@@ -143,7 +143,7 @@ export default function PhaseChecklist({
 												{step.note.title.toUpperCase()}
 											</div>
 											{step.note.lines.map((line, i) => (
-												<p key={i} className="m-0 text-[13px] leading-[1.65] text-[rgba(245,245,250,.68)]">
+												<p key={i} className="m-0 text-justify text-[13px] leading-[1.65] text-[rgba(245,245,250,.68)]">
 													{line}
 												</p>
 											))}

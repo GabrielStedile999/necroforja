@@ -55,7 +55,7 @@ export default function QuickRef({ accent }: { accent: string }) {
 						<div className="mb-3 text-[18px] font-bold uppercase tracking-[0.5px]" style={{ color: active.color }}>
 							{active.name}
 						</div>
-						<p className="m-0 text-[13.5px] leading-[1.65] text-[rgba(245,245,250,.68)]">{active.text}</p>
+						<p className="m-0 text-justify text-[13.5px] leading-[1.65] text-[rgba(245,245,250,.68)]">{active.text}</p>
 					</div>
 				</div>
 			</div>
@@ -78,7 +78,7 @@ export default function QuickRef({ accent }: { accent: string }) {
 							</div>
 						))}
 					</div>
-					<p className="m-0 mt-4 border-l-2 border-hazard bg-[rgba(255,45,111,.06)] p-3 pl-4 text-[12.5px] leading-[1.6] text-[rgba(245,245,250,.65)]">
+					<p className="m-0 mt-4 border-l-2 border-hazard bg-[rgba(255,45,111,.06)] p-3 pl-4 text-justify text-[12.5px] leading-[1.6] text-[rgba(245,245,250,.65)]">
 						Natural 1 em Hit ou Save = falha automática. Roll-off: maior vence;
 						empate rola de novo.
 					</p>
@@ -98,7 +98,7 @@ export default function QuickRef({ accent }: { accent: string }) {
 								>
 									{row.xp}
 								</span>
-								<span className="text-[rgba(245,245,250,.65)]">{row.text}</span>
+								<span className="text-justify text-[rgba(245,245,250,.65)]">{row.text}</span>
 							</div>
 						))}
 					</div>
@@ -113,7 +113,7 @@ export default function QuickRef({ accent }: { accent: string }) {
 						{END_CONDITIONS.map((c) => (
 							<div key={c.title}>
 								<div className="mb-1 text-[13px] font-bold uppercase tracking-[0.5px]">{c.title}</div>
-								<p className="m-0 text-[12.5px] leading-[1.6] text-[rgba(245,245,250,.6)]">{c.text}</p>
+								<p className="m-0 text-justify text-[12.5px] leading-[1.6] text-[rgba(245,245,250,.6)]">{c.text}</p>
 							</div>
 						))}
 					</div>

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { START_KIT, type KitItem } from "./content";
 
 /** Ícones inline de cada item do kit — traço fino, estética terminal. */
@@ -75,7 +76,7 @@ function KitIcon({ name, color }: { name: KitItem["icon"]; color: string }) {
 const TAG_COLOR: Record<string, string> = {
 	ESSENCIAL: "#00e5ff",
 	"NA NECROFORJA": "#ff2d6f",
-	"A MESA": "#59e36b",
+	RECOMENDADO: "#59e36b",
 };
 
 /**
@@ -84,7 +85,10 @@ const TAG_COLOR: Record<string, string> = {
  */
 export default function StartKit() {
 	return (
-		<section id="comece-aqui" className="ncf-section scroll-mt-[130px] border-t border-white/[0.06] py-[88px]">
+		<section
+			id="comece-aqui"
+			className="ncf-section scroll-mt-[130px] border-t border-white/[0.06] py-[88px]"
+		>
 			<div className="ncf-wrap mx-auto max-w-[1380px] px-[48px]">
 				<div className="mb-[18px] flex items-center gap-[14px]">
 					<span className="font-mono text-[13px] tracking-[4px] text-cyan">
@@ -96,9 +100,8 @@ export default function StartKit() {
 				<h2 className="m-0 mb-4 text-[clamp(28px,4vw,44px)] font-bold uppercase leading-[1.02] tracking-[1px]">
 					O que você precisa para jogar
 				</h2>
-				<p className="m-0 mb-[44px] max-w-[720px] text-[15px] leading-[1.75] text-[rgba(245,245,250,.65)]">
-					Seis coisas separam você da sua primeira batalha no Underhive. Três já
-					estão na mesa do grupo — o resto é seu.
+				<p className="m-0 mb-[44px] max-w-[720px] text-justify text-[15px] leading-[1.75] text-[rgba(245,245,250,.65)]">
+					Sua primeira batalha no Underhive está próxima.
 				</p>
 
 				<div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -107,23 +110,37 @@ export default function StartKit() {
 						return (
 							<div
 								key={item.id}
-								className="clip-chamfer group border border-white/[0.08] bg-[#0f0d14] p-6 transition-colors hover:border-white/[0.2]"
+								className="clip-chamfer group overflow-hidden border border-white/[0.08] bg-[#0f0d14] transition-colors hover:border-white/[0.2]"
 							>
-								<div className="mb-4 flex items-center justify-between">
-									<KitIcon name={item.icon} color={tagColor} />
-									<span
-										className="font-mono text-[10px] tracking-[2px]"
-										style={{ color: tagColor }}
-									>
-										{item.tag}
-									</span>
+								{/* Imagem do card */}
+								<div className="relative h-[180px] w-full overflow-hidden">
+									<Image
+										src={`/howtoplay/kit-${item.id}.webp`}
+										alt={item.title}
+										fill
+										sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 430px"
+										className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.04]"
+									/>
+									<div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_55%,rgba(15,13,20,.92))]" />
 								</div>
-								<div className="mb-2 text-[17px] font-bold uppercase leading-[1.1] tracking-[0.5px]">
-									{item.title}
+
+								<div className="p-6 pt-4">
+									<div className="mb-4 flex items-center justify-between">
+										<KitIcon name={item.icon} color={tagColor} />
+										<span
+											className="font-mono text-[10px] tracking-[2px]"
+											style={{ color: tagColor }}
+										>
+											{item.tag}
+										</span>
+									</div>
+									<div className="mb-2 text-[17px] font-bold uppercase leading-[1.1] tracking-[0.5px]">
+										{item.title}
+									</div>
+									<p className="m-0 text-justify text-[13px] leading-[1.65] text-[rgba(245,245,250,.6)]">
+										{item.text}
+									</p>
 								</div>
-								<p className="m-0 text-[13px] leading-[1.65] text-[rgba(245,245,250,.6)]">
-									{item.text}
-								</p>
 							</div>
 						);
 					})}
