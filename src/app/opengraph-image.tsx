@@ -15,7 +15,12 @@ export const alt =
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default function OgImage() {
+export default async function OgImage() {
+  // Official crest (transparent PNG bundled next to this file)
+  const crest = await fetch(new URL("./og-crest.png", import.meta.url)).then(
+    (res) => res.arrayBuffer(),
+  );
+
   return new ImageResponse(
     (
       <div
@@ -29,6 +34,18 @@ export default function OgImage() {
           justifyContent: "space-between",
         }}
       >
+        {/* Official crest — right side */}
+        {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text */}
+        <img
+          src={crest as unknown as string}
+          width={360}
+          height={360}
+          style={{
+            position: "absolute",
+            top: "135px",
+            right: "80px",
+          }}
+        />
         {/* Top accent bar — magenta → cyan gradient */}
         <div
           style={{
@@ -50,7 +67,7 @@ export default function OgImage() {
               background: "rgba(255,45,111,0.12)",
               border: "1px solid rgba(255,45,111,0.4)",
               padding: "4px 12px",
-              width: "fit-content",
+              alignSelf: "flex-start",
             }}
           >
             <div
@@ -77,6 +94,7 @@ export default function OgImage() {
           {/* Title */}
           <div
             style={{
+              display: "flex",
               fontSize: "88px",
               fontWeight: 800,
               color: "#f5f5fa",
@@ -94,7 +112,7 @@ export default function OgImage() {
             style={{
               fontSize: "24px",
               color: "#7d7a95",
-              maxWidth: "680px",
+              maxWidth: "620px",
               lineHeight: 1.4,
               letterSpacing: "0.05em",
             }}

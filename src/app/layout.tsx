@@ -92,7 +92,7 @@ export const metadata: Metadata = {
 	icons: {
 		// Apple-touch-icon for iOS home-screen add (manifest icons are ignored there)
 		apple: [
-			{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+			{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
 		],
 		icon: [
 			{ url: "/icon.svg", type: "image/svg+xml" },

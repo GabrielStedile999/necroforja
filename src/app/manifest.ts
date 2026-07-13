@@ -15,8 +15,8 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     display: "standalone",
     orientation: "any",
-    background_color: "#0b0c0e",
-    theme_color: "#f2a900",
+    background_color: "#0b0a0d",
+    theme_color: "#ff2d6f",
     lang: "en",
     categories: ["games", "utilities"],
     icons: [
