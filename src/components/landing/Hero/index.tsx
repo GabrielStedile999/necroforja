@@ -79,11 +79,16 @@ export default function Hero() {
 				</div>
 
 				{/* H1 */}
+				{/*
+				 * issue #14 — NECRO and FORJA are atomic inline-blocks: they can
+				 * never break mid-word; when the line doesn't fit, the browser
+				 * wraps exactly between them (NECRO / FORJA), at any viewport.
+				 */}
 				<h1
-					className={`ncf-h1 m-0 text-[clamp(64px,9.6vw,158px)] font-bold leading-[0.9] tracking-[2px] text-[#fafaff] whitespace-nowrap ${s.heroTitle}`}
+					className={`ncf-h1 m-0 text-[clamp(64px,9.6vw,158px)] font-bold leading-[0.9] tracking-[2px] text-[#fafaff] ${s.heroTitle}`}
 				>
-					NECRO
-					<span className="text-hazard animate-flicker">FORJA</span>
+					<span className="inline-block">NECRO</span>
+					<span className="inline-block text-hazard animate-flicker">FORJA</span>
 				</h1>
 
 				{/* Tagline */}
