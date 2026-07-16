@@ -1,20 +1,30 @@
 import Image from "next/image";
-import { LORE_INTRO, LORE_IMG_DIMS } from "./content";
+import { useLocale } from "next-intl";
+import type { Locale } from "@/i18n/config";
+import { LORE_IMG_DIMS } from "./content";
+import { getLoreIntro, toLocale } from "./content.i18n";
+
+const STRINGS: Record<Locale, { backdropAlt: string }> = {
+  en: { backdropAlt: "A hive city of Necromunda" },
+  "pt-BR": { backdropAlt: "Cidade colmeia de Necromunda" },
+};
 
 /**
  * Hero da página de lore — citação de abertura do documento sobre um
  * backdrop da colmeia, com scanlines e a estética hazard/cyan do site.
  */
 export default function LoreHero() {
-  const dims = LORE_IMG_DIMS[LORE_INTRO.image] ?? { w: 1284, h: 963 };
+  const locale = toLocale(useLocale());
+  const intro = getLoreIntro(locale);
+  const dims = LORE_IMG_DIMS[intro.image] ?? { w: 1284, h: 963 };
 
   return (
     <section className="relative overflow-hidden border-b border-white/[0.08]">
       {/* Backdrop */}
       <div className="absolute inset-0">
         <Image
-          src={`/lore/${LORE_INTRO.image}.webp`}
-          alt="Cidade colmeia de Necromunda"
+          src={`/lore/${intro.image}.webp`}
+          alt={STRINGS[locale].backdropAlt}
           width={dims.w}
           height={dims.h}
           priority
@@ -31,15 +41,15 @@ export default function LoreHero() {
         </div>
 
         <h1 className="glow-magenta m-0 mb-[28px] max-w-[900px] text-[clamp(38px,6vw,76px)] font-bold uppercase leading-[0.98] tracking-[2px]">
-          {LORE_INTRO.lead}
+          {intro.lead}
         </h1>
 
         <p className="m-0 mb-[20px] max-w-[760px] border-l-2 border-hazard pl-5 text-justify text-[16px] leading-[1.75] text-[rgba(245,245,250,.78)]">
-          {LORE_INTRO.body}
+          {intro.body}
         </p>
 
         <p className="m-0 font-mono text-[13px] tracking-[2px] text-cyan">
-          {LORE_INTRO.close}
+          {intro.close}
         </p>
       </div>
     </section>

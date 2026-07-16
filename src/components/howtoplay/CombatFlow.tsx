@@ -1,24 +1,78 @@
 "use client";
 
 import { useState } from "react";
-import {
-	SHOOT_STEPS,
-	FIGHT_STEPS,
-	HIT_STEPS,
-	INJURY_DICE,
-	HIT_MODIFIERS,
-	woundTarget,
-	type CombatStep,
-} from "./content";
+import { useLocale } from "next-intl";
+import type { Locale } from "@/i18n/config";
+import { woundTarget, type CombatStep } from "./content";
+import { getHtpContent } from "./content.i18n";
 
-const TABS = [
-	{ id: "shoot", label: "TIRO", sub: "Shoot Action · pg. 116", steps: SHOOT_STEPS },
-	{ id: "fight", label: "CORPO A CORPO", sub: "Fight Action · pg. 120", steps: FIGHT_STEPS },
-	{ id: "hit", label: "RESOLVER HITS", sub: "Resolve Hits · pg. 124", steps: HIT_STEPS },
-] as const;
+type TabId = "shoot" | "fight" | "hit";
+
+/** Small per-locale UI strings owned by this component. */
+const STRINGS: Record<
+	Locale,
+	{
+		tabShoot: string;
+		tabFight: string;
+		tabHit: string;
+		stepAria: (n: number) => string;
+		prev: string;
+		next: string;
+		hitModifiers: string;
+		fightTip: { before: string; bold: string; after: string };
+		calcTitle: string;
+		calcIntro: string;
+		attackStrength: string;
+		targetToughness: string;
+		onD6ToWound: string;
+	}
+> = {
+	en: {
+		tabShoot: "SHOOTING",
+		tabFight: "CLOSE COMBAT",
+		tabHit: "RESOLVE HITS",
+		stepAria: (n) => `Step ${n}`,
+		prev: "← PREVIOUS",
+		next: "NEXT →",
+		hitModifiers: "HIT MODIFIERS",
+		fightTip: {
+			before: "Close combat is deadly for both sides: whoever takes the hits and survives engaged ",
+			bold: "strikes back",
+			after: " in the same activation. Do the maths before you charge.",
+		},
+		calcTitle: "TO WOUND CALCULATOR",
+		calcIntro:
+			"The weapon's Strength against the target's Toughness — the die shows what you need to roll to wound.",
+		attackStrength: "ATTACK STRENGTH",
+		targetToughness: "TARGET TOUGHNESS",
+		onD6ToWound: "ON THE D6 TO WOUND",
+	},
+	"pt-BR": {
+		tabShoot: "TIRO",
+		tabFight: "CORPO A CORPO",
+		tabHit: "RESOLVER HITS",
+		stepAria: (n) => `Passo ${n}`,
+		prev: "← ANTERIOR",
+		next: "PRÓXIMO →",
+		hitModifiers: "MODIFICADORES DE ACERTO",
+		fightTip: {
+			before: "Corpo a corpo é mortal para os dois lados: quem apanha e sobrevive engaged ",
+			bold: "bate de volta",
+			after: " na mesma ativação. Faça as contas antes de dar charge.",
+		},
+		calcTitle: "CALCULADORA TO WOUND",
+		calcIntro:
+			"Strength da arma contra Toughness do alvo — o dado mostra o que você precisa rolar para ferir.",
+		attackStrength: "STRENGTH DO ATAQUE",
+		targetToughness: "TOUGHNESS DO ALVO",
+		onD6ToWound: "NO D6 PARA FERIR",
+	},
+};
 
 /** Sequência passo a passo com navegação anterior/próximo. */
 function StepWalker({ steps, accent }: { steps: readonly CombatStep[]; accent: string }) {
+	const locale = useLocale() as Locale;
+	const s = STRINGS[locale];
 	const [idx, setIdx] = useState(0);
 	const step = steps[Math.min(idx, steps.length - 1)];
 
@@ -32,7 +86,7 @@ function StepWalker({ steps, accent }: { steps: readonly CombatStep[]; accent: s
 					<button
 						key={i}
 						onClick={() => setIdx(i)}
-						aria-label={`Passo ${i + 1}`}
+						aria-label={s.stepAria(i + 1)}
 						aria-current={i === idx}
 						className="h-[8px] flex-1 cursor-pointer border-0 p-0 transition-all"
 						style={{
@@ -65,7 +119,7 @@ function StepWalker({ steps, accent }: { steps: readonly CombatStep[]; accent: s
 					disabled={idx === 0}
 					className="cursor-pointer border border-white/[0.15] bg-transparent px-4 py-2 text-[rgba(245,245,250,.7)] transition-colors hover:border-white/[0.4] disabled:cursor-default disabled:opacity-30"
 				>
-					← ANTERIOR
+					{s.prev}
 				</button>
 				<span className="text-[rgba(245,245,250,.4)]">
 					{idx + 1} / {steps.length}
@@ -76,7 +130,7 @@ function StepWalker({ steps, accent }: { steps: readonly CombatStep[]; accent: s
 					className="cursor-pointer border bg-transparent px-4 py-2 transition-colors disabled:cursor-default disabled:opacity-30"
 					style={{ borderColor: `${accent}77`, color: accent }}
 				>
-					PRÓXIMO →
+					{s.next}
 				</button>
 			</div>
 		</div>
@@ -139,6 +193,8 @@ function SelectRow({
 
 /** Calculadora To Wound — escolha S e T e veja o alvo do D6. */
 function WoundCalculator({ accent }: { accent: string }) {
+	const locale = useLocale() as Locale;
+	const str = STRINGS[locale];
 	const [s, setS] = useState(3);
 	const [t, setT] = useState(3);
 	const target = woundTarget(s, t);
@@ -146,15 +202,15 @@ function WoundCalculator({ accent }: { accent: string }) {
 	return (
 		<div className="clip-chamfer border border-white/[0.08] bg-[#0f0d14] p-6 md:p-8">
 			<div className="mb-1 font-mono text-[11px] tracking-[3px]" style={{ color: accent }}>
-				{"// "}CALCULADORA TO WOUND
+				{"// "}
+				{str.calcTitle}
 			</div>
 			<p className="m-0 mb-6 text-justify text-[13px] leading-[1.6] text-[rgba(245,245,250,.55)]">
-				Strength da arma contra Toughness do alvo — o dado mostra o que você
-				precisa rolar para ferir.
+				{str.calcIntro}
 			</p>
 
-			<SelectRow label="STRENGTH DO ATAQUE" value={s} set={setS} color="#ff2d6f" />
-			<SelectRow label="TOUGHNESS DO ALVO" value={t} set={setT} color="#00e5ff" />
+			<SelectRow label={str.attackStrength} value={s} set={setS} color="#ff2d6f" />
+			<SelectRow label={str.targetToughness} value={t} set={setT} color="#00e5ff" />
 
 			<div className="mt-6 flex items-center justify-center gap-6">
 				<div className="text-right">
@@ -165,7 +221,7 @@ function WoundCalculator({ accent }: { accent: string }) {
 				</div>
 				<DieFace value={target} color={accent} />
 				<div className="max-w-[120px] font-mono text-[11px] leading-[1.6] tracking-[1px] text-[rgba(245,245,250,.5)]">
-					NO D6 PARA FERIR
+					{str.onD6ToWound}
 				</div>
 			</div>
 		</div>
@@ -178,7 +234,18 @@ function WoundCalculator({ accent }: { accent: string }) {
  * acerto e o significado dos Injury dice.
  */
 export default function CombatFlow({ accent }: { accent: string }) {
-	const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("shoot");
+	const locale = useLocale() as Locale;
+	const { SHOOT_STEPS, FIGHT_STEPS, HIT_STEPS, INJURY_DICE, HIT_MODIFIERS } =
+		getHtpContent(locale);
+	const s = STRINGS[locale];
+
+	const TABS = [
+		{ id: "shoot", label: s.tabShoot, sub: "Shoot Action · pg. 116", steps: SHOOT_STEPS },
+		{ id: "fight", label: s.tabFight, sub: "Fight Action · pg. 120", steps: FIGHT_STEPS },
+		{ id: "hit", label: s.tabHit, sub: "Resolve Hits · pg. 124", steps: HIT_STEPS },
+	] as const;
+
+	const [tab, setTab] = useState<TabId>("shoot");
 	const activeTab = TABS.find((t) => t.id === tab) ?? TABS[0];
 
 	return (
@@ -220,13 +287,14 @@ export default function CombatFlow({ accent }: { accent: string }) {
 					{tab === "shoot" && (
 						<div className="mt-8 border-t border-white/[0.06] pt-6">
 							<div className="mb-3 font-mono text-[11px] tracking-[3px]" style={{ color: accent }}>
-								{"// "}MODIFICADORES DE ACERTO
+								{"// "}
+								{s.hitModifiers}
 							</div>
 							<div className="flex flex-col gap-[6px]">
 								{HIT_MODIFIERS.map((m) => (
 									<div key={m.label} className="flex items-center justify-between gap-4 border-b border-white/[0.05] pb-[6px] text-[13px]">
 										<span className="text-[rgba(245,245,250,.65)]">{m.label}</span>
-										<span className="font-mono font-bold tracking-[1px]" style={{ color: m.mod.startsWith("-") || m.mod === "ERRA" ? "#ff2d6f" : "#59e36b" }}>
+										<span className="font-mono font-bold tracking-[1px]" style={{ color: m.mod.startsWith("-") || m.mod === "ERRA" || m.mod === "MISS" ? "#ff2d6f" : "#59e36b" }}>
 											{m.mod}
 										</span>
 									</div>
@@ -237,9 +305,9 @@ export default function CombatFlow({ accent }: { accent: string }) {
 
 					{tab === "fight" && (
 						<p className="m-0 mt-8 border-l-2 border-cyan bg-[rgba(0,229,255,.05)] p-4 pl-5 text-justify text-[13px] leading-[1.65] text-[rgba(245,245,250,.65)]">
-							Corpo a corpo é mortal para os dois lados: quem apanha e sobrevive
-							engaged <strong className="text-ink">bate de volta</strong> na mesma
-							ativação. Faça as contas antes de dar charge.
+							{s.fightTip.before}
+							<strong className="text-ink">{s.fightTip.bold}</strong>
+							{s.fightTip.after}
 						</p>
 					)}
 				</div>

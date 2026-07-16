@@ -1,13 +1,49 @@
 "use client";
 
+import { useLocale } from "next-intl";
 import { ACCENT_HEX } from "@/components/lore/accents";
-import { FLOW_PHASES } from "./content";
+import type { Locale } from "@/i18n/config";
+import { getHtpContent } from "./content.i18n";
+
+/** Small per-locale UI strings owned by this component. */
+const STRINGS: Record<
+	Locale,
+	{
+		kicker: string;
+		heading: string;
+		intro: string;
+		viewChecklist: string;
+		insideEachRound: string;
+		repeat: string;
+	}
+> = {
+	en: {
+		kicker: "THE GAME LOOP",
+		heading: "The 3 big phases",
+		intro: "Every game of Necromunda happens in this order. Click a phase to jump straight to its checklist.",
+		viewChecklist: "VIEW CHECKLIST →",
+		insideEachRound: "INSIDE EACH ROUND:",
+		repeat: "REPEAT ↻",
+	},
+	"pt-BR": {
+		kicker: "O LOOP DO JOGO",
+		heading: "As 3 grandes fases",
+		intro: "Todo jogo de Necromunda acontece nesta ordem. Clique em uma fase para pular direto para o checklist dela.",
+		viewChecklist: "VER CHECKLIST →",
+		insideEachRound: "DENTRO DE CADA ROUND:",
+		repeat: "REPETE ↻",
+	},
+};
 
 /**
  * 01 · O loop do jogo — mapa interativo das 3 grandes fases.
  * Clicar em uma fase rola até a seção correspondente do guia.
  */
 export default function FlowMap() {
+	const locale = useLocale() as Locale;
+	const { FLOW_PHASES } = getHtpContent(locale);
+	const s = STRINGS[locale];
+
 	const jump = (id: string) => {
 		document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 	};
@@ -17,17 +53,16 @@ export default function FlowMap() {
 			<div className="ncf-wrap mx-auto max-w-[1380px] px-[48px]">
 				<div className="mb-[18px] flex items-center gap-[14px]">
 					<span className="font-mono text-[13px] tracking-[4px] text-hazard">
-						01 {"//"} O LOOP DO JOGO
+						01 {"//"} {s.kicker}
 					</span>
 					<span className="h-px flex-1 bg-white/[0.1]" />
 				</div>
 
 				<h2 className="m-0 mb-4 text-[clamp(28px,4vw,44px)] font-bold uppercase leading-[1.02] tracking-[1px]">
-					As 3 grandes fases
+					{s.heading}
 				</h2>
 				<p className="m-0 mb-[48px] max-w-[720px] text-justify text-[15px] leading-[1.75] text-[rgba(245,245,250,.65)]">
-					Todo jogo de Necromunda acontece nesta ordem. Clique em uma fase para
-					pular direto para o checklist dela.
+					{s.intro}
 				</p>
 
 				{/* Diagrama de fluxo */}
@@ -78,7 +113,7 @@ export default function FlowMap() {
 										className="font-mono text-[11px] tracking-[2px] opacity-70 transition-opacity group-hover:opacity-100"
 										style={{ color: hex }}
 									>
-										VER CHECKLIST →
+										{s.viewChecklist}
 									</span>
 								</button>
 
@@ -96,14 +131,14 @@ export default function FlowMap() {
 
 				{/* Loop interno do battle round */}
 				<div className="mt-8 flex flex-wrap items-center justify-center gap-3 border border-white/[0.07] bg-[rgba(255,255,255,.02)] px-6 py-4 font-mono text-[11px] tracking-[2px] text-[rgba(245,245,250,.55)]">
-					<span style={{ color: ACCENT_HEX.rust }}>DENTRO DE CADA ROUND:</span>
+					<span style={{ color: ACCENT_HEX.rust }}>{s.insideEachRound}</span>
 					<span>PRIORITY PHASE</span>
 					<span className="opacity-50">→</span>
 					<span>ACTION PHASE</span>
 					<span className="opacity-50">→</span>
 					<span>END PHASE</span>
 					<span className="opacity-50">→</span>
-					<span style={{ color: ACCENT_HEX.rust }}>REPETE ↻</span>
+					<span style={{ color: ACCENT_HEX.rust }}>{s.repeat}</span>
 				</div>
 			</div>
 		</section>

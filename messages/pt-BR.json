@@ -1,0 +1,179 @@
+{
+	"LocaleSwitcher": {
+		"label": "Idioma",
+		"en": "English",
+		"pt-BR": "Português (BR)"
+	},
+	"Ticker": {
+		"items": [
+			"● TEMPORADA 1 NO AR",
+			"THE ARANTHIAN SUCCESSION",
+			"GANGUES NA GUERRA",
+			"NOVA TEMPORADA DE CAMPANHA — RECRUTANDO",
+			"TRONO DA ESPIRAL: EM DISPUTA"
+		]
+	},
+	"Nav": {
+		"game": "O JOGO",
+		"factions": "FACÇÕES",
+		"world": "MUNDO",
+		"news": "NOTÍCIAS",
+		"dashboard": "DASHBOARD",
+		"howToPlay": "COMO JOGAR",
+		"signIn": "ENTRAR",
+		"signInArrow": "ENTRAR →",
+		"search": "BUSCAR",
+		"openMenu": "Abrir menu",
+		"closeMenu": "Fechar menu",
+		"navigate": "// NAVEGAR",
+		"gameMenu": {
+			"overviewLabel": "// VISÃO GERAL",
+			"modesLabel": "// MODOS",
+			"overview": {
+				"gameOverview": "Visão Geral do Jogo",
+				"howToPlay": "Como Jogar",
+				"gangForge": "Sistemas de Gangue & Forja",
+				"loreSetting": "Lore & Cenário",
+				"campaignJournal": "Diário de Campanha"
+			},
+			"modes": {
+				"campaign": "Campanha",
+				"territoryWar": "Guerra de Território",
+				"skirmish": "Skirmish",
+				"ashWastes": "Ash Wastes",
+				"publicDashboard": "Dashboard Público"
+			},
+			"featuredKicker": "DESTAQUE · T2",
+			"featuredTitle": "The Aranthian Succession",
+			"featuredDesc": "Muitas gangues. Um mundo agonizante. A temporada de campanha está viva na mesa."
+		},
+		"factionsMenu": {
+			"housesLabel": "// AS GRANDES CASAS",
+			"pickASide": "ESCOLHA UM LADO",
+			"chooseTitle": "Escolha Sua Casa",
+			"chooseDesc": "Sua lealdade molda a campanha — e quem você trai.",
+			"compareAll": "COMPARAR TODAS AS CASAS →"
+		},
+		"houses": {
+			"cawdor": "Fé & Fogo · Zelote",
+			"delaque": "Sombras & Segredos · Psicotérico",
+			"escher": "Lâminas & Veneno · Toxina",
+			"goliath": "Músculo & Fúria · Força Bruta",
+			"orlock": "Ferro & Estrada · Versátil",
+			"vanSaar": "Tecnologia & Precisão · Atirador"
+		}
+	},
+	"Hero": {
+		"rec": "REC",
+		"liveFeed": "TRANSMISSÃO AO VIVO · SETOR-7G",
+		"verticalDeco": "ARANTHIAN SUCCESSION // FORGE PROTOCOL",
+		"scroll": "ROLE",
+		"preTitle": "TALES OF NECROMUNDA",
+		"tagline": "THE ARANTHIAN SUCCESSION",
+		"lead": "Desça à sub-colmeia tomada pela ferrugem. Percorra os desertos infinitos sobre motores rugindo. Forje uma gangue, tome territórios e sobreviva às Casas rivais em uma guerra viva por poder, sobrevivência e controle de um mundo agonizante.",
+		"ctaPrimary": "ENTRAR NO DASHBOARD PÚBLICO →",
+		"ctaPrimarySub": "CAMPANHA AO VIVO · TEMPORADA 1",
+		"watchTrailer": "VER TRAILER",
+		"trailerSub": "REVELAÇÃO OFICIAL · 01:08",
+		"trailerAria": "Vídeo do trailer",
+		"closeTrailer": "Fechar trailer"
+	},
+	"Features": {
+		"sectionLabel": "01 // O JOGO",
+		"rosterLabel": "GANGUE // ELENCO",
+		"recruitRow": "+ RECRUTAR LUTADOR",
+		"territoryLabel": "TERRITÓRIO // SETOR-7G",
+		"control": "CONTROLE 62% ▲",
+		"f1Kicker": "01 / SISTEMA",
+		"f1Title": "FORJE SUA GANGUE",
+		"f1Desc": "Recrute lutadores, instale cibernéticos e vasculhe a forja em busca de equipamento. Cada cicatriz, arma e melhoria persiste ao longo de toda a campanha.",
+		"f1Tags": ["CUSTOMIZAÇÃO PROFUNDA", "FERIMENTOS PERSISTENTES", "17 GANGUES"],
+		"f2Kicker": "02 / MUNDO",
+		"f2Title": "UMA SUB-COLMEIA VIVA",
+		"f2Desc": "O território muda depois de cada batalha na mesa. Temporadas de campanha reescrevem o mapa, alianças nascem e queimam, e o trono da espiral está sempre em jogo.",
+		"f2Tags": ["GUERRA DE TERRITÓRIO AO VIVO", "MAPA POR TEMPORADA"]
+	},
+	"Gangs": {
+		"sectionLabel": "02 // AS GANGUES",
+		"compareAll": "COMPARAR TODAS AS GANGUES →",
+		"heading": "Muitas gangues. Um mundo agonizante. Ninguém reina para sempre.",
+		"countSuffix": "GANGUES",
+		"groups": {
+			"greatHouses": "AS GRANDES CASAS",
+			"independent": "GANGUES INDEPENDENTES & CULTOS",
+			"ashWastes": "GANGUES DOS ASH WASTES",
+			"hiveSecundus": "GANGUES DE HIVE SECUNDUS"
+		},
+		"cards": {
+			"GH-01": { "tagline": "FÉ & FOGO", "desc": "Fanáticos religiosos que lançam hordas com armas improvisadas e chamas purificadoras. Inclui os Redemptionists." },
+			"GH-02": { "tagline": "A CASA DAS SOMBRAS", "desc": "Espionagem, infiltração, controle psicológico e os poderes Psicotéricos que dobram mentes." },
+			"GH-03": { "tagline": "LÂMINAS & VENENO", "desc": "Velocidade, venenos, toxinas e gerações de engenharia genética." },
+			"GH-04": { "tagline": "OS TIRANOS DA FORJA", "desc": "Força bruta, resiliência movida a stimms e músculos de bioengenharia." },
+			"GH-05": { "tagline": "A CASA DE FERRO", "desc": "Lutadores versáteis, armas de fogo confiáveis e uma vida vivida na estrada." },
+			"GH-06": { "tagline": "OS ARCHTEKS", "desc": "Tecnologia avançada, pontaria superior e armamento de energia." },
+			"IG-01": { "tagline": "OS AÇOUGUEIROS", "desc": "Cultistas de Khorne sedentos por sangue, devotados ao combate corpo a corpo selvagem." },
+			"IG-02": { "tagline": "A LEI DA COLMEIA", "desc": "A força policial paramilitar de Necromunda, armada para manter a ordem por quaisquer meios." },
+			"IG-03": { "tagline": "OS LIBERTOS", "desc": "Ogryns fugitivos erguidos em revolta contra seus antigos mestres." },
+			"IG-04": { "tagline": "OS CORROMPIDOS", "desc": "Cultos genéricos do Caos que podem representar seguidores de qualquer um dos Deuses Sombrios." },
+			"IG-05": { "tagline": "A NINHADA OCULTA", "desc": "Cultos Genestealer tradicionais se espalhando em silêncio sob a colmeia." },
+			"IG-06": { "tagline": "CAÇADORES DE RECOMPENSA", "desc": "Bandos de caçadores totalmente customizáveis — humanos, Squats, Ogryns, Beastmen e Ratlings desde a atualização de 2025." },
+			"IG-07": { "tagline": "OS ESQUECIDOS", "desc": "A gangue mais aberta do jogo: foras da lei, mutantes, wyrds, guilders, nobres decaídos — quase qualquer conceito que você imaginar." },
+			"AW-01": { "tagline": "CAVALEIROS DOS DESERTOS", "desc": "Nômades nativos dos ermos: furtividade, emboscadas, insetos gigantes e domínio total do terreno. Expandidos ao longo de 2025." },
+			"AW-02": { "tagline": "OS CLÃS MINERADORES", "desc": "Mineradores Squat resistentes com poder de fogo industrial e tecnologia soberba, muito expandidos em Halls of the Ancients." },
+			"HS-01": { "tagline": "A CAÇADA NOBRE", "desc": "Nobres ultrarricos em Hunting Rigs. Pouquíssimas miniaturas, extremamente poderosas, crescendo pela própria mecânica de Terror Level." },
+			"HS-02": { "tagline": "A NINHADA DISTORCIDA", "desc": "Os Genestealers mutantes de Hive Secundus: hordas de Brood Scum apoiadas por monstros aterrorizantes, feitas para os Underhells." }
+		}
+	},
+	"News": {
+		"sectionLabel": "03 // DESPACHOS",
+		"readAll": "LER TODOS OS DESPACHOS →",
+		"items": {
+			"0": { "tag": "RELATO DE BATALHA", "title": "Emboscada nos Portões do Sump", "summary": "Zelotes Cawdor incendeiam um antro químico Escher em uma guerra de território brutal — relato completo da mesa, com fotos e a conta final do açougueiro." },
+			"1": { "tag": "CAMPANHA", "title": "Metade da Temporada 1: O Mapa Redesenhado", "summary": "Territórios trocam de mãos enquanto a Aranthian Succession esquenta. Classificação, rivalidades e traições da campanha até aqui." },
+			"2": { "tag": "HOBBY", "title": "Pintando a Ferrugem: Weathering na Sub-colmeia", "summary": "Do plástico cru à sujeira da sub-colmeia — as técnicas por trás da gangue destaque do mês, passo a passo." }
+		}
+	},
+	"CTA": {
+		"kicker": "SKIRMISH DE MESA · MINIATURAS · DADOS · CAMPANHA NARRATIVA",
+		"title": "ENTRE NA SUB-COLMEIA",
+		"howToStart": "COMO COMEÇAR",
+		"meetGangs": "CONHEÇA AS GANGUES"
+	},
+	"Footer": {
+		"blurb": "Tales of Necromunda — The Aranthian Succession. Uma guerra de mesa com miniaturas, dados e tinta pela sub-colmeia.",
+		"headings": {
+			"game": "JOGO",
+			"community": "COMUNIDADE",
+			"support": "SUPORTE"
+		},
+		"links": {
+			"overview": "Visão Geral",
+			"factions": "Facções",
+			"roadmap": "Roadmap",
+			"dashboard": "Dashboard",
+			"discord": "Discord",
+			"news": "Notícias",
+			"creators": "Criadores",
+			"forums": "Fóruns",
+			"help": "Ajuda",
+			"status": "Status",
+			"contact": "Contato",
+			"account": "Conta"
+		},
+		"copyright": "© 2026 NECROFORJA — PROJETO DE FÃ. SEM AFILIAÇÃO COM A GAMES WORKSHOP.",
+		"privacy": "PRIVACIDADE",
+		"terms": "TERMOS"
+	},
+	"Login": {
+		"title": "Acesso restrito",
+		"subtitle": "As contas são criadas pelo Árbitro. Entre com suas credenciais.",
+		"email": "E-mail",
+		"password": "Senha",
+		"signIn": "Entrar",
+		"signingIn": "Entrando...",
+		"backToDashboard": "← Voltar ao dashboard público",
+		"errors": {
+			"invalid_credentials": "E-mail ou senha inválidos."
+		}
+	}
+}

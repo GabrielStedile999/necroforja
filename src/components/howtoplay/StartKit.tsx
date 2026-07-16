@@ -1,5 +1,22 @@
 import Image from "next/image";
-import { START_KIT, type KitItem } from "./content";
+import { useLocale } from "next-intl";
+import type { Locale } from "@/i18n/config";
+import type { KitItem } from "./content";
+import { getHtpContent } from "./content.i18n";
+
+/** Small per-locale UI strings owned by this component. */
+const STRINGS: Record<Locale, { kicker: string; heading: string; sub: string }> = {
+	en: {
+		kicker: "START HERE",
+		heading: "What you need to play",
+		sub: "Your first battle in the Underhive is close.",
+	},
+	"pt-BR": {
+		kicker: "COMECE AQUI",
+		heading: "O que você precisa para jogar",
+		sub: "Sua primeira batalha no Underhive está próxima.",
+	},
+};
 
 /** Ícones inline de cada item do kit — traço fino, estética terminal. */
 function KitIcon({ name, color }: { name: KitItem["icon"]; color: string }) {
@@ -74,9 +91,14 @@ function KitIcon({ name, color }: { name: KitItem["icon"]; color: string }) {
 }
 
 const TAG_COLOR: Record<string, string> = {
+	// pt-BR tags
 	ESSENCIAL: "#00e5ff",
 	"NA NECROFORJA": "#ff2d6f",
 	RECOMENDADO: "#59e36b",
+	// en tags
+	ESSENTIAL: "#00e5ff",
+	"ON NECROFORJA": "#ff2d6f",
+	RECOMMENDED: "#59e36b",
 };
 
 /**
@@ -84,6 +106,10 @@ const TAG_COLOR: Record<string, string> = {
  * miniaturas, livros e materiais de mesa.
  */
 export default function StartKit() {
+	const locale = useLocale() as Locale;
+	const { START_KIT } = getHtpContent(locale);
+	const s = STRINGS[locale];
+
 	return (
 		<section
 			id="comece-aqui"
@@ -92,16 +118,16 @@ export default function StartKit() {
 			<div className="ncf-wrap mx-auto max-w-[1380px] px-[48px]">
 				<div className="mb-[18px] flex items-center gap-[14px]">
 					<span className="font-mono text-[13px] tracking-[4px] text-cyan">
-						00 {"//"} COMECE AQUI
+						00 {"//"} {s.kicker}
 					</span>
 					<span className="h-px flex-1 bg-white/[0.1]" />
 				</div>
 
 				<h2 className="m-0 mb-4 text-[clamp(28px,4vw,44px)] font-bold uppercase leading-[1.02] tracking-[1px]">
-					O que você precisa para jogar
+					{s.heading}
 				</h2>
 				<p className="m-0 mb-[44px] max-w-[720px] text-justify text-[15px] leading-[1.75] text-[rgba(245,245,250,.65)]">
-					Sua primeira batalha no Underhive está próxima.
+					{s.sub}
 				</p>
 
 				<div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">

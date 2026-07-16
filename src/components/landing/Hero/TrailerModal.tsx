@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import s from "./Hero.module.scss";
 
 /**
@@ -11,6 +12,7 @@ import s from "./Hero.module.scss";
  * - Body scroll locked while open
  */
 export default function TrailerModal() {
+	const t = useTranslations("Hero");
 	const [open, setOpen] = useState(false);
 	const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -54,10 +56,10 @@ export default function TrailerModal() {
 				</div>
 				<div className="flex flex-col">
 					<span className="text-[14px] font-semibold tracking-[2px]">
-						WATCH TRAILER
+						{t("watchTrailer")}
 					</span>
 					<span className="font-mono text-[11px] tracking-[1px] text-[rgba(245,245,250,.5)]">
-						OFFICIAL REVEAL · 01:08
+						{t("trailerSub")}
 					</span>
 				</div>
 			</button>
@@ -67,7 +69,7 @@ export default function TrailerModal() {
 				<div
 					role="dialog"
 					aria-modal="true"
-					aria-label="Trailer video"
+					aria-label={t("trailerAria")}
 					onClick={close}
 					className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-[2px] p-4 md:p-10"
 				>
@@ -75,7 +77,7 @@ export default function TrailerModal() {
 					<button
 						type="button"
 						onClick={close}
-						aria-label="Close trailer"
+						aria-label={t("closeTrailer")}
 						className="absolute right-5 top-5 z-[2] flex h-11 w-11 cursor-pointer items-center justify-center border border-white/[0.25] bg-black/50 text-ink transition-colors hover:border-hazard hover:text-hazard"
 					>
 						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

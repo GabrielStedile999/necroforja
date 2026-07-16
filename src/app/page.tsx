@@ -13,9 +13,10 @@ import { buildWebsiteJsonLd, buildAppJsonLd } from "@/lib/seo/json-ld";
  * Hi-Fi marketing landing page — pixel-faithful React implementation
  * of the NecroForja Claude Design Hi-Fi mockup.
  *
- * ISR: revalidate every 60 s.
+ * i18n (issue #12): the locale is read from the NEXT_LOCALE cookie, which
+ * makes this route dynamic — the previous ISR (revalidate 60s) no longer
+ * applies and was removed to avoid confusion.
  */
-export const revalidate = 60;
 
 const siteUrl = process.env.AUTH_URL || "https://necroforja.vercel.app";
 

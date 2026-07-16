@@ -1,9 +1,17 @@
+import { useLocale } from "next-intl";
+import type { Locale } from "@/i18n/config";
 import { ACCENT_HEX } from "./accents";
 import LoreCallout from "./LoreCallout";
 import LoreFigure from "./LoreFigure";
 import HiveAnatomy from "./HiveAnatomy";
 import CityGrid from "./CityGrid";
 import { LORE_IMG_DIMS, type LoreChapter as Chapter, type LoreSection } from "./content";
+import { toLocale } from "./content.i18n";
+
+const STRINGS: Record<Locale, { clanHouse: string }> = {
+  en: { clanHouse: "// CLAN HOUSE" },
+  "pt-BR": { clanHouse: "// CASA CLÃ" },
+};
 
 /** Imagens largas viram figuras full-width; as demais vão para a coluna lateral. */
 function isWide(src: string) {
@@ -86,6 +94,7 @@ function ProseSection({
 
 /** Card de Casa Clã — barra superior na cor da Casa, texto + galeria. */
 function HouseSection({ section }: { section: LoreSection }) {
+  const locale = toLocale(useLocale());
   const color = section.color ?? "#f5f5fa";
   const paras = section.blocks.filter((b) => b.type === "p" || b.type === "quote");
   const imgs = section.blocks.filter((b) => b.type === "img");
@@ -98,7 +107,7 @@ function HouseSection({ section }: { section: LoreSection }) {
       <div className="h-[4px] w-full" style={{ background: color, boxShadow: `0 0 16px ${color}66` }} />
       <div className="p-[28px] md:p-[36px]">
         <div className="mb-1 font-mono text-[11px] tracking-[3px]" style={{ color }}>
-          {"// CASA CLÃ"}
+          {STRINGS[locale].clanHouse}
         </div>
         <h3 className="m-0 mb-5 text-[30px] font-bold uppercase leading-none tracking-[1px]">
           {section.title}

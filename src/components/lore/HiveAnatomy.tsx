@@ -1,20 +1,68 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale } from "next-intl";
+import type { Locale } from "@/i18n/config";
 import LoreFigure from "./LoreFigure";
 import type { LoreSection } from "./content";
+import { toLocale } from "./content.i18n";
 
-/** Metadados visuais de cada camada do corte transversal da colmeia. */
-const LAYER_META: Record<string, { tag: string; width: number }> = {
-  "as-torres":             { tag: "TOPO · NOBREZA",          width: 34 },
-  "a-casca":               { tag: "CAMADA EXTERNA",          width: 46 },
-  "dissipadores-de-calor": { tag: "INFRAESTRUTURA",          width: 56 },
-  "zonas-habitacionais":   { tag: "CIDADE COLMEIA",          width: 66 },
-  "zonas-de-manufatura":   { tag: "CIDADE COLMEIA",          width: 76 },
-  "manufaturas-em-ruinas": { tag: "FRONTEIRA",               width: 84 },
-  "a-sub-colmeia":         { tag: "SUB-COLMEIA",             width: 92 },
-  "o-fundo-da-colmeia":    { tag: "FUNDO · ABISMO",          width: 100 },
-  "as-favelas":            { tag: "EXTERIOR · SOLO DE CINZAS", width: 100 },
+/** Largura visual (%) de cada camada do corte transversal — igual nos dois idiomas. */
+const LAYER_WIDTH: Record<string, number> = {
+  "as-torres":             34,
+  "a-casca":               46,
+  "dissipadores-de-calor": 56,
+  "zonas-habitacionais":   66,
+  "zonas-de-manufatura":   76,
+  "manufaturas-em-ruinas": 84,
+  "a-sub-colmeia":         92,
+  "o-fundo-da-colmeia":    100,
+  "as-favelas":            100,
+};
+
+/** Etiqueta mono de cada camada, por locale. */
+const LAYER_TAG: Record<Locale, Record<string, string>> = {
+  en: {
+    "as-torres":             "TOP · NOBILITY",
+    "a-casca":               "OUTER LAYER",
+    "dissipadores-de-calor": "INFRASTRUCTURE",
+    "zonas-habitacionais":   "HIVE CITY",
+    "zonas-de-manufatura":   "HIVE CITY",
+    "manufaturas-em-ruinas": "FRONTIER",
+    "a-sub-colmeia":         "UNDERHIVE",
+    "o-fundo-da-colmeia":    "BOTTOM · ABYSS",
+    "as-favelas":            "OUTSIDE · ASH GROUND",
+  },
+  "pt-BR": {
+    "as-torres":             "TOPO · NOBREZA",
+    "a-casca":               "CAMADA EXTERNA",
+    "dissipadores-de-calor": "INFRAESTRUTURA",
+    "zonas-habitacionais":   "CIDADE COLMEIA",
+    "zonas-de-manufatura":   "CIDADE COLMEIA",
+    "manufaturas-em-ruinas": "FRONTEIRA",
+    "a-sub-colmeia":         "SUB-COLMEIA",
+    "o-fundo-da-colmeia":    "FUNDO · ABISMO",
+    "as-favelas":            "EXTERIOR · SOLO DE CINZAS",
+  },
+};
+
+/** Strings fixas da UI do corte transversal, por locale. */
+const STRINGS: Record<
+  Locale,
+  { crossSection: string; level: string; ashWastes: string; layerFallback: string }
+> = {
+  en: {
+    crossSection: "CROSS-SECTION",
+    level: "LEVEL",
+    ashWastes: "ASH WASTES ▸ CH. 04",
+    layerFallback: "LAYER",
+  },
+  "pt-BR": {
+    crossSection: "CORTE TRANSVERSAL",
+    level: "NÍVEL",
+    ashWastes: "DESERTOS DE CINZAS ▸ CAP. 04",
+    layerFallback: "CAMADA",
+  },
 };
 
 /**
@@ -28,6 +76,8 @@ export default function HiveAnatomy({
   sections: LoreSection[];
   accent: string;
 }) {
+  const locale = toLocale(useLocale());
+  const t = STRINGS[locale];
   const [activeId, setActiveId] = useState(sections[0]?.id ?? "");
   const active = sections.find((s) => s.id === activeId) ?? sections[0];
   const activeIdx = sections.findIndex((s) => s.id === active?.id);
@@ -42,15 +92,18 @@ export default function HiveAnatomy({
       {/* ── Corte transversal ── */}
       <div className="w-full lg:w-[400px] lg:shrink-0">
         <div className="mb-4 flex items-baseline justify-between font-mono text-[11px] tracking-[2px] text-[rgba(245,245,250,.45)]">
-          <span>CORTE TRANSVERSAL</span>
+          <span>{t.crossSection}</span>
           <span style={{ color: accent }}>
-            NÍVEL {String(activeIdx + 1).padStart(2, "0")}/{String(sections.length).padStart(2, "0")}
+            {t.level} {String(activeIdx + 1).padStart(2, "0")}/{String(sections.length).padStart(2, "0")}
           </span>
         </div>
 
         <div className="flex flex-col items-center gap-[6px]">
           {sections.map((s) => {
-            const meta = LAYER_META[s.id] ?? { tag: "", width: 100 };
+            const meta = {
+              tag: LAYER_TAG[locale][s.id] ?? "",
+              width: LAYER_WIDTH[s.id] ?? 100,
+            };
             const isActive = s.id === active.id;
             return (
               <button
@@ -85,7 +138,7 @@ export default function HiveAnatomy({
         {/* Solo de cinzas */}
         <div className="mt-[6px] h-[8px] w-full opacity-70 hazard-stripes" />
         <div className="mt-2 text-center font-mono text-[10px] tracking-[3px] text-[rgba(245,245,250,.35)]">
-          DESERTOS DE CINZAS ▸ CAP. 04
+          {t.ashWastes}
         </div>
       </div>
 
@@ -96,7 +149,7 @@ export default function HiveAnatomy({
         style={{ borderLeft: `3px solid ${accent}` }}
       >
         <div className="mb-1 font-mono text-[11px] tracking-[3px]" style={{ color: accent }}>
-          {"// "}{(LAYER_META[active.id]?.tag ?? "CAMADA")}
+          {"// "}{(LAYER_TAG[locale][active.id] ?? t.layerFallback)}
         </div>
         <h3 className="m-0 mb-5 text-[28px] font-bold uppercase leading-none tracking-[1px]">
           {active.title}

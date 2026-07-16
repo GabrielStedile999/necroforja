@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { getLocale } from "next-intl/server";
+import type { Locale } from "@/i18n/config";
 import Ticker from "@/components/landing/Ticker";
 import SiteNav from "@/components/landing/SiteNav";
 import SiteFooter from "@/components/landing/SiteFooter";
@@ -12,12 +14,8 @@ import RoundLoop from "@/components/howtoplay/RoundLoop";
 import CombatFlow from "@/components/howtoplay/CombatFlow";
 import QuickRef from "@/components/howtoplay/QuickRef";
 import HtpCTA from "@/components/howtoplay/HtpCTA";
-import {
-	HTP_CHAPTERS,
-	PRE_BATTLE_STEPS,
-	POST_BATTLE_STEPS,
-	type HtpAccent,
-} from "@/components/howtoplay/content";
+import type { HtpAccent } from "@/components/howtoplay/content";
+import { getHtpContent } from "@/components/howtoplay/content.i18n";
 
 /**
  * How to Play — como começar a jogar Necromunda (issue #7).
@@ -29,12 +27,83 @@ import {
 export const metadata: Metadata = {
 	title: "How to Play",
 	description:
-		"Aprenda a jogar Necromunda: o que você precisa para começar, o fluxo completo de uma partida (pre-battle, battle rounds, post-battle) e referência rápida de regras.",
+		"Learn to play Necromunda: what you need to get started, the complete flow of a game (pre-battle, battle rounds, post-battle) and a quick rules reference.",
 	alternates: { canonical: "/how-to-play" },
 	openGraph: {
 		title: "How to Play · NecroForja",
 		description:
-			"Do aperto de mãos ao relatório final: o fluxo completo de um jogo de Necromunda em checklists interativos.",
+			"From the pre-battle handshake to the final report: the complete flow of a Necromunda game in interactive checklists.",
+	},
+};
+
+/** Per-locale strings owned by the page: chapter titles, intros and labels. */
+const PAGE_STRINGS: Record<
+	Locale,
+	{
+		preBattle: { title: string; intro: string; doneLabel: string };
+		battleRound: { title: string; intro: string };
+		combat: { title: string; intro: string };
+		postBattle: { title: string; intro: string; doneLabel: string };
+		quickRef: { title: string; intro: string };
+	}
+> = {
+	en: {
+		preBattle: {
+			title: "Pre-battle sequence",
+			intro:
+				"Before the battlefield is set up and the battle begins — 8 admin steps, done with both players present (Core Rulebook 2023, pg. 97). Tick each step as you complete it.",
+			doneLabel: "PRE-BATTLE COMPLETE — LET THE BATTLE BEGIN",
+		},
+		battleRound: {
+			title: "Battle round",
+			intro:
+				"The battle itself. Each round has 3 sub-phases in this order: Priority → Action → End (Core Rulebook 2023, pg. 99). The loop repeats until someone wins, everyone bottles out, or the scenario ends.",
+		},
+		combat: {
+			title: "Combat",
+			intro:
+				"The two ways to bring an enemy down — shooting and close combat — and what happens when a hit connects. Walk through each sequence step by step and use the To Wound calculator.",
+		},
+		postBattle: {
+			title: "Post-battle sequence",
+			intro:
+				"After the final round is over — 7 steps, in this order, with both players present (Core Rulebook 2023, pg. 142). In a skirmish, skip the campaign-specific steps.",
+			doneLabel: "POST-BATTLE COMPLETE — UNTIL THE NEXT BATTLE",
+		},
+		quickRef: {
+			title: "Quick reference",
+			intro:
+				"The pocket summaries to consult mid-game: statuses and conditions, characteristic tests, automatic XP, end of battle and falling damage.",
+		},
+	},
+	"pt-BR": {
+		preBattle: {
+			title: "Pre-battle sequence",
+			intro:
+				"Antes do tabuleiro ser montado e da batalha começar — 8 passos administrativos, feitos com os dois jogadores presentes (Core Rulebook 2023, pg. 97). Marque cada passo conforme executa.",
+			doneLabel: "PRE-BATTLE COMPLETO — QUE COMECE A BATALHA",
+		},
+		battleRound: {
+			title: "Battle round",
+			intro:
+				"A batalha em si. Cada round tem 3 sub-fases nesta ordem: Priority → Action → End (Core Rulebook 2023, pg. 99). O loop se repete até alguém vencer, todo mundo dar bottle out, ou o cenário terminar.",
+		},
+		combat: {
+			title: "Combate",
+			intro:
+				"As duas formas de derrubar um inimigo — tiro e corpo a corpo — e o que acontece quando um hit conecta. Percorra cada sequência passo a passo e use a calculadora To Wound.",
+		},
+		postBattle: {
+			title: "Post-battle sequence",
+			intro:
+				"Depois que o último round terminou — 7 passos, nesta ordem, com os dois jogadores presentes (Core Rulebook 2023, pg. 142). Em skirmish, pule os passos específicos de campanha.",
+			doneLabel: "POST-BATTLE COMPLETO — ATÉ A PRÓXIMA BATALHA",
+		},
+		quickRef: {
+			title: "Referência rápida",
+			intro:
+				"Os resumos de bolso para consultar no meio do jogo: statuses e conditions, testes de característica, XP automático, fim de batalha e dano por queda.",
+		},
 	},
 };
 
@@ -80,7 +149,11 @@ function Chapter({
 	);
 }
 
-export default function HowToPlayPage() {
+export default async function HowToPlayPage() {
+	const locale = (await getLocale()) as Locale;
+	const { HTP_CHAPTERS, PRE_BATTLE_STEPS, POST_BATTLE_STEPS } = getHtpContent(locale);
+	const t = PAGE_STRINGS[locale];
+
 	return (
 		<div
 			className="relative w-full overflow-x-clip text-ink"
@@ -104,24 +177,24 @@ export default function HowToPlayPage() {
 				<Chapter
 					id="pre-battle"
 					num="02"
-					title="Pre-battle sequence"
+					title={t.preBattle.title}
 					accent="violet"
-					intro="Antes do tabuleiro ser montado e da batalha começar — 8 passos administrativos, feitos com os dois jogadores presentes (Core Rulebook 2023, pg. 97). Marque cada passo conforme executa."
+					intro={t.preBattle.intro}
 				>
 					<PhaseChecklist
 						steps={PRE_BATTLE_STEPS}
 						accent={ACCENT_HEX.violet}
-						doneLabel="PRE-BATTLE COMPLETO — QUE COMECE A BATALHA"
+						doneLabel={t.preBattle.doneLabel}
 					/>
 				</Chapter>
 
 				<Chapter
 					id="battle-round"
 					num="03"
-					title="Battle round"
+					title={t.battleRound.title}
 					accent="rust"
 					alt
-					intro="A batalha em si. Cada round tem 3 sub-fases nesta ordem: Priority → Action → End (Core Rulebook 2023, pg. 99). O loop se repete até alguém vencer, todo mundo dar bottle out, ou o cenário terminar."
+					intro={t.battleRound.intro}
 				>
 					<RoundLoop accent={ACCENT_HEX.rust} />
 				</Chapter>
@@ -129,9 +202,9 @@ export default function HowToPlayPage() {
 				<Chapter
 					id="combate"
 					num="04"
-					title="Combate"
+					title={t.combat.title}
 					accent="hazard"
-					intro="As duas formas de derrubar um inimigo — tiro e corpo a corpo — e o que acontece quando um hit conecta. Percorra cada sequência passo a passo e use a calculadora To Wound."
+					intro={t.combat.intro}
 				>
 					<CombatFlow accent={ACCENT_HEX.hazard} />
 				</Chapter>
@@ -139,24 +212,24 @@ export default function HowToPlayPage() {
 				<Chapter
 					id="post-battle"
 					num="05"
-					title="Post-battle sequence"
+					title={t.postBattle.title}
 					accent="toxic"
 					alt
-					intro="Depois que o último round terminou — 7 passos, nesta ordem, com os dois jogadores presentes (Core Rulebook 2023, pg. 142). Em skirmish, pule os passos específicos de campanha."
+					intro={t.postBattle.intro}
 				>
 					<PhaseChecklist
 						steps={POST_BATTLE_STEPS}
 						accent={ACCENT_HEX.toxic}
-						doneLabel="POST-BATTLE COMPLETO — ATÉ A PRÓXIMA BATALHA"
+						doneLabel={t.postBattle.doneLabel}
 					/>
 				</Chapter>
 
 				<Chapter
 					id="referencia"
 					num="06"
-					title="Referência rápida"
+					title={t.quickRef.title}
 					accent="cyan"
-					intro="Os resumos de bolso para consultar no meio do jogo: statuses e conditions, testes de característica, XP automático, fim de batalha e dano por queda."
+					intro={t.quickRef.intro}
 				>
 					<QuickRef accent={ACCENT_HEX.cyan} />
 				</Chapter>

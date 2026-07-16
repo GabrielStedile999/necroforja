@@ -2,13 +2,48 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import {
-	ROUND_PHASES,
-	ACTIVATION_FLOW,
-	ACTION_TYPES,
-	GAME_ACTIONS,
-	ACTION_TYPE_COLOR,
-} from "./content";
+import { useLocale } from "next-intl";
+import type { Locale } from "@/i18n/config";
+import { getHtpContent } from "./content.i18n";
+
+/** Small per-locale UI strings owned by this component. */
+const STRINGS: Record<
+	Locale,
+	{
+		phase: string;
+		repeat: string;
+		acronyms: string;
+		howToActivate: string;
+		actionTypes: string;
+		actionGuide: string;
+		action: string;
+		effect: string;
+		actionPhaseAlt: string;
+	}
+> = {
+	en: {
+		phase: "PHASE",
+		repeat: "↻ REPEAT",
+		acronyms: "ACRONYMS: ",
+		howToActivate: "HOW TO RUN AN ACTIVATION",
+		actionTypes: "ACTION TYPES",
+		actionGuide: "ACTION GUIDE",
+		action: "ACTION",
+		effect: "EFFECT",
+		actionPhaseAlt: "Escher and Goliath fighting in the Underhive",
+	},
+	"pt-BR": {
+		phase: "FASE",
+		repeat: "↻ REPETE",
+		acronyms: "SIGLAS: ",
+		howToActivate: "COMO EXECUTAR UMA ATIVAÇÃO",
+		actionTypes: "TIPOS DE AÇÃO",
+		actionGuide: "GUIA DE AÇÕES",
+		action: "AÇÃO",
+		effect: "EFEITO",
+		actionPhaseAlt: "Escher e Goliath em combate no Underhive",
+	},
+};
 
 /**
  * 03 · Battle round — loop interativo Priority → Action → End.
@@ -16,6 +51,10 @@ import {
  * o fluxo de uma ativação e os tipos de ação.
  */
 export default function RoundLoop({ accent }: { accent: string }) {
+	const locale = useLocale() as Locale;
+	const { ROUND_PHASES, ACTIVATION_FLOW, ACTION_TYPES, GAME_ACTIONS, ACTION_TYPE_COLOR } =
+		getHtpContent(locale);
+	const s = STRINGS[locale];
 	const [activeId, setActiveId] = useState(ROUND_PHASES[0]?.id ?? "");
 	const active = ROUND_PHASES.find((p) => p.id === activeId) ?? ROUND_PHASES[0];
 
@@ -49,7 +88,7 @@ export default function RoundLoop({ accent }: { accent: string }) {
 									className="mb-1 block font-mono text-[11px] tracking-[2px]"
 									style={{ color: accent }}
 								>
-									FASE {phase.letter}
+									{s.phase} {phase.letter}
 								</span>
 								<span
 									className="block text-[16px] font-bold uppercase tracking-[1px]"
@@ -74,7 +113,7 @@ export default function RoundLoop({ accent }: { accent: string }) {
 					style={{ color: accent }}
 					aria-hidden
 				>
-					↻ REPETE
+					{s.repeat}
 				</span>
 			</div>
 
@@ -115,7 +154,7 @@ export default function RoundLoop({ accent }: { accent: string }) {
 				{/* Nota de rodapé — siglas usadas na End Phase */}
 				{active.id === "round-end" && (
 					<p className="m-0 mt-6 border-t border-white/[0.06] pt-4 font-mono text-[11px] leading-[1.8] tracking-[0.5px] text-[rgba(245,245,250,.45)]">
-						<span style={{ color: accent }}>SIGLAS: </span>
+						<span style={{ color: accent }}>{s.acronyms}</span>
 						SI = Seriously Injured · OOA = Out of Action ·
 					</p>
 				)}
@@ -129,7 +168,8 @@ export default function RoundLoop({ accent }: { accent: string }) {
 								className="mb-4 font-mono text-[11px] tracking-[3px]"
 								style={{ color: accent }}
 							>
-								{"// "}COMO EXECUTAR UMA ATIVAÇÃO
+								{"// "}
+								{s.howToActivate}
 							</div>
 							<ol className="m-0 flex list-none flex-col gap-0 p-0">
 								{ACTIVATION_FLOW.map((step, i) => (
@@ -164,7 +204,7 @@ export default function RoundLoop({ accent }: { accent: string }) {
 						<div className="clip-chamfer relative min-h-[280px] overflow-hidden border border-white/[0.08] lg:min-h-0">
 							<Image
 								src="/howtoplay/action-phase.webp"
-								alt="Escher e Goliath em combate no Underhive"
+								alt={s.actionPhaseAlt}
 								fill
 								sizes="(max-width: 1024px) 100vw, 620px"
 								className="object-cover object-center"
@@ -191,7 +231,8 @@ export default function RoundLoop({ accent }: { accent: string }) {
 									className="mb-4 font-mono text-[11px] tracking-[3px]"
 									style={{ color: accent }}
 								>
-									{"// "}TIPOS DE AÇÃO
+									{"// "}
+									{s.actionTypes}
 								</div>
 								<div className="flex flex-col gap-3">
 									{ACTION_TYPES.map((type) => (
@@ -220,13 +261,14 @@ export default function RoundLoop({ accent }: { accent: string }) {
 									className="mb-4 font-mono text-[11px] tracking-[3px]"
 									style={{ color: accent }}
 								>
-									{"// "}GUIA DE AÇÕES
+									{"// "}
+									{s.actionGuide}
 								</div>
 
 								{/* Cabeçalho */}
 								<div className="grid grid-cols-[170px_1fr] gap-3 border-b border-white/[0.12] pb-2 font-mono text-[10px] tracking-[2px] text-[rgba(245,245,250,.45)] max-sm:grid-cols-[120px_1fr]">
-									<span>AÇÃO</span>
-									<span>EFEITO</span>
+									<span>{s.action}</span>
+									<span>{s.effect}</span>
 								</div>
 
 								{GAME_ACTIONS.map((a) => {

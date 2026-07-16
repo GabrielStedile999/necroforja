@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Chakra_Petch, Share_Tech_Mono } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 import { PwaRegister } from "@/components/PwaRegister";
 import { OfflineBanner } from "@/components/OfflineBanner";
@@ -101,17 +103,23 @@ export const metadata: Metadata = {
 	},
 };
 
-export default function RootLayout({
+export default async function RootLayout({
 	children,
 }: Readonly<{ children: React.ReactNode }>) {
+	// Locale comes from the NEXT_LOCALE cookie (default "en" — no detection).
+	const locale = await getLocale();
+	const messages = await getMessages();
+
 	return (
-		<html lang="en">
+		<html lang={locale}>
 			<body className={`${chakra.variable} ${shareMono.variable} antialiased`}>
-				{/* PWA: offline banner renders at top of viewport when network is lost */}
-				<OfflineBanner />
-				{children}
-				{/* PWA: registers /sw.js; renders nothing */}
-				<PwaRegister />
+				<NextIntlClientProvider locale={locale} messages={messages}>
+					{/* PWA: offline banner renders at top of viewport when network is lost */}
+					<OfflineBanner />
+					{children}
+					{/* PWA: registers /sw.js; renders nothing */}
+					<PwaRegister />
+				</NextIntlClientProvider>
 				<Analytics />
 			</body>
 		</html>

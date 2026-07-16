@@ -1,7 +1,26 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale } from "next-intl";
+import type { Locale } from "@/i18n/config";
 import type { HtpStep } from "./content";
+
+/** Small per-locale UI strings owned by this component. */
+const STRINGS: Record<
+	Locale,
+	{ steps: string; unmark: (title: string) => string; markDone: (title: string) => string }
+> = {
+	en: {
+		steps: "STEPS",
+		unmark: (title) => `Unmark ${title}`,
+		markDone: (title) => `Mark ${title} as done`,
+	},
+	"pt-BR": {
+		steps: "PASSOS",
+		unmark: (title) => `Desmarcar ${title}`,
+		markDone: (title) => `Marcar ${title} como feito`,
+	},
+};
 
 /**
  * Checklist interativo de uma fase (pre-battle / post-battle).
@@ -17,6 +36,8 @@ export default function PhaseChecklist({
 	accent: string;
 	doneLabel: string;
 }) {
+	const locale = useLocale() as Locale;
+	const s = STRINGS[locale];
 	const [open, setOpen] = useState<string | null>(steps[0]?.id ?? null);
 	const [done, setDone] = useState<Set<string>>(new Set());
 
@@ -42,7 +63,7 @@ export default function PhaseChecklist({
 					/>
 				</div>
 				<span className="shrink-0 font-mono text-[12px] tracking-[2px]" style={{ color: accent }}>
-					{done.size}/{steps.length} PASSOS
+					{done.size}/{steps.length} {s.steps}
 				</span>
 			</div>
 
@@ -73,7 +94,7 @@ export default function PhaseChecklist({
 								{/* Checkbox */}
 								<button
 									onClick={() => toggleDone(step.id)}
-									aria-label={isDone ? `Desmarcar ${step.title}` : `Marcar ${step.title} como feito`}
+									aria-label={isDone ? s.unmark(step.title) : s.markDone(step.title)}
 									aria-pressed={isDone}
 									className="flex h-[22px] w-[22px] shrink-0 cursor-pointer items-center justify-center border text-[13px] font-bold transition-all"
 									style={{

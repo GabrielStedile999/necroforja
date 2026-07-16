@@ -3,7 +3,11 @@
 import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
 
-export type LoginState = { error?: string };
+/**
+ * Error is a stable, English error CODE (not display text) — the UI
+ * translates it via messages/<locale>.json (issue #12: logic in English).
+ */
+export type LoginState = { error?: "invalid_credentials" };
 
 export async function authenticate(
   _prev: LoginState,
@@ -19,7 +23,7 @@ export async function authenticate(
   } catch (error) {
     // signIn throws a redirect on success — must propagate.
     if (error instanceof AuthError) {
-      return { error: "Invalid e-mail or password." };
+      return { error: "invalid_credentials" };
     }
     throw error;
   }

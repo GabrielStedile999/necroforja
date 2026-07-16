@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 /**
  * "ENTER THE UNDERHIVE" — full-width call-to-action strip.
  * Tailwind layout + globals.css stripe/grid utilities.
  */
 export default function BigCTA() {
+  const t = useTranslations("CTA");
   return (
     <section className="ncf-section relative overflow-hidden border-t border-white/[0.06] py-[130px] text-center bg-[radial-gradient(120%_140%_at_50%_120%,#1c0e18,#08070a_70%)]">
 
@@ -19,11 +21,11 @@ export default function BigCTA() {
 
       <div className="ncf-wrap relative z-[2] mx-auto max-w-[1380px] px-[48px]">
         <div className="mb-[22px] font-mono text-[13px] tracking-[6px] text-hazard">
-          TABLETOP SKIRMISH · MINIATURES · DICE · NARRATIVE CAMPAIGN
+          {t("kicker")}
         </div>
 
         <h2 className="ncf-cta-h text-glow-cta m-0 mb-[30px] text-[clamp(48px,7vw,92px)] font-bold leading-[0.95] tracking-[2px]">
-          ENTER THE UNDERHIVE
+          {t("title")}
         </h2>
 
         <div className="flex flex-wrap justify-center gap-[18px]">
@@ -31,12 +33,12 @@ export default function BigCTA() {
             href="/how-to-play"
             className="inline-flex items-center px-[46px] py-[18px] text-[18px] font-bold tracking-[3px] text-[#0a0a0c] bg-hazard cursor-pointer no-underline clip-btn-72 shadow-cta-magenta-lg transition-[filter] hover:brightness-[1.12]"
           >
-            HOW TO START
+            {t("howToStart")}
           </Link>
 
           {/* TODO: point to the Gangs page once it exists (issue #8) */}
           <div className="inline-flex cursor-pointer items-center border border-white/[0.22] px-[42px] py-[18px] text-[18px] font-semibold tracking-[3px] text-ink transition-[border-color] hover:border-cyan">
-            MEET THE GANGS
+            {t("meetGangs")}
           </div>
         </div>
       </div>

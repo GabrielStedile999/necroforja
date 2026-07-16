@@ -1,16 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale } from "next-intl";
+import type { Locale } from "@/i18n/config";
 import { ACCENT_HEX } from "./accents";
 import type { LoreChapter } from "./content";
+import { toLocale } from "./content.i18n";
 
 type ChapterLink = Pick<LoreChapter, "id" | "num" | "title" | "accent">;
+
+const STRINGS: Record<Locale, { chaptersLabel: string }> = {
+  en: { chaptersLabel: "Chapters" },
+  "pt-BR": { chaptersLabel: "Capítulos" },
+};
 
 /**
  * Sub-navegação dos capítulos — sticky logo abaixo do SiteNav (74px),
  * com scrollspy e barra de progresso de leitura.
  */
 export default function LoreNav({ chapters }: { chapters: ChapterLink[] }) {
+  const locale = toLocale(useLocale());
   const [active, setActive] = useState<string>(chapters[0]?.id ?? "");
   const [progress, setProgress] = useState(0);
 
@@ -42,7 +51,7 @@ export default function LoreNav({ chapters }: { chapters: ChapterLink[] }) {
   return (
     <div className="sticky top-[74px] z-[50] border-b border-white/[0.08] bg-[rgba(10,9,12,.92)] backdrop-blur-[10px]">
       <nav
-        aria-label="Capítulos"
+        aria-label={STRINGS[locale].chaptersLabel}
         className="ncf-wrap mx-auto flex max-w-[1380px] items-center gap-1 overflow-x-auto px-[24px] py-0 [scrollbar-width:none]"
       >
         {chapters.map((c) => {

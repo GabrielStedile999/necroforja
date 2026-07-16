@@ -1,7 +1,48 @@
 "use client";
 
 import { useState } from "react";
-import { STATUSES, CHAR_TESTS, XP_TABLE, END_CONDITIONS, FALL_TABLE } from "./content";
+import { useLocale } from "next-intl";
+import type { Locale } from "@/i18n/config";
+import { getHtpContent } from "./content.i18n";
+
+/** Small per-locale UI strings owned by this component. */
+const STRINGS: Record<
+	Locale,
+	{
+		statusesHeader: string;
+		charTestsHeader: string;
+		natural1: string;
+		xpHeader: string;
+		endHeader: string;
+		fallHeader: string;
+		height: string;
+		hitProfile: string;
+		fallNote: string;
+	}
+> = {
+	en: {
+		statusesHeader: "FIGHTER STATUSES & CONDITIONS",
+		charTestsHeader: "CHARACTERISTIC TESTS",
+		natural1: "A natural 1 on a Hit or Save = automatic failure. Roll-off: highest wins; a tie is re-rolled.",
+		xpHeader: "XP EARNED IN BATTLE (PG. 148)",
+		endHeader: "WHEN THE BATTLE ENDS",
+		fallHeader: "FALLING DAMAGE (3″+)",
+		height: "HEIGHT",
+		hitProfile: "HIT PROFILE",
+		fallNote: "The higher the Underhive, the longer the fall. Mind the walkways.",
+	},
+	"pt-BR": {
+		statusesHeader: "STATUSES & CONDITIONS DE FIGHTER",
+		charTestsHeader: "TESTES DE CARACTERÍSTICA",
+		natural1: "Natural 1 em Hit ou Save = falha automática. Roll-off: maior vence; empate rola de novo.",
+		xpHeader: "XP GANHO NA BATALHA (PG. 148)",
+		endHeader: "QUANDO A BATALHA TERMINA",
+		fallHeader: "DANO POR QUEDA (3″+)",
+		height: "ALTURA",
+		hitProfile: "PERFIL DO HIT",
+		fallNote: "Quanto mais alto o Underhive, mais longa a queda. Cuidado nas passarelas.",
+	},
+};
 
 /**
  * 06 · Referência rápida — statuses interativos, testes de característica,
@@ -9,6 +50,9 @@ import { STATUSES, CHAR_TESTS, XP_TABLE, END_CONDITIONS, FALL_TABLE } from "./co
  * do documento original.
  */
 export default function QuickRef({ accent }: { accent: string }) {
+	const locale = useLocale() as Locale;
+	const { STATUSES, CHAR_TESTS, XP_TABLE, END_CONDITIONS, FALL_TABLE } = getHtpContent(locale);
+	const str = STRINGS[locale];
 	const [activeId, setActiveId] = useState(STATUSES[0]?.id ?? "");
 	const active = STATUSES.find((s) => s.id === activeId) ?? STATUSES[0];
 
@@ -19,7 +63,8 @@ export default function QuickRef({ accent }: { accent: string }) {
 			{/* Statuses interativos */}
 			<div>
 				<div className="mb-4 font-mono text-[11px] tracking-[3px]" style={{ color: accent }}>
-					{"// "}STATUSES & CONDITIONS DE FIGHTER
+					{"// "}
+					{str.statusesHeader}
 				</div>
 				<div className="grid gap-6 lg:grid-cols-[1fr_380px]">
 					<div className="flex flex-wrap content-start gap-2">
@@ -65,7 +110,8 @@ export default function QuickRef({ accent }: { accent: string }) {
 				{/* Testes de característica */}
 				<div className="clip-chamfer border border-white/[0.08] bg-[#0f0d14] p-6">
 					<div className="mb-4 font-mono text-[11px] tracking-[3px]" style={{ color: accent }}>
-						{"// "}TESTES DE CARACTERÍSTICA
+						{"// "}
+						{str.charTestsHeader}
 					</div>
 					<div className="flex flex-col gap-3">
 						{CHAR_TESTS.map((t) => (
@@ -79,15 +125,15 @@ export default function QuickRef({ accent }: { accent: string }) {
 						))}
 					</div>
 					<p className="m-0 mt-4 border-l-2 border-hazard bg-[rgba(255,45,111,.06)] p-3 pl-4 text-justify text-[12.5px] leading-[1.6] text-[rgba(245,245,250,.65)]">
-						Natural 1 em Hit ou Save = falha automática. Roll-off: maior vence;
-						empate rola de novo.
+						{str.natural1}
 					</p>
 				</div>
 
 				{/* XP automático */}
 				<div className="clip-chamfer border border-white/[0.08] bg-[#0f0d14] p-6">
 					<div className="mb-4 font-mono text-[11px] tracking-[3px]" style={{ color: accent }}>
-						{"// "}XP GANHO NA BATALHA (PG. 148)
+						{"// "}
+						{str.xpHeader}
 					</div>
 					<div className="flex flex-col gap-[10px]">
 						{XP_TABLE.map((row, i) => (
@@ -107,7 +153,8 @@ export default function QuickRef({ accent }: { accent: string }) {
 				{/* Quando a batalha termina */}
 				<div className="clip-chamfer border border-white/[0.08] bg-[#0f0d14] p-6">
 					<div className="mb-4 font-mono text-[11px] tracking-[3px]" style={{ color: accent }}>
-						{"// "}QUANDO A BATALHA TERMINA
+						{"// "}
+						{str.endHeader}
 					</div>
 					<div className="flex flex-col gap-4">
 						{END_CONDITIONS.map((c) => (
@@ -122,12 +169,13 @@ export default function QuickRef({ accent }: { accent: string }) {
 				{/* Queda */}
 				<div className="clip-chamfer border border-white/[0.08] bg-[#0f0d14] p-6">
 					<div className="mb-4 font-mono text-[11px] tracking-[3px]" style={{ color: accent }}>
-						{"// "}DANO POR QUEDA (3″+)
+						{"// "}
+						{str.fallHeader}
 					</div>
 					<div className="flex flex-col gap-[6px] font-mono text-[13px]">
 						<div className="flex justify-between border-b border-white/[0.1] pb-2 text-[10px] tracking-[2px] text-[rgba(245,245,250,.45)]">
-							<span>ALTURA</span>
-							<span>PERFIL DO HIT</span>
+							<span>{str.height}</span>
+							<span>{str.hitProfile}</span>
 						</div>
 						{FALL_TABLE.map((row) => (
 							<div key={row.range} className="flex justify-between border-b border-white/[0.05] pb-[6px] last:border-0">
@@ -139,7 +187,7 @@ export default function QuickRef({ accent }: { accent: string }) {
 						))}
 					</div>
 					<p className="m-0 mt-4 text-[12px] leading-[1.6] text-[rgba(245,245,250,.5)]">
-						Quanto mais alto o Underhive, mais longa a queda. Cuidado nas passarelas.
+						{str.fallNote}
 					</p>
 				</div>
 			</div>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Skull } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Metadata } from "next";
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default function LoginPage() {
+  const t = useTranslations("Login");
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
       <Link href="/" className="mb-6 flex items-center justify-center gap-2">
@@ -22,10 +24,10 @@ export default function LoginPage() {
       <Card>
         <CardContent className="py-6">
           <h1 className="stencil mb-1 text-xl font-bold text-ink">
-            Restricted access
+            {t("title")}
           </h1>
           <p className="mb-5 text-sm text-muted">
-            Accounts are created by the Arbitrator. Sign in with your credentials.
+            {t("subtitle")}
           </p>
           <LoginForm />
         </CardContent>
@@ -35,7 +37,7 @@ export default function LoginPage() {
         href="/dashboard"
         className="mt-6 text-center text-xs text-muted hover:text-ink"
       >
-        ← Back to public dashboard
+        {t("backToDashboard")}
       </Link>
     </main>
   );

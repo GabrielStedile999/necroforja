@@ -1,5 +1,13 @@
 import Image from "next/image";
-import { HTP_INTRO, HOW_TO_READ } from "./content";
+import { useLocale } from "next-intl";
+import type { Locale } from "@/i18n/config";
+import { getHtpContent } from "./content.i18n";
+
+/** Small per-locale UI strings owned by this component. */
+const STRINGS: Record<Locale, { heroAlt: string }> = {
+	en: { heroAlt: "Gangs fighting in the Underhive" },
+	"pt-BR": { heroAlt: "Gangues em combate no Underhive" },
+};
 
 /** Ícones inline da legenda "como ler este guia". */
 function LegendIcon({ name }: { name: string }) {
@@ -25,13 +33,17 @@ function LegendIcon({ name }: { name: string }) {
  * com a caixa "como ler este guia" do documento original.
  */
 export default function HtpHero() {
+	const locale = useLocale() as Locale;
+	const { HTP_INTRO, HOW_TO_READ } = getHtpContent(locale);
+	const s = STRINGS[locale];
+
 	return (
 		<section className="relative overflow-hidden border-b border-white/[0.08]">
 			{/* Backdrop */}
 			<div className="absolute inset-0">
 				<Image
 					src={`/lore/${HTP_INTRO.image}.webp`}
-					alt="Gangues em combate no Underhive"
+					alt={s.heroAlt}
 					width={1284}
 					height={963}
 					priority

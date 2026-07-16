@@ -2,18 +2,33 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
+import LocaleSwitcher from "@/components/LocaleSwitcher";
 import s from "./SiteNav.module.scss";
 
+// House names are canonical game terms and stay in English (issue #12:
+// identifiers/logic in English — only display copy is translated).
 const GREAT_HOUSES = [
-  { name: "House Cawdor",   sub: "Faith & Fire · Zealot",        color: "#ffc23d", shadow: "rgba(255,194,61,.6)"  },
-  { name: "House Delaque",  sub: "Shadow & Secrets · Psychoteric", color: "#b07bff", shadow: "rgba(176,123,255,.6)" },
-  { name: "House Escher",   sub: "Blades & Venom · Toxin",       color: "#ff2d6f", shadow: "rgba(255,45,111,.6)"  },
-  { name: "House Goliath",  sub: "Muscle & Fury · Brawn",        color: "#ff8a3d", shadow: "rgba(255,138,61,.6)"  },
-  { name: "House Orlock",   sub: "Iron & Road · Versatile",      color: "#59e36b", shadow: "rgba(89,227,107,.6)"  },
-  { name: "House Van Saar", sub: "Tech & Precision · Marksman",  color: "#00e5ff", shadow: "rgba(0,229,255,.6)"   },
-];
+  { key: "cawdor",  name: "House Cawdor",   color: "#ffc23d", shadow: "rgba(255,194,61,.6)"  },
+  { key: "delaque", name: "House Delaque",  color: "#b07bff", shadow: "rgba(176,123,255,.6)" },
+  { key: "escher",  name: "House Escher",   color: "#ff2d6f", shadow: "rgba(255,45,111,.6)"  },
+  { key: "goliath", name: "House Goliath",  color: "#ff8a3d", shadow: "rgba(255,138,61,.6)"  },
+  { key: "orlock",  name: "House Orlock",   color: "#59e36b", shadow: "rgba(89,227,107,.6)"  },
+  { key: "vanSaar", name: "House Van Saar", color: "#00e5ff", shadow: "rgba(0,229,255,.6)"   },
+] as const;
+
+const GAME_OVERVIEW_LINKS = [
+  { key: "gameOverview" },
+  { key: "howToPlay", href: "/how-to-play" },
+  { key: "gangForge" },
+  { key: "loreSetting", href: "/lore" },
+  { key: "campaignJournal" },
+] as const;
+
+const GAME_MODE_KEYS = ["campaign", "territoryWar", "skirmish", "ashWastes", "publicDashboard"] as const;
 
 export default function SiteNav() {
+  const t = useTranslations("Nav");
   const [menu, setMenu]       = useState<"game" | "factions" | null>(null);
   const [navOpen, setNavOpen] = useState(false);
 
@@ -53,7 +68,7 @@ export default function SiteNav() {
               className={`${s.navLink} ${menu === "game" ? s.active : ""}`}
               style={{ borderBottomColor: menu === "game" ? "#ff2d6f" : "transparent" }}
             >
-              GAME <span className="text-[9px] opacity-70">▼</span>
+              {t("game")} <span className="text-[9px] opacity-70">▼</span>
             </span>
 
             <span
@@ -61,12 +76,12 @@ export default function SiteNav() {
               className={`${s.navLink} ${menu === "factions" ? s.active : ""}`}
               style={{ borderBottomColor: menu === "factions" ? "#00e5ff" : "transparent" }}
             >
-              FACTIONS <span className="text-[9px] opacity-70">▼</span>
+              {t("factions")} <span className="text-[9px] opacity-70">▼</span>
             </span>
 
-            <Link href="/lore" onMouseEnter={() => setMenu(null)} className={`${s.navText} no-underline`}>WORLD</Link>
-            <span onMouseEnter={() => setMenu(null)} className={s.navText}>NEWS</span>
-            <Link href="/dashboard" onMouseEnter={() => setMenu(null)} className={s.navText}>DASHBOARD</Link>
+            <Link href="/lore" onMouseEnter={() => setMenu(null)} className={`${s.navText} no-underline`}>{t("world")}</Link>
+            <span onMouseEnter={() => setMenu(null)} className={s.navText}>{t("news")}</span>
+            <Link href="/dashboard" onMouseEnter={() => setMenu(null)} className={s.navText}>{t("dashboard")}</Link>
           </nav>
 
           {/* Utility cluster — desktop */}
@@ -82,18 +97,16 @@ export default function SiteNav() {
 
             <span className="h-[20px] w-px bg-white/[0.14]" />
 
-            <span className={`font-mono text-xs tracking-[1px] text-[rgba(245,245,250,.5)] ${s.utilItem}`}>
-              EN ▾
-            </span>
+            <LocaleSwitcher align="right" />
 
-            <Link href="/login" className={s.playFreeBtn}>SIGN IN</Link>
+            <Link href="/login" className={s.playFreeBtn}>{t("signIn")}</Link>
           </div>
 
           {/* Burger — mobile */}
           <button
             onClick={openNav}
             className={`ncf-burger ml-auto ${s.burger}`}
-            aria-label="Open menu"
+            aria-label={t("openMenu")}
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="3" y1="6" x2="21" y2="6" />
@@ -111,24 +124,22 @@ export default function SiteNav() {
               {/* Link columns */}
               <div className="flex flex-1 gap-[64px]">
                 <div>
-                  <div className="mb-5 font-mono text-[11px] tracking-[3px] text-hazard">{'// OVERVIEW'}</div>
+                  <div className="mb-5 font-mono text-[11px] tracking-[3px] text-hazard">{t("gameMenu.overviewLabel")}</div>
                   <div className="flex flex-col gap-[15px]">
-                    {["Game Overview","How to Play","Gang & Forge Systems","Lore & Setting","Campaign Journal"].map((l) =>
-                      l === "Lore & Setting" ? (
-                        <Link key={l} href="/lore" className={`${s.megaLink} no-underline`}>{l}</Link>
-                      ) : l === "How to Play" ? (
-                        <Link key={l} href="/how-to-play" className={`${s.megaLink} no-underline`}>{l}</Link>
+                    {GAME_OVERVIEW_LINKS.map((item) =>
+                      "href" in item ? (
+                        <Link key={item.key} href={item.href} className={`${s.megaLink} no-underline`}>{t(`gameMenu.overview.${item.key}`)}</Link>
                       ) : (
-                        <span key={l} className={s.megaLink}>{l}</span>
+                        <span key={item.key} className={s.megaLink}>{t(`gameMenu.overview.${item.key}`)}</span>
                       ),
                     )}
                   </div>
                 </div>
                 <div>
-                  <div className="mb-5 font-mono text-[11px] tracking-[3px] text-cyan">{'// MODES'}</div>
+                  <div className="mb-5 font-mono text-[11px] tracking-[3px] text-cyan">{t("gameMenu.modesLabel")}</div>
                   <div className="flex flex-col gap-[15px]">
-                    {["Campaign","Territory War","Skirmish","Ash Wastes","Public Dashboard"].map((l) => (
-                      <span key={l} className={s.megaLink}>{l}</span>
+                    {GAME_MODE_KEYS.map((k) => (
+                      <span key={k} className={s.megaLink}>{t(`gameMenu.modes.${k}`)}</span>
                     ))}
                   </div>
                 </div>
@@ -138,12 +149,12 @@ export default function SiteNav() {
               <div className="relative shrink-0 basis-[420px] overflow-hidden border border-hazard/30 bg-[linear-gradient(150deg,#1a1020,#0a0810)] cursor-pointer clip-card-br-16">
                 <div className="absolute inset-0 stripe-game-featured" />
                 <div className="relative p-6">
-                  <div className="mb-[10px] font-mono text-[11px] tracking-[2px] text-hazard">FEATURED · S2</div>
-                  <div className="mb-2 text-[24px] font-bold leading-[1.05]">The Aranthian Succession</div>
+                  <div className="mb-[10px] font-mono text-[11px] tracking-[2px] text-hazard">{t("gameMenu.featuredKicker")}</div>
+                  <div className="mb-2 text-[24px] font-bold leading-[1.05]">{t("gameMenu.featuredTitle")}</div>
                   <div className="mb-5 max-w-[300px] text-[13px] leading-[1.55] text-[rgba(245,245,250,.6)]">
-                    Many gangs. One dying world. The campaign season is live on the table.
+                    {t("gameMenu.featuredDesc")}
                   </div>
-                  <Link href="/login" className={s.megaPlayBtn}>SIGN IN →</Link>
+                  <Link href="/login" className={s.megaPlayBtn}>{t("signInArrow")}</Link>
                 </div>
               </div>
             </div>
@@ -157,14 +168,14 @@ export default function SiteNav() {
 
               {/* Houses grid */}
               <div className="flex-1">
-                <div className="mb-[22px] font-mono text-[11px] tracking-[3px] text-cyan">{'// THE GREAT HOUSES'}</div>
+                <div className="mb-[22px] font-mono text-[11px] tracking-[3px] text-cyan">{t("factionsMenu.housesLabel")}</div>
                 <div className="grid grid-cols-2 gap-x-[40px] gap-y-[14px]">
                   {GREAT_HOUSES.map((h) => (
                     <div key={h.name} className={s.houseRow}>
                       <span className="h-[34px] w-1 shrink-0" style={{ background: h.color, boxShadow: `0 0 10px ${h.shadow}` }} />
                       <div>
                         <div className="text-[15px] font-semibold">{h.name}</div>
-                        <div className="font-mono text-[11px] text-[rgba(245,245,250,.45)]">{h.sub}</div>
+                        <div className="font-mono text-[11px] text-[rgba(245,245,250,.45)]">{t(`houses.${h.key}`)}</div>
                       </div>
                     </div>
                   ))}
@@ -175,12 +186,12 @@ export default function SiteNav() {
               <div className="relative shrink-0 basis-[360px] overflow-hidden border border-cyan/[0.28] bg-[linear-gradient(150deg,#0a1418,#06090d)] cursor-pointer clip-card-bl-16">
                 <div className="absolute bottom-[-20%] left-[-10%] right-[-10%] h-[90%] opacity-[0.14] grid-factions-panel" />
                 <div className="relative p-6">
-                  <div className="mb-[10px] font-mono text-[11px] tracking-[2px] text-cyan">PICK A SIDE</div>
-                  <div className="mb-2 text-[23px] font-bold leading-[1.05]">Choose Your House</div>
+                  <div className="mb-[10px] font-mono text-[11px] tracking-[2px] text-cyan">{t("factionsMenu.pickASide")}</div>
+                  <div className="mb-2 text-[23px] font-bold leading-[1.05]">{t("factionsMenu.chooseTitle")}</div>
                   <div className="mb-5 max-w-[280px] text-[13px] leading-[1.55] text-[rgba(245,245,250,.6)]">
-                    Your allegiance shapes the campaign — and who you betray.
+                    {t("factionsMenu.chooseDesc")}
                   </div>
-                  <span className={s.compareLink}>COMPARE ALL HOUSES →</span>
+                  <span className={s.compareLink}>{t("factionsMenu.compareAll")}</span>
                 </div>
               </div>
             </div>
@@ -202,7 +213,7 @@ export default function SiteNav() {
               <span className={`text-hazard text-[20px] leading-none ${s.logoGlyph}`}>◣</span>
               <span className="text-[16px] font-bold tracking-[4px]">NECROFORJA</span>
             </div>
-            <button onClick={closeNav} className={s.mobileClose} aria-label="Close menu">
+            <button onClick={closeNav} className={s.mobileClose} aria-label={t("closeMenu")}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="5" y1="5" x2="19" y2="19" /><line x1="19" y1="5" x2="5" y2="19" />
               </svg>
@@ -211,15 +222,15 @@ export default function SiteNav() {
 
           {/* Body */}
           <div className="relative z-[2] flex flex-col px-5 pb-10 pt-2">
-            <div className="my-5 mb-1 font-mono text-[11px] tracking-[3px] text-hazard">{'// NAVIGATE'}</div>
+            <div className="my-5 mb-1 font-mono text-[11px] tracking-[3px] text-hazard">{t("navigate")}</div>
 
             {[
-              { num: "01", label: "GAME" },
-              { num: "02", label: "HOW TO PLAY", href: "/how-to-play" },
-              { num: "03", label: "FACTIONS" },
-              { num: "04", label: "WORLD", href: "/lore" },
-              { num: "05", label: "NEWS" },
-              { num: "06", label: "DASHBOARD", href: "/dashboard" },
+              { num: "01", label: t("game") },
+              { num: "02", label: t("howToPlay"), href: "/how-to-play" },
+              { num: "03", label: t("factions") },
+              { num: "04", label: t("world"), href: "/lore" },
+              { num: "05", label: t("news") },
+              { num: "06", label: t("dashboard"), href: "/dashboard" },
             ].map((item) =>
               item.href ? (
                 <Link key={item.num} href={item.href} onClick={closeNav} className={`${s.mobileNavItem} no-underline text-ink`}>
@@ -234,14 +245,14 @@ export default function SiteNav() {
               ),
             )}
 
-            <div className="mb-[14px] mt-[30px] font-mono text-[11px] tracking-[3px] text-cyan">{'// THE GREAT HOUSES'}</div>
+            <div className="mb-[14px] mt-[30px] font-mono text-[11px] tracking-[3px] text-cyan">{t("factionsMenu.housesLabel")}</div>
             <div className="flex flex-col gap-3">
               {GREAT_HOUSES.map((h) => (
                 <div key={h.name} onClick={closeNav} className={s.mobileHouseRow}>
                   <span className="h-[30px] w-1 shrink-0" style={{ background: h.color, boxShadow: `0 0 10px ${h.shadow}` }} />
                   <div>
                     <div className="text-[15px] font-semibold">{h.name}</div>
-                    <div className="font-mono text-[11px] text-[rgba(245,245,250,.45)]">{h.sub}</div>
+                    <div className="font-mono text-[11px] text-[rgba(245,245,250,.45)]">{t(`houses.${h.key}`)}</div>
                   </div>
                 </div>
               ))}
@@ -252,13 +263,13 @@ export default function SiteNav() {
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.5" y2="16.5" />
                 </svg>
-                SEARCH
+                {t("search")}
               </span>
-              <span className="cursor-pointer">EN ▾</span>
+              <LocaleSwitcher align="left" />
             </div>
 
             <Link href="/login" onClick={closeNav} className={s.mobilePlayBtn}>
-              SIGN IN →
+              {t("signInArrow")}
             </Link>
           </div>
         </div>

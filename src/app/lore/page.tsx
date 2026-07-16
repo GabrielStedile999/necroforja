@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getLocale } from "next-intl/server";
 import Ticker from "@/components/landing/Ticker";
 import SiteNav from "@/components/landing/SiteNav";
 import SiteFooter from "@/components/landing/SiteFooter";
@@ -6,28 +7,32 @@ import LoreHero from "@/components/lore/LoreHero";
 import LoreNav from "@/components/lore/LoreNav";
 import LoreChapter from "@/components/lore/LoreChapter";
 import LoreCTA from "@/components/lore/LoreCTA";
-import { LORE_CHAPTERS } from "@/components/lore/content";
+import { getLoreChapters, toLocale } from "@/components/lore/content.i18n";
 
 /**
  * Lore & Setting — introdução ao cenário de Necromunda (issue #9).
  *
  * Conteúdo estruturado a partir do documento de lore da campanha:
  * o Império, a anatomia de uma cidade colmeia (interativa), as colmeias
- * de Necromunda, os Desertos de Cinzas e as Casas.
+ * de Necromunda, os Desertos de Cinzas e as Casas. Texto selecionado por
+ * locale (issue #12): EN é o padrão, PT-BR preserva o documento original.
  */
 export const metadata: Metadata = {
   title: "Lore & Setting",
   description:
-    "Introdução ao cenário de Necromunda: o Império, os mundos colmeia, a sub-colmeia, os Desertos de Cinzas e as Casas que disputam o Underhive.",
+    "An introduction to the setting of Necromunda: the Imperium, the hive worlds, the underhive, the Ash Wastes and the Houses that fight over the Underhive.",
   alternates: { canonical: "/lore" },
   openGraph: {
     title: "Lore & Setting · NecroForja",
     description:
-      "Bem-vindo a Necromunda. Conheça o mundo colmeia, o Underhive e as Casas antes de forjar sua gangue.",
+      "Welcome to Necromunda. Get to know the hive world, the Underhive and the Houses before forging your gang.",
   },
 };
 
-export default function LorePage() {
+export default async function LorePage() {
+  const locale = toLocale(await getLocale());
+  const chapters = getLoreChapters(locale);
+
   return (
     <div
       className="relative w-full overflow-x-clip text-ink"
@@ -43,9 +48,9 @@ export default function LorePage() {
 
       <main>
         <LoreHero />
-        <LoreNav chapters={LORE_CHAPTERS.map(({ id, num, title, accent }) => ({ id, num, title, accent }))} />
+        <LoreNav chapters={chapters.map(({ id, num, title, accent }) => ({ id, num, title, accent }))} />
 
-        {LORE_CHAPTERS.map((chapter) => (
+        {chapters.map((chapter) => (
           <LoreChapter key={chapter.id} chapter={chapter} />
         ))}
 

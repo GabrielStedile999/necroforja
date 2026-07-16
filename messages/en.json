@@ -1,0 +1,179 @@
+{
+	"LocaleSwitcher": {
+		"label": "Language",
+		"en": "English",
+		"pt-BR": "Português (BR)"
+	},
+	"Ticker": {
+		"items": [
+			"● SEASON 1 LIVE",
+			"THE ARANTHIAN SUCCESSION",
+			"GANGS IN THE WAR",
+			"NEW CAMPAIGN SEASON — RECRUITING",
+			"SPIRE THRONE: CONTESTED"
+		]
+	},
+	"Nav": {
+		"game": "GAME",
+		"factions": "FACTIONS",
+		"world": "WORLD",
+		"news": "NEWS",
+		"dashboard": "DASHBOARD",
+		"howToPlay": "HOW TO PLAY",
+		"signIn": "SIGN IN",
+		"signInArrow": "SIGN IN →",
+		"search": "SEARCH",
+		"openMenu": "Open menu",
+		"closeMenu": "Close menu",
+		"navigate": "// NAVIGATE",
+		"gameMenu": {
+			"overviewLabel": "// OVERVIEW",
+			"modesLabel": "// MODES",
+			"overview": {
+				"gameOverview": "Game Overview",
+				"howToPlay": "How to Play",
+				"gangForge": "Gang & Forge Systems",
+				"loreSetting": "Lore & Setting",
+				"campaignJournal": "Campaign Journal"
+			},
+			"modes": {
+				"campaign": "Campaign",
+				"territoryWar": "Territory War",
+				"skirmish": "Skirmish",
+				"ashWastes": "Ash Wastes",
+				"publicDashboard": "Public Dashboard"
+			},
+			"featuredKicker": "FEATURED · S2",
+			"featuredTitle": "The Aranthian Succession",
+			"featuredDesc": "Many gangs. One dying world. The campaign season is live on the table."
+		},
+		"factionsMenu": {
+			"housesLabel": "// THE GREAT HOUSES",
+			"pickASide": "PICK A SIDE",
+			"chooseTitle": "Choose Your House",
+			"chooseDesc": "Your allegiance shapes the campaign — and who you betray.",
+			"compareAll": "COMPARE ALL HOUSES →"
+		},
+		"houses": {
+			"cawdor": "Faith & Fire · Zealot",
+			"delaque": "Shadow & Secrets · Psychoteric",
+			"escher": "Blades & Venom · Toxin",
+			"goliath": "Muscle & Fury · Brawn",
+			"orlock": "Iron & Road · Versatile",
+			"vanSaar": "Tech & Precision · Marksman"
+		}
+	},
+	"Hero": {
+		"rec": "REC",
+		"liveFeed": "LIVE FEED · SECTOR-7G",
+		"verticalDeco": "ARANTHIAN SUCCESSION // FORGE PROTOCOL",
+		"scroll": "SCROLL",
+		"preTitle": "TALES OF NECROMUNDA",
+		"tagline": "THE ARANTHIAN SUCCESSION",
+		"lead": "Descend into the rust-choked underhive. Roam the endless wastes on roaring engines. Forge a gang, seize territory, and outlast rival Houses in a living war for power, survival, and control of a dying world.",
+		"ctaPrimary": "ENTER PUBLIC DASHBOARD →",
+		"ctaPrimarySub": "LIVE CAMPAIGN · SEASON 1",
+		"watchTrailer": "WATCH TRAILER",
+		"trailerSub": "OFFICIAL REVEAL · 01:08",
+		"trailerAria": "Trailer video",
+		"closeTrailer": "Close trailer"
+	},
+	"Features": {
+		"sectionLabel": "01 // THE GAME",
+		"rosterLabel": "GANG // ROSTER",
+		"recruitRow": "+ RECRUIT FIGHTER",
+		"territoryLabel": "TERRITORY // SECTOR-7G",
+		"control": "CONTROL 62% ▲",
+		"f1Kicker": "01 / SYSTEM",
+		"f1Title": "FORGE YOUR GANG",
+		"f1Desc": "Recruit fighters, bolt on cybernetics, and scavenge the forge for gear. Every scar, weapon, and upgrade persists across the entire campaign.",
+		"f1Tags": ["DEEP CUSTOMIZATION", "PERSISTENT INJURIES", "17 GANGS"],
+		"f2Kicker": "02 / WORLD",
+		"f2Title": "A LIVING UNDERHIVE",
+		"f2Desc": "Territory shifts after every battle on the table. Campaign seasons rewrite the map, alliances rise and burn, and the spire throne is always in play.",
+		"f2Tags": ["LIVE TERRITORY WAR", "SEASONAL MAP"]
+	},
+	"Gangs": {
+		"sectionLabel": "02 // THE GANGS",
+		"compareAll": "COMPARE ALL GANGS →",
+		"heading": "Many gangs. One dying world. No one rules forever.",
+		"countSuffix": "GANGS",
+		"groups": {
+			"greatHouses": "THE GREAT HOUSES",
+			"independent": "INDEPENDENT GANGS & CULTS",
+			"ashWastes": "ASH WASTES GANGS",
+			"hiveSecundus": "HIVE SECUNDUS GANGS"
+		},
+		"cards": {
+			"GH-01": { "tagline": "FAITH & FIRE", "desc": "Religious fanatics fielding hordes with improvised weapons and cleansing flame. Includes the Redemptionists." },
+			"GH-02": { "tagline": "THE SHADOW HOUSE", "desc": "Espionage, infiltration, psychological control and mind-bending Psychoteric powers." },
+			"GH-03": { "tagline": "BLADES & VENOM", "desc": "Speed, poisons, toxins and generations of genetic craft." },
+			"GH-04": { "tagline": "THE FORGE TYRANTS", "desc": "Brute strength, stimm-fuelled resilience and bio-engineered muscle." },
+			"GH-05": { "tagline": "HOUSE OF IRON", "desc": "Versatile fighters, dependable firearms and a life lived on the road." },
+			"GH-06": { "tagline": "THE ARCHTEKS", "desc": "Advanced technology, superior marksmanship and energy weaponry." },
+			"IG-01": { "tagline": "THE BUTCHERS", "desc": "Blood-crazed cultists of Khorne devoted to savage close combat." },
+			"IG-02": { "tagline": "THE HIVE'S LAW", "desc": "Necromunda's paramilitary police force, armed to keep order by any means." },
+			"IG-03": { "tagline": "THE UNSHACKLED", "desc": "Escaped ogryns risen in revolt against their former masters." },
+			"IG-04": { "tagline": "THE CORRUPTED", "desc": "Generic Chaos cults that can represent followers of any of the Dark Gods." },
+			"IG-05": { "tagline": "THE HIDDEN BROOD", "desc": "Traditional Genestealer cults spreading quietly beneath the hive." },
+			"IG-06": { "tagline": "BOUNTY HUNTERS", "desc": "Fully customizable hunter bands — humans, Squats, Ogryns, Beastmen and Ratlings since the 2025 update." },
+			"IG-07": { "tagline": "THE FORGOTTEN", "desc": "The most open gang in the game: outlaws, mutants, wyrds, guilders, fallen nobles — almost any concept you can imagine." },
+			"AW-01": { "tagline": "RIDERS OF THE WASTES", "desc": "Native nomads of the wastelands: stealth, ambushes, giant insects and total mastery of the terrain. Expanded through 2025." },
+			"AW-02": { "tagline": "THE MINING CLANS", "desc": "Hardy Squat miners with industrial firepower and superb tech, heavily expanded in Halls of the Ancients." },
+			"HS-01": { "tagline": "THE NOBLE HUNT", "desc": "Ultra-rich nobles in Hunting Rigs. Very few models, extremely powerful, growing through their own Terror Level mechanic." },
+			"HS-02": { "tagline": "THE TWISTED BROOD", "desc": "The mutant Genestealers of Hive Secundus: hordes of Brood Scum backed by terrifying monsters, built for the Underhells." }
+		}
+	},
+	"News": {
+		"sectionLabel": "03 // DISPATCHES",
+		"readAll": "READ ALL DISPATCHES →",
+		"items": {
+			"0": { "tag": "BATTLE REPORT", "title": "Ambush at the Sump Gates", "summary": "Cawdor zealots torch an Escher chem-den in a brutal turf war — full report from the tabletop, with photos and the final butcher's bill." },
+			"1": { "tag": "CAMPAIGN", "title": "Season 1 Mid-Point: The Map Redrawn", "summary": "Territories change hands as the Aranthian Succession heats up. Standings, rivalries and betrayals from the campaign so far." },
+			"2": { "tag": "HOBBY", "title": "Painting the Rust: Weathering the Underhive", "summary": "From bare plastic to underhive grime — the techniques behind this month's featured gang, step by step." }
+		}
+	},
+	"CTA": {
+		"kicker": "TABLETOP SKIRMISH · MINIATURES · DICE · NARRATIVE CAMPAIGN",
+		"title": "ENTER THE UNDERHIVE",
+		"howToStart": "HOW TO START",
+		"meetGangs": "MEET THE GANGS"
+	},
+	"Footer": {
+		"blurb": "Tales of Necromunda — The Aranthian Succession. A tabletop war of miniatures, dice and paint for the underhive.",
+		"headings": {
+			"game": "GAME",
+			"community": "COMMUNITY",
+			"support": "SUPPORT"
+		},
+		"links": {
+			"overview": "Overview",
+			"factions": "Factions",
+			"roadmap": "Roadmap",
+			"dashboard": "Dashboard",
+			"discord": "Discord",
+			"news": "News",
+			"creators": "Creators",
+			"forums": "Forums",
+			"help": "Help",
+			"status": "Status",
+			"contact": "Contact",
+			"account": "Account"
+		},
+		"copyright": "© 2026 NECROFORJA — FAN-MADE CONCEPT. NOT AFFILIATED WITH GAMES WORKSHOP.",
+		"privacy": "PRIVACY",
+		"terms": "TERMS"
+	},
+	"Login": {
+		"title": "Restricted access",
+		"subtitle": "Accounts are created by the Arbitrator. Sign in with your credentials.",
+		"email": "E-mail",
+		"password": "Password",
+		"signIn": "Sign in",
+		"signingIn": "Signing in...",
+		"backToDashboard": "← Back to public dashboard",
+		"errors": {
+			"invalid_credentials": "Invalid e-mail or password."
+		}
+	}
+}

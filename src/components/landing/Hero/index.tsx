@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import s from "./Hero.module.scss";
 import TrailerModal from "./TrailerModal";
 
@@ -7,6 +8,7 @@ import TrailerModal from "./TrailerModal";
  * text-shadow, complex gradients, and hover transitions.
  */
 export default function Hero() {
+	const t = useTranslations("Hero");
 	return (
 		<div
 			className="ncf-hero relative flex min-h-screen max-h-screen items-end overflow-hidden bg-[#0a0507]"
@@ -41,10 +43,10 @@ export default function Hero() {
 			<div className="ncf-hero-deco absolute right-[48px] top-[26px] z-[21] flex items-center gap-[14px] font-mono text-xs tracking-[1px] text-[rgba(245,245,250,.7)]">
 				<span className="inline-flex items-center gap-[7px]">
 					<span className={s.recDot} />
-					REC
+					{t("rec")}
 				</span>
 				<span className="text-[rgba(245,245,250,.4)]">
-					LIVE FEED · SECTOR-7G
+					{t("liveFeed")}
 				</span>
 				<span className="border border-white/[0.15] px-2 py-[3px]">
 					02:14:08
@@ -53,13 +55,13 @@ export default function Hero() {
 
 			{/* Left vertical text */}
 			<div className="ncf-hero-deco absolute left-5 top-1/2 z-[21] -translate-y-1/2 rotate-180 writing-vertical font-mono text-[11px] tracking-[5px] text-[rgba(245,245,250,.32)]">
-				ARANTHIAN SUCCESSION // FORGE PROTOCOL
+				{t("verticalDeco")}
 			</div>
 
 			{/* Scroll cue */}
 			<div className="ncf-hero-deco absolute bottom-[40px] right-[48px] z-[21] flex flex-col items-center gap-[10px]">
 				<span className="writing-vertical font-mono text-[10px] tracking-[3px] text-[rgba(245,245,250,.4)]">
-					SCROLL
+					{t("scroll")}
 				</span>
 				<span className={s.scrollMouse}>
 					<span className={s.scrollDot} />
@@ -72,7 +74,7 @@ export default function Hero() {
 				<div className="mb-[18px] flex items-center gap-[14px]">
 					<span className="h-px w-[54px] bg-hazard" />
 					<span className="font-mono text-[13px] tracking-[5px] text-hazard">
-						TALES OF NECROMUNDA
+						{t("preTitle")}
 					</span>
 				</div>
 
@@ -86,15 +88,12 @@ export default function Hero() {
 
 				{/* Tagline */}
 				<div className="ncf-hero-tagline mt-4 mb-6 font-mono text-[clamp(15px,1.5vw,22px)] tracking-[9px] text-[rgba(245,245,250,.82)]">
-					THE ARANTHIAN SUCCESSION
+					{t("tagline")}
 				</div>
 
 				{/* Lead */}
 				<p className="ncf-hero-lead m-0 mb-9 max-w-[600px] text-[18px] leading-[1.65] text-[rgba(245,245,250,.62)]">
-					Descend into the rust-choked underhive. Roam the endless wastes on
-					roaring engines. Forge a gang, seize territory, and outlast rival
-					Houses in a living war for power, survival, and control of a dying
-					world.
+					{t("lead")}
 				</p>
 
 				{/* CTAs */}
@@ -102,10 +101,10 @@ export default function Hero() {
 					{/* Primary */}
 					<Link href="/dashboard" className={s.ctaPrimary}>
 						<span className="text-[17px] font-bold tracking-[2px]">
-							ENTER PUBLIC DASHBOARD →
+							{t("ctaPrimary")}
 						</span>
 						<span className="mt-[3px] font-mono text-[11px] tracking-[1px] opacity-70">
-							LIVE CAMPAIGN · SEASON 1
+							{t("ctaPrimarySub")}
 						</span>
 					</Link>
 

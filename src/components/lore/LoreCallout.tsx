@@ -1,5 +1,13 @@
+import { useLocale } from "next-intl";
+import type { Locale } from "@/i18n/config";
 import LoreFigure from "./LoreFigure";
 import type { LoreSection } from "./content";
+import { toLocale } from "./content.i18n";
+
+const STRINGS: Record<Locale, { hiveRecord: string }> = {
+  en: { hiveRecord: "// HIVE RECORD" },
+  "pt-BR": { hiveRecord: "// REGISTRO DA COLMEIA" },
+};
 
 /**
  * Caixa de destaque narrativa — corresponde aos blocos em negrito do
@@ -12,6 +20,7 @@ export default function LoreCallout({
   section: LoreSection;
   accent: string;
 }) {
+  const locale = toLocale(useLocale());
   const img = section.blocks.find((b) => b.type === "img");
   const texts = section.blocks.filter((b) => b.type !== "img");
 
@@ -28,7 +37,7 @@ export default function LoreCallout({
       <div className="relative flex flex-col gap-8 p-[32px] md:flex-row md:items-center md:p-[40px]">
         <div className="flex-1">
           <div className="mb-3 font-mono text-[11px] tracking-[3px]" style={{ color: accent }}>
-            {"// REGISTRO DA COLMEIA"}
+            {STRINGS[locale].hiveRecord}
           </div>
           <h3 className="m-0 mb-4 text-[24px] font-bold uppercase leading-[1.05] tracking-[1px]">
             {section.title}
