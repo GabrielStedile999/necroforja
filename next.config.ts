@@ -19,6 +19,14 @@ const nextConfig: NextConfig = {
     // Qualidades permitidas para next/image (90 usada nas figuras do lore)
     qualities: [75, 90],
   },
+  // O jornal de campanha nasceu em /blog e foi renomeado para /reports
+  // (issue #5) — 301 preserva links antigos e SEO.
+  async redirects() {
+    return [
+      { source: "/blog", destination: "/reports", permanent: true },
+      { source: "/blog/:slug", destination: "/reports/:slug", permanent: true },
+    ];
+  },
   // Cabeçalhos de segurança básicos (ver seção 9 do PLANO-TECNICO.md)
   async headers() {
     return [

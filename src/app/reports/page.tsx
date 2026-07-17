@@ -4,10 +4,10 @@ import type { Locale } from "@/i18n/config";
 import Ticker from "@/components/landing/Ticker";
 import SiteNav from "@/components/landing/SiteNav";
 import SiteFooter from "@/components/landing/SiteFooter";
-import PostList, { type PostListItem } from "@/components/blog/PostList";
-import { toPostType } from "@/components/blog/postTypes";
+import PostList, { type PostListItem } from "@/components/reports/PostList";
+import { toPostType } from "@/components/reports/postTypes";
 import { listPublishedPosts } from "@/lib/db/queries";
-import { formatPostDate, pickPostText } from "@/lib/blog";
+import { formatPostDate, pickPostText } from "@/lib/reports";
 import { logger } from "@/lib/logger";
 
 /**
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 	title: "Campaign Journal",
 	description:
 		"The campaign journal of The Aranthian Succession: session reports, character chronicles, painting logs and reports from the Underhive.",
-	alternates: { canonical: "/blog" },
+	alternates: { canonical: "/reports" },
 	openGraph: {
 		title: "Campaign Journal · NecroForja",
 		description:
@@ -51,12 +51,12 @@ async function loadPosts(): Promise<Awaited<ReturnType<typeof listPublishedPosts
 	try {
 		return await listPublishedPosts();
 	} catch (error) {
-		logger.error("blog: failed to load published posts", { error });
+		logger.error("reports: failed to load published posts", { error });
 		return null;
 	}
 }
 
-export default async function BlogPage() {
+export default async function ReportsPage() {
 	const locale = (await getLocale()) as Locale;
 	const t = PAGE_STRINGS[locale] ?? PAGE_STRINGS.en;
 	const rows = await loadPosts();

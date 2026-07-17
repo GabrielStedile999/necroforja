@@ -10,7 +10,7 @@
  */
 
 /** Bucket for campaign journal images (public read). */
-export const BLOG_BUCKET = "blog";
+export const REPORTS_BUCKET = "reports";
 
 function supabaseEnv(): { url: string; serviceKey: string } {
 	const url = process.env.SUPABASE_URL;

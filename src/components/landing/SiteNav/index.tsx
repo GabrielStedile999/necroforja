@@ -21,7 +21,7 @@ const GREAT_HOUSES = [
 const GAME_OVERVIEW_LINKS = [
   { key: "howToPlay", href: "/how-to-play" },
   { key: "loreSetting", href: "/lore" },
-  { key: "campaignJournal", href: "/blog" },
+  { key: "campaignJournal", href: "/reports" },
 ] as const;
 
 const GAME_MODE_KEYS = ["campaign", "skirmish"] as const;
@@ -82,7 +82,7 @@ export default function SiteNav() {
             </Link>
 
             <Link href="/lore" onMouseEnter={() => setMenu(null)} className={`${s.navText} no-underline`}>{t("world")}</Link>
-            <Link href="/blog" onMouseEnter={() => setMenu(null)} className={`${s.navText} no-underline`}>{t("news")}</Link>
+            <Link href="/reports" onMouseEnter={() => setMenu(null)} className={`${s.navText} no-underline`}>{t("news")}</Link>
             <Link href="/dashboard" onMouseEnter={() => setMenu(null)} className={s.navText}>{t("dashboard")}</Link>
           </nav>
 
@@ -235,7 +235,7 @@ export default function SiteNav() {
               { num: "02", label: t("howToPlay"), href: "/how-to-play" },
               { num: "03", label: t("factions"), href: "/gangs" },
               { num: "04", label: t("world"), href: "/lore" },
-              { num: "05", label: t("news"), href: "/blog" },
+              { num: "05", label: t("news"), href: "/reports" },
               { num: "06", label: t("dashboard"), href: "/dashboard" },
             ].map((item) =>
               item.href ? (

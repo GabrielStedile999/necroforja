@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { pickPostText, formatPostDate, slugify, type PostText } from "@/lib/blog";
+import { pickPostText, formatPostDate, slugify, type PostText } from "@/lib/reports";
 import { postSchema } from "@/lib/validation";
-import { POST_TYPE_KEYS, toPostType } from "@/components/blog/postTypes";
+import { POST_TYPE_KEYS, toPostType } from "@/components/reports/postTypes";
 
 /** Campaign journal helpers (issue #5). */
 
@@ -77,7 +77,7 @@ describe("postSchema", () => {
 
 	it("rejects non-https cover URLs", () => {
 		expect(postSchema.safeParse({ ...base, coverImage: "http://x.com/a.png" }).success).toBe(false);
-		expect(postSchema.safeParse({ ...base, coverImage: "/blog/a.png" }).success).toBe(true);
+		expect(postSchema.safeParse({ ...base, coverImage: "/reports/a.png" }).success).toBe(true);
 		expect(
 			postSchema.safeParse({ ...base, coverImage: "https://x.supabase.co/a.png" }).success,
 		).toBe(true);

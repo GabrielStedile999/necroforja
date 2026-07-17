@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 /**
  * 03 // REPORTS — os relatórios mais recentes do jornal de campanha
  * (issue #5). A landing carrega os posts publicados no servidor e passa
- * itens prontos para exibição; cada linha linka para /blog/<slug>.
+ * itens prontos para exibição; cada linha linka para /reports/<slug>.
  *
  * i18n: rótulos do cabeçalho vêm de messages/<locale>.json (News);
  * título/resumo/tag chegam já resolvidos para o locale.
@@ -40,7 +40,7 @@ export default function News({ items }: { items: NewsItem[] }) {
 						{t("sectionLabel")}
 					</span>
 					<Link
-						href="/blog"
+						href="/reports"
 						className="ncf-util-link font-mono text-[13px] tracking-[2px] text-[rgba(245,245,250,.7)] no-underline"
 					>
 						{t("readAll")}
@@ -60,7 +60,7 @@ export default function News({ items }: { items: NewsItem[] }) {
 							return (
 								<Link
 									key={item.slug}
-									href={`/blog/${item.slug}`}
+									href={`/reports/${item.slug}`}
 									className={`
                     ncf-news-row ncf-news-row-item
                     flex items-center gap-7 px-2 py-6

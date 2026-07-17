@@ -232,7 +232,7 @@ export const posts = pgTable(
     excerptPt: text("excerpt_pt").notNull().default(""),
     bodyEn: text("body_en").notNull(),
     bodyPt: text("body_pt").notNull(),
-    /** Absolute URL (Supabase Storage) or site-relative path (/blog/…). */
+    /** Absolute URL (Supabase Storage) or site-relative path (/reports/…). */
     coverImage: text("cover_image"),
     coverAlt: text("cover_alt"),
     published: boolean("published").notNull().default(false),

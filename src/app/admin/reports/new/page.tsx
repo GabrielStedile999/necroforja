@@ -20,7 +20,7 @@ export default function NewPostPage() {
 			<main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8">
 				<div className="flex items-center gap-3">
 					<h1 className="stencil text-2xl font-bold text-ink">New post</h1>
-					<Link href="/admin/blog" className="ml-auto">
+					<Link href="/admin/reports" className="ml-auto">
 						<Button variant="ghost">← Journal</Button>
 					</Link>
 				</div>

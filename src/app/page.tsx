@@ -9,10 +9,10 @@ import Houses from "@/components/landing/Houses";
 import News, { type NewsItem } from "@/components/landing/News";
 import BigCTA from "@/components/landing/BigCTA";
 import SiteFooter from "@/components/landing/SiteFooter";
-import { POST_TYPES, toPostType } from "@/components/blog/postTypes";
+import { POST_TYPES, toPostType } from "@/components/reports/postTypes";
 import { buildWebsiteJsonLd, buildAppJsonLd } from "@/lib/seo/json-ld";
 import { listPublishedPosts } from "@/lib/db/queries";
-import { formatPostDate, pickPostText } from "@/lib/blog";
+import { formatPostDate, pickPostText } from "@/lib/reports";
 import { logger } from "@/lib/logger";
 
 /**

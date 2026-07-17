@@ -17,7 +17,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:seed": "tsx src/lib/db/seed.ts",
-    "db:seed:blog": "tsx src/lib/db/seed-blog.ts",
+    "db:seed:reports": "tsx src/lib/db/seed-reports.ts",
     "db:studio": "drizzle-kit studio",
     "rules:ingest": "tsx src/lib/ai/ingest.ts"
   },

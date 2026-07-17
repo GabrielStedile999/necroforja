@@ -7,10 +7,10 @@ import type { Locale } from "@/i18n/config";
 import Ticker from "@/components/landing/Ticker";
 import SiteNav from "@/components/landing/SiteNav";
 import SiteFooter from "@/components/landing/SiteFooter";
-import PostBody from "@/components/blog/PostBody";
-import { POST_TYPES, toPostType } from "@/components/blog/postTypes";
+import PostBody from "@/components/reports/PostBody";
+import { POST_TYPES, toPostType } from "@/components/reports/postTypes";
 import { getPublishedPostBySlug } from "@/lib/db/queries";
-import { formatPostDate, pickPostText } from "@/lib/blog";
+import { formatPostDate, pickPostText } from "@/lib/reports";
 import { logger } from "@/lib/logger";
 
 /**
@@ -30,7 +30,7 @@ async function loadPost(slug: string) {
 	try {
 		return await getPublishedPostBySlug(slug);
 	} catch (error) {
-		logger.error("blog: failed to load post", { slug, error });
+		logger.error("reports: failed to load post", { slug, error });
 		return null;
 	}
 }
@@ -48,7 +48,7 @@ export async function generateMetadata({
 	return {
 		title: post.titleEn,
 		description: post.excerptEn || post.excerptPt || undefined,
-		alternates: { canonical: `/blog/${post.slug}` },
+		alternates: { canonical: `/reports/${post.slug}` },
 		openGraph: {
 			title: `${post.titleEn} · NecroForja`,
 			description: post.excerptEn || undefined,
@@ -57,7 +57,7 @@ export async function generateMetadata({
 	};
 }
 
-export default async function BlogPostPage({ params }: { params: Promise<Params> }) {
+export default async function ReportPostPage({ params }: { params: Promise<Params> }) {
 	const { slug } = await params;
 	const locale = (await getLocale()) as Locale;
 	const s = STRINGS[locale] ?? STRINGS.en;
@@ -88,7 +88,7 @@ export default async function BlogPostPage({ params }: { params: Promise<Params>
 					<header className="border-b border-white/[0.08]">
 						<div className="ncf-wrap mx-auto max-w-[1380px] px-[48px] pb-[48px] pt-[72px]">
 							<Link
-								href="/blog"
+								href="/reports"
 								className="mb-8 inline-block font-mono text-[12px] tracking-[2px] text-[rgba(245,245,250,.55)] no-underline hover:text-cyan"
 							>
 								{s.back}

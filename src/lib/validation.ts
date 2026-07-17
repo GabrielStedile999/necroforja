@@ -212,9 +212,9 @@ export const postSchema = z.object({
 
 export type PostInput = z.infer<typeof postSchema>;
 
-/** Image upload constraints for the blog bucket. */
-export const BLOG_IMAGE_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
-export const BLOG_IMAGE_MIME_TYPES = [
+/** Image upload constraints for the reports bucket. */
+export const REPORT_IMAGE_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+export const REPORT_IMAGE_MIME_TYPES = [
   "image/png",
   "image/jpeg",
   "image/webp",

@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { UploadImageForm } from "@/components/admin/UploadImageForm";
 import { listPostsAdmin } from "@/lib/db/queries";
-import { formatPostDate } from "@/lib/blog";
-import { POST_TYPES, toPostType } from "@/components/blog/postTypes";
+import { formatPostDate } from "@/lib/reports";
+import { POST_TYPES, toPostType } from "@/components/reports/postTypes";
 import { deletePost } from "./actions";
 import { Newspaper } from "lucide-react";
 
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 /** Painel do jornal de campanha (issue #5): lista, upload e atalhos. */
-export default async function AdminBlogPage() {
+export default async function AdminReportsPage() {
 	const posts = await listPostsAdmin();
 
 	return (
@@ -35,7 +35,7 @@ export default async function AdminBlogPage() {
 						<Link href="/admin">
 							<Button variant="ghost">← Arbitrator</Button>
 						</Link>
-						<Link href="/admin/blog/new">
+						<Link href="/admin/reports/new">
 							<Button>New post</Button>
 						</Link>
 					</div>
@@ -44,7 +44,7 @@ export default async function AdminBlogPage() {
 				<Card>
 					<CardHeader>
 						<CardTitle>Image upload (Supabase Storage)</CardTitle>
-						<span className="ml-auto text-xs text-muted">bucket: blog</span>
+						<span className="ml-auto text-xs text-muted">bucket: reports</span>
 					</CardHeader>
 					<CardContent>
 						<UploadImageForm />
@@ -58,7 +58,7 @@ export default async function AdminBlogPage() {
 					<CardContent className="px-0 py-0">
 						{posts.length === 0 ? (
 							<p className="px-5 py-6 text-sm text-muted">
-								No posts yet. Create the first one — or run <code>npm run db:seed:blog</code>{" "}
+								No posts yet. Create the first one — or run <code>npm run db:seed:reports</code>{" "}
 								to seed the week 1 mission report.
 							</p>
 						) : (
@@ -87,13 +87,13 @@ export default async function AdminBlogPage() {
 													{post.published ? "published" : "draft"}
 												</Badge>
 												{post.published && (
-													<a href={`/blog/${post.slug}`} target="_blank" rel="noreferrer">
+													<a href={`/reports/${post.slug}`} target="_blank" rel="noreferrer">
 														<Button variant="ghost" type="button" className="text-xs">
 															View
 														</Button>
 													</a>
 												)}
-												<Link href={`/admin/blog/${post.id}`}>
+												<Link href={`/admin/reports/${post.id}`}>
 													<Button variant="outline" type="button">
 														Edit
 													</Button>

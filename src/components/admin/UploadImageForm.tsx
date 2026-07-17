@@ -1,17 +1,17 @@
 "use client";
 
 import { useActionState } from "react";
-import { uploadBlogImage, type BlogActionState } from "@/app/admin/blog/actions";
+import { uploadReportImage, type ReportsActionState } from "@/app/admin/reports/actions";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 
 /**
- * Upload de imagem para o bucket `blog` do Supabase Storage (issues #5/#24).
+ * Upload de imagem para o bucket `reports` do Supabase Storage (issues #5/#24).
  * Devolve a URL pública para colar no campo de capa ou no corpo Markdown.
  */
 export function UploadImageForm() {
-	const [state, formAction, pending] = useActionState<BlogActionState, FormData>(
-		uploadBlogImage,
+	const [state, formAction, pending] = useActionState<ReportsActionState, FormData>(
+		uploadReportImage,
 		{},
 	);
 

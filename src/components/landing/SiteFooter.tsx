@@ -21,7 +21,7 @@ const LINK_GROUPS = [
 		headingKey: "community",
 		links: [
 			{ key: "discord", href: "/" },
-			{ key: "news", href: "/blog" },
+			{ key: "news", href: "/reports" },
 			{ key: "creators", href: "/" },
 			{ key: "forums", href: "/" },
 		],

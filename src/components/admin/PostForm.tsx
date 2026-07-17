@@ -1,10 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
-import { savePost, type BlogActionState } from "@/app/admin/blog/actions";
+import { savePost, type ReportsActionState } from "@/app/admin/reports/actions";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
-import { POST_TYPES, POST_TYPE_KEYS } from "@/components/blog/postTypes";
+import { POST_TYPES, POST_TYPE_KEYS } from "@/components/reports/postTypes";
 
 /** Valores iniciais do form (edição) — subset serializável da row `post`. */
 export type PostFormValues = {
@@ -30,7 +30,7 @@ const textareaClass =
  * tipo de post, capa e publicação — server action com validação zod.
  */
 export function PostForm({ post }: { post?: PostFormValues }) {
-	const [state, formAction, pending] = useActionState<BlogActionState, FormData>(
+	const [state, formAction, pending] = useActionState<ReportsActionState, FormData>(
 		savePost,
 		{},
 	);
@@ -129,7 +129,7 @@ export function PostForm({ post }: { post?: PostFormValues }) {
 						id="coverImage"
 						name="coverImage"
 						defaultValue={post?.coverImage ?? ""}
-						placeholder="https://<project>.supabase.co/storage/v1/object/public/blog/…"
+						placeholder="https://<project>.supabase.co/storage/v1/object/public/reports/…"
 					/>
 				</div>
 				<div>
@@ -145,7 +145,7 @@ export function PostForm({ post }: { post?: PostFormValues }) {
 					defaultChecked={post?.published ?? false}
 					className="h-4 w-4 accent-[#ff2d6f]"
 				/>
-				Published (visible at /blog)
+				Published (visible at /reports)
 			</label>
 
 			{state.error && (

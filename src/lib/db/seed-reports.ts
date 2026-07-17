@@ -7,18 +7,18 @@
  *   título para "Season 1 Mid-Point: The Map Redrawn" (rebatizado);
  * - `painting-the-rust` (diário de pintura, proxy) — insere se faltar.
  *
- * A capa do mission report aponta para o bucket público `blog`; envie a
- * imagem como `week-1-mission-report.png` (via /admin/blog ou console).
+ * A capa do mission report aponta para o bucket público `reports`; envie a
+ * imagem como `week-1-mission-report.png` (via /admin/reports ou console).
  *
  * Uso: configure DATABASE_URL (e SUPABASE_URL) no .env e rode
- *   npm run db:seed:blog
+ *   npm run db:seed:reports
  */
 import "dotenv/config";
 import { eq } from "drizzle-orm";
 import { db, schema } from "./index";
 
 const STORAGE_BASE = process.env.SUPABASE_URL
-	? `${process.env.SUPABASE_URL.replace(/\/+$/, "")}/storage/v1/object/public/blog`
+	? `${process.env.SUPABASE_URL.replace(/\/+$/, "")}/storage/v1/object/public/reports`
 	: null;
 
 /* ────────────────── week-1-mission-report (session report) ─────────────── */
@@ -202,7 +202,7 @@ const POSTS: SeedPost[] = [
 	},
 ];
 
-async function seedBlog() {
+async function seedReports() {
 	console.log("→ Seeding campaign journal (issue #5)...");
 
 	for (const post of POSTS) {
@@ -242,13 +242,13 @@ async function seedBlog() {
 	}
 
 	if (STORAGE_BASE) {
-		console.log(`  ↳ Cover: upload blog/${MISSION_SLUG}.png in Supabase Storage.`);
+		console.log(`  ↳ Cover: upload reports/${MISSION_SLUG}.png in Supabase Storage.`);
 	} else {
 		console.log("  ↳ SUPABASE_URL not set — mission report seeded without cover.");
 	}
 }
 
-seedBlog()
+seedReports()
 	.then(() => process.exit(0))
 	.catch((err) => {
 		console.error(err);

@@ -6,28 +6,28 @@ import { db, schema } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/guards";
 import {
 	postSchema,
-	BLOG_IMAGE_MAX_BYTES,
-	BLOG_IMAGE_MIME_TYPES,
+	REPORT_IMAGE_MAX_BYTES,
+	REPORT_IMAGE_MIME_TYPES,
 } from "@/lib/validation";
-import { slugify } from "@/lib/blog";
-import { uploadToBucket, BLOG_BUCKET } from "@/lib/storage";
+import { slugify } from "@/lib/reports";
+import { uploadToBucket, REPORTS_BUCKET } from "@/lib/storage";
 import { logger } from "@/lib/logger";
 
-export type BlogActionState = { error?: string; success?: string; url?: string };
+export type ReportsActionState = { error?: string; success?: string; url?: string };
 
 /** Revalida as rotas públicas afetadas por um post. */
-function revalidateBlog(slug?: string) {
-	revalidatePath("/blog");
-	if (slug) revalidatePath(`/blog/${slug}`);
-	revalidatePath("/admin/blog");
+function revalidateReports(slug?: string) {
+	revalidatePath("/reports");
+	if (slug) revalidatePath(`/reports/${slug}`);
+	revalidatePath("/admin/reports");
 	revalidatePath("/sitemap.xml");
 }
 
 /** Cria ou atualiza um post do jornal (issue #5). */
 export async function savePost(
-	_prev: BlogActionState,
+	_prev: ReportsActionState,
 	formData: FormData,
-): Promise<BlogActionState> {
+): Promise<ReportsActionState> {
 	const user = await requireAdmin();
 
 	const postId = String(formData.get("postId") ?? "");
@@ -82,8 +82,8 @@ export async function savePost(
 			})
 			.where(eq(schema.posts.id, postId));
 
-		revalidateBlog(existing.slug);
-		revalidateBlog(slug);
+		revalidateReports(existing.slug);
+		revalidateReports(slug);
 		return { success: `Post "${data.titleEn}" updated.` };
 	}
 
@@ -93,7 +93,7 @@ export async function savePost(
 		authorUserId: user.id,
 	});
 
-	revalidateBlog(slug);
+	revalidateReports(slug);
 	return { success: `Post "${data.titleEn}" created (${slug}).` };
 }
 
@@ -106,27 +106,27 @@ export async function deletePost(formData: FormData) {
 		columns: { slug: true },
 	});
 	await db.delete(schema.posts).where(eq(schema.posts.id, postId));
-	revalidateBlog(post?.slug);
+	revalidateReports(post?.slug);
 }
 
 /**
- * Upload de imagem para o bucket público `blog` no Supabase Storage
+ * Upload de imagem para o bucket público `reports` no Supabase Storage
  * (issues #5/#24). Retorna a URL pública para colar na capa ou no corpo.
  */
-export async function uploadBlogImage(
-	_prev: BlogActionState,
+export async function uploadReportImage(
+	_prev: ReportsActionState,
 	formData: FormData,
-): Promise<BlogActionState> {
+): Promise<ReportsActionState> {
 	await requireAdmin();
 
 	const file = formData.get("file");
 	if (!(file instanceof File) || file.size === 0) {
 		return { error: "Choose an image file." };
 	}
-	if (!(BLOG_IMAGE_MIME_TYPES as readonly string[]).includes(file.type)) {
+	if (!(REPORT_IMAGE_MIME_TYPES as readonly string[]).includes(file.type)) {
 		return { error: `Unsupported type (${file.type}). Use PNG, JPEG, WebP or GIF.` };
 	}
-	if (file.size > BLOG_IMAGE_MAX_BYTES) {
+	if (file.size > REPORT_IMAGE_MAX_BYTES) {
 		return { error: "File too large (max 5 MB)." };
 	}
 
@@ -138,10 +138,10 @@ export async function uploadBlogImage(
 	const path = `${base}${ext}`;
 
 	try {
-		const url = await uploadToBucket(BLOG_BUCKET, path, file);
+		const url = await uploadToBucket(REPORTS_BUCKET, path, file);
 		return { success: `Image uploaded as ${path}.`, url };
 	} catch (error) {
-		logger.error("blog: image upload failed", { path, error });
+		logger.error("reports: image upload failed", { path, error });
 		return {
 			error:
 				error instanceof Error ? error.message : "Upload failed. Check the Supabase env vars.",

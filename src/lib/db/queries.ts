@@ -246,7 +246,7 @@ export async function listGangsPublic() {
 
 /* ------------------------- Campaign journal (issue #5) ------------------ */
 
-/** Published posts, newest first (public /blog listing). */
+/** Published posts, newest first (public /reports listing). */
 export async function listPublishedPosts(limit = 50) {
   return db.query.posts.findMany({
     where: eq(schema.posts.published, true),
@@ -255,7 +255,7 @@ export async function listPublishedPosts(limit = 50) {
   });
 }
 
-/** A single published post by slug (public /blog/[slug]). */
+/** A single published post by slug (public /reports/[slug]). */
 export async function getPublishedPostBySlug(slug: string) {
   return db.query.posts.findFirst({
     where: and(eq(schema.posts.slug, slug), eq(schema.posts.published, true)),

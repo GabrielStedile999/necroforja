@@ -92,7 +92,7 @@ export default function PostList({
 					return (
 						<Link
 							key={post.id}
-							href={`/blog/${post.slug}`}
+							href={`/reports/${post.slug}`}
 							className={`ncf-news-row ncf-news-row-item flex items-center gap-7 border-t border-white/[0.09] px-2 py-6 no-underline text-ink ${
 								i === visible.length - 1 ? "border-b border-white/[0.09]" : ""
 							}`}

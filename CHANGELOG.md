@@ -9,10 +9,10 @@ All notable changes to this project. Format based on
 ### Changed
 - **Landing "Dispatches" section renamed to "Reports"** (EN "Reports" /
   PT-BR "Relatórios") and now loads the 3 latest published journal posts
-  from the database, each row linking to /blog/<slug>; static placeholder
+  from the database, each row linking to /reports/<slug>; static placeholder
   items removed from messages. Landing wrapper switched from
   `overflow-x: hidden` to `overflow-x-clip` so the SiteNav is sticky like
-  on the other pages. Blog seed now covers 3 posts (Ambush at the Sump
+  on the other pages. Reports seed now covers 3 posts (Ambush at the Sump
   Gates, the retitled "Season 1 Mid-Point: The Map Redrawn", and the
   Painting the Rust proxy).
 - **PDF gang sheet** redesigned: "dossier" spaced layout with NecroForja theme
@@ -20,11 +20,11 @@ All notable changes to this project. Format based on
   equipment with line breaks, dead fighters highlighted).
 
 ### Added
-- **Campaign journal** (`/blog`, issue #5): Postgres-backed posts (bilingual
+- **Campaign journal** (`/reports`, issue #5): Postgres-backed posts (bilingual
   EN/PT-BR, four types: session report, chronicle, painting log, dispatch),
   public listing with client-side type filter + post page rendering Markdown
   (react-markdown/GFM), admin editor with zod-validated server actions,
-  image upload to Supabase Storage (bucket `blog`, REST — no SDK), dynamic
+  image upload to Supabase Storage (bucket `reports`, REST — no SDK), dynamic
   sitemap entries, nav/footer links and seed with the week 1 mission report.
 - **Gangs page** (`/gangs`, issue #8): full dossiers of the six Great Houses
   (art, identity, playstyle, strengths/weaknesses) plus cards for the

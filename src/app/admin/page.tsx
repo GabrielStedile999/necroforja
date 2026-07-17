@@ -31,7 +31,7 @@ export default async function AdminPage() {
           </h1>
           <Badge variant="hazard">Admin</Badge>
           <div className="ml-auto flex gap-2">
-            <Link href="/admin/blog">
+            <Link href="/admin/reports">
               <Button variant="outline">Journal →</Button>
             </Link>
             <Link href="/admin/campaign">

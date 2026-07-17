@@ -3,7 +3,7 @@ import { listPublishedPosts } from "@/lib/db/queries";
 import { logger } from "@/lib/logger";
 
 /**
- * Sitemap — public pages only: /, /lore, /how-to-play, /gangs, /blog (plus
+ * Sitemap — public pages only: /, /lore, /how-to-play, /gangs, /reports (plus
  * published posts) and /dashboard. Authenticated pages are excluded.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -15,7 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const posts = await listPublishedPosts();
     postEntries = posts.map((post) => ({
-      url: `${siteUrl}/blog/${post.slug}`,
+      url: `${siteUrl}/reports/${post.slug}`,
       lastModified: post.updatedAt ?? post.publishedAt ?? new Date(),
       changeFrequency: "monthly" as const,
       priority: 0.6,
@@ -50,7 +50,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     },
     {
-      url: `${siteUrl}/blog`,
+      url: `${siteUrl}/reports`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.8,
