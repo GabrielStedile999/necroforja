@@ -21,7 +21,6 @@ const GREAT_HOUSES = [
 const GAME_OVERVIEW_LINKS = [
   { key: "gameOverview" },
   { key: "howToPlay", href: "/how-to-play" },
-  { key: "gangForge" },
   { key: "loreSetting", href: "/lore" },
   { key: "campaignJournal", href: "/blog" },
 ] as const;
