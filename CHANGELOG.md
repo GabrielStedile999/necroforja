@@ -12,6 +12,12 @@ All notable changes to this project. Format based on
   equipment with line breaks, dead fighters highlighted).
 
 ### Added
+- **Campaign journal** (`/blog`, issue #5): Postgres-backed posts (bilingual
+  EN/PT-BR, four types: session report, chronicle, painting log, dispatch),
+  public listing with client-side type filter + post page rendering Markdown
+  (react-markdown/GFM), admin editor with zod-validated server actions,
+  image upload to Supabase Storage (bucket `blog`, REST — no SDK), dynamic
+  sitemap entries, nav/footer links and seed with the week 1 mission report.
 - **Gangs page** (`/gangs`, issue #8): full dossiers of the six Great Houses
   (art, identity, playstyle, strengths/weaknesses) plus cards for the
   independent, Ash Wastes and Hive Secundus gangs, with i18n (EN/PT-BR),

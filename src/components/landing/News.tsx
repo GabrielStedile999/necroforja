@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 /**
@@ -42,9 +43,12 @@ export default function News() {
 					<span className="font-mono text-[13px] tracking-[4px] text-hazard">
 						{t("sectionLabel")}
 					</span>
-					<span className="ncf-util-link font-mono text-[13px] tracking-[2px] text-[rgba(245,245,250,.7)]">
+					<Link
+						href="/blog"
+						className="ncf-util-link font-mono text-[13px] tracking-[2px] text-[rgba(245,245,250,.7)] no-underline"
+					>
 						{t("readAll")}
-					</span>
+					</Link>
 				</div>
 
 				<div className="flex flex-col">

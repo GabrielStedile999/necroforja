@@ -172,6 +172,54 @@ export const assignSympathiserSchema = z.object({
   gangId: z.string(),
 });
 
+/* ---------------------- Campaign journal (issue #5) ---------------------- */
+
+export const postTypeEnum = z.enum([
+  "session_report",
+  "chronicle",
+  "painting",
+  "news",
+]);
+
+/** Create/update a journal post (bilingual fields; slug is a logic key). */
+export const postSchema = z.object({
+  slug: z
+    .string()
+    .min(3, "Slug too short.")
+    .max(80)
+    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Use lowercase letters, digits and hyphens.")
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  type: postTypeEnum,
+  titleEn: z.string().min(3, "English title too short.").max(120),
+  titlePt: z.string().min(3, "Portuguese title too short.").max(120),
+  excerptEn: z.string().max(300).default(""),
+  excerptPt: z.string().max(300).default(""),
+  bodyEn: z.string().min(1, "English body is required.").max(50_000),
+  bodyPt: z.string().min(1, "Portuguese body is required.").max(50_000),
+  coverImage: z
+    .string()
+    .max(500)
+    .refine(
+      (v) => v === "" || v.startsWith("/") || v.startsWith("https://"),
+      "Cover must be an https:// URL or a site-relative path.",
+    )
+    .default(""),
+  coverAlt: z.string().max(200).default(""),
+  published: z.coerce.boolean().default(false),
+});
+
+export type PostInput = z.infer<typeof postSchema>;
+
+/** Image upload constraints for the blog bucket. */
+export const BLOG_IMAGE_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+export const BLOG_IMAGE_MIME_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+] as const;
+
 export type AssignSympathiserInput = z.infer<typeof assignSympathiserSchema>;
 export type CreatePlayerInput = z.infer<typeof createPlayerSchema>;
 export type FighterInput = z.infer<typeof fighterSchema>;

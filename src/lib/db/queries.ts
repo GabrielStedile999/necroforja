@@ -244,6 +244,38 @@ export async function listGangsPublic() {
   });
 }
 
+/* ------------------------- Campaign journal (issue #5) ------------------ */
+
+/** Published posts, newest first (public /blog listing). */
+export async function listPublishedPosts(limit = 50) {
+  return db.query.posts.findMany({
+    where: eq(schema.posts.published, true),
+    orderBy: [desc(schema.posts.publishedAt), desc(schema.posts.createdAt)],
+    limit,
+  });
+}
+
+/** A single published post by slug (public /blog/[slug]). */
+export async function getPublishedPostBySlug(slug: string) {
+  return db.query.posts.findFirst({
+    where: and(eq(schema.posts.slug, slug), eq(schema.posts.published, true)),
+  });
+}
+
+/** All posts (drafts included) for the admin panel, newest first. */
+export async function listPostsAdmin() {
+  return db.query.posts.findMany({
+    orderBy: [desc(schema.posts.createdAt)],
+  });
+}
+
+/** A post by id (admin edit form). */
+export async function getPostById(postId: string) {
+  return db.query.posts.findFirst({
+    where: eq(schema.posts.id, postId),
+  });
+}
+
 /** Gangs (id + name) for admin selects. */
 export async function listGangsBasic(campaignId: string) {
   return db.query.gangs.findMany({

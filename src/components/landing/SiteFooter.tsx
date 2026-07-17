@@ -12,7 +12,7 @@ const LINK_GROUPS = [
 		headingKey: "game",
 		links: [
 			{ key: "overview", href: "/" },
-			{ key: "factions", href: "#factions" },
+			{ key: "factions", href: "/gangs" },
 			{ key: "roadmap", href: "/" },
 			{ key: "dashboard", href: "/dashboard" },
 		],
@@ -21,7 +21,7 @@ const LINK_GROUPS = [
 		headingKey: "community",
 		links: [
 			{ key: "discord", href: "/" },
-			{ key: "news", href: "/" },
+			{ key: "news", href: "/blog" },
 			{ key: "creators", href: "/" },
 			{ key: "forums", href: "/" },
 		],

@@ -58,6 +58,14 @@ export const equipmentCategory = pgEnum("equipment_category", [
   "upgrade",
 ]);
 
+/** Campaign journal post kinds (issue #5). */
+export const postType = pgEnum("post_type", [
+  "session_report", // relatos de sessão/batalha
+  "chronicle", // história de personagens e acontecimentos
+  "painting", // passo a passo / acompanhamento de pintura
+  "news", // avisos e notícias gerais da campanha
+]);
+
 /* --------------------------- Tables -------------------------------- */
 export const campaigns = pgTable("campaign", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -206,6 +214,38 @@ export const triumphs = pgTable("triumph", {
 });
 
 /**
+ * Campaign journal posts (issue #5). Bilingual like the content pages
+ * (issue #12): English is the default, PT-BR is the display translation;
+ * logic keys (slug, type) stay in English. Bodies are Markdown, rendered
+ * with react-markdown (raw HTML disabled).
+ */
+export const posts = pgTable(
+  "post",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    slug: text("slug").notNull().unique(),
+    type: postType("type").notNull().default("news"),
+    titleEn: text("title_en").notNull(),
+    titlePt: text("title_pt").notNull(),
+    excerptEn: text("excerpt_en").notNull().default(""),
+    excerptPt: text("excerpt_pt").notNull().default(""),
+    bodyEn: text("body_en").notNull(),
+    bodyPt: text("body_pt").notNull(),
+    /** Absolute URL (Supabase Storage) or site-relative path (/blog/…). */
+    coverImage: text("cover_image"),
+    coverAlt: text("cover_alt"),
+    published: boolean("published").notNull().default(false),
+    publishedAt: timestamp("published_at"),
+    authorUserId: uuid("author_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [index("post_published_at_idx").on(t.published, t.publishedAt)],
+);
+
+/**
  * Vectorised rule chunks for the AI assistant (RAG).
  * Requires the pgvector extension: CREATE EXTENSION IF NOT EXISTS vector;
  */
@@ -274,6 +314,14 @@ export const stashItemsRelations = relations(stashItems, ({ one }) => ({
 
 export const usersRelations = relations(users, ({ many }) => ({
   gangs: many(gangs),
+  posts: many(posts),
+}));
+
+export const postsRelations = relations(posts, ({ one }) => ({
+  author: one(users, {
+    fields: [posts.authorUserId],
+    references: [users.id],
+  }),
 }));
 
 export const campaignsRelations = relations(campaigns, ({ many }) => ({
