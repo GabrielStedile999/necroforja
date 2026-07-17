@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Chakra_Petch, Share_Tech_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
@@ -82,8 +82,7 @@ export const metadata: Metadata = {
 	// own metadata export.
 	robots: { index: true, follow: true },
 
-	// ---- PWA — theme-color (duplicates manifest.ts for iOS Safari) ----
-	themeColor: "#ff2d6f",
+	// ---- PWA ----
 	appleWebApp: {
 		capable: true,
 		statusBarStyle: "black-translucent",
@@ -101,6 +100,14 @@ export const metadata: Metadata = {
 			{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
 		],
 	},
+};
+
+/**
+ * Viewport export — desde o Next 14, themeColor/viewport/colorScheme saem do
+ * `metadata` e vêm para cá (o themeColor duplica o manifest.ts p/ iOS Safari).
+ */
+export const viewport: Viewport = {
+	themeColor: "#ff2d6f",
 };
 
 export default async function RootLayout({
