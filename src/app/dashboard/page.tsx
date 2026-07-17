@@ -45,9 +45,23 @@ export default async function DashboardPage() {
           </div>
         </div>
       </main>
-      <footer className="border-t border-rivet py-6 text-center text-xs text-muted">
-        Campaign dashboard · Gabriel Stedile&apos;s portfolio project ·
-        Campaign content for private use among players.
+      <footer className="border-t border-rivet px-4 py-6 text-center text-xs text-muted">
+        <p className="m-0 mb-3">
+          Campaign dashboard · Gabriel Stedile&apos;s portfolio project ·
+          Campaign content for private use among players.
+        </p>
+        {/* GW IP disclaimer (issue #17). Static English on purpose: this route
+            is ISR-cached and stays outside the cookie-based i18n. */}
+        <p className="mx-auto m-0 max-w-4xl text-[11px] leading-[1.7] opacity-80">
+          NecroForja is an unofficial, non-commercial fan project for the
+          Necromunda tabletop game. It is in no way affiliated with, endorsed
+          or licensed by Games Workshop Limited. Necromunda, Warhammer 40,000
+          and all associated logos, illustrations, images, names, creatures,
+          races, vehicles, locations, weapons, characters and marks are ®, ™
+          and/or © Games Workshop Limited, variably registered around the
+          world. Used without permission. No challenge to their status is
+          intended. All rights reserved to their respective owners.
+        </p>
       </footer>
     </>
   );

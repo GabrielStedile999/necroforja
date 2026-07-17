@@ -79,6 +79,12 @@ export default function SiteFooter() {
 					</div>
 				</div>
 
+				{/* Games Workshop IP disclaimer (issue #17) — unofficial fan project,
+				    wording aligned with GW's fan-site guidelines. */}
+				<p className="m-0 mb-[22px] max-w-[980px] text-[11px] leading-[1.7] text-[rgba(245,245,250,.35)]">
+					{t("gwDisclaimer")}
+				</p>
+
 				{/* Bottom bar */}
 				<div className="flex flex-wrap items-center justify-between gap-[14px] border-t border-white/[0.07] pt-[26px] font-mono text-[11px] tracking-[1px] text-[rgba(245,245,250,.35)]">
 					<span>{t("copyright")}</span>
