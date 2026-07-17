@@ -12,6 +12,11 @@ All notable changes to this project. Format based on
   equipment with line breaks, dead fighters highlighted).
 
 ### Added
+- **Gangs page** (`/gangs`, issue #8): full dossiers of the six Great Houses
+  (art, identity, playstyle, strengths/weaknesses) plus cards for the
+  independent, Ash Wastes and Hive Secundus gangs, with i18n (EN/PT-BR),
+  a live "In the campaign" section reading the `gang` table, and nav/landing
+  links (mega-menu, mobile menu, landing cards, LoreCTA) now pointing at it.
 - Player equipment and Stash management (equip/unequip, move from Stash).
 - Fighter lifecycle (status/XP) and Downtime effects.
 - Manual Sympathiser assignment by the Arbitrator.

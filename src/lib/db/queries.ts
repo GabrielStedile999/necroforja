@@ -227,6 +227,23 @@ export async function stashItemBelongsToGang(
   return !!row;
 }
 
+/**
+ * Public, lightweight gang list for the Gangs page (issue #8):
+ * name + house + cached rating/reputation, best rating first.
+ */
+export async function listGangsPublic() {
+  return db.query.gangs.findMany({
+    columns: {
+      id: true,
+      name: true,
+      house: true,
+      ratingCached: true,
+      reputation: true,
+    },
+    orderBy: [desc(schema.gangs.ratingCached)],
+  });
+}
+
 /** Gangs (id + name) for admin selects. */
 export async function listGangsBasic(campaignId: string) {
   return db.query.gangs.findMany({

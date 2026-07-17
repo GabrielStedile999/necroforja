@@ -68,9 +68,8 @@ export default function LoreCTA() {
         </h2>
 
         <div className="grid gap-5 md:grid-cols-2">
-          {/* TODO: apontar para a página de Gangues quando existir (issue #8) */}
           <Link
-            href="/#factions"
+            href="/gangs"
             className="clip-card-bl-16 group relative block overflow-hidden border border-cyan/[0.28] bg-[linear-gradient(150deg,#0a1418,#06090d)] p-7 no-underline transition-colors hover:border-cyan"
           >
             <div className="mb-2 font-mono text-[11px] tracking-[2px] text-cyan">{t.gangsLabel}</div>

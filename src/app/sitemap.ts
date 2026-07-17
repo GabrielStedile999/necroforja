@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 /**
- * Sitemap — public pages only: /, /lore, /how-to-play and /dashboard.
+ * Sitemap — public pages only: /, /lore, /how-to-play, /gangs and /dashboard.
  * Authenticated pages (/admin, /player, /portal) are excluded.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -23,6 +23,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${siteUrl}/how-to-play`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
+      url: `${siteUrl}/gangs`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.8,

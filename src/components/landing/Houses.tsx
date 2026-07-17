@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 /**
@@ -7,9 +8,13 @@ import { useTranslations } from "next-intl";
  * i18n (issue #12): structural data (ids, names, roles, colors) is
  * canonical English; display copy (taglines, descriptions, headings)
  * is looked up in messages/<locale>.json keyed by the stable gang id.
+ *
+ * Each card links to its anchor on the dedicated Gangs page (issue #8);
+ * slugs mirror src/components/gangs/content.ts.
  */
 type Gang = {
   id: string;
+  slug: string;
   name: string;
   role: string;
   color: string;
@@ -27,41 +32,41 @@ const GROUPS: GangGroup[] = [
     key: "greatHouses",
     accent: "#ff2d6f",
     gangs: [
-      { id: "GH-01", name: "HOUSE CAWDOR",   role: "ZEALOT",    color: "#ffc23d", roleBorder: "rgba(255,194,61,.4)"  },
-      { id: "GH-02", name: "HOUSE DELAQUE",  role: "INFILTRATE", color: "#b07bff", roleBorder: "rgba(176,123,255,.4)" },
-      { id: "GH-03", name: "HOUSE ESCHER",   role: "TOXIN",     color: "#ff2d6f", roleBorder: "rgba(255,45,111,.4)"  },
-      { id: "GH-04", name: "HOUSE GOLIATH",  role: "BRAWN",     color: "#ff8a3d", roleBorder: "rgba(255,138,61,.4)"  },
-      { id: "GH-05", name: "HOUSE ORLOCK",   role: "VERSATILE", color: "#59e36b", roleBorder: "rgba(89,227,107,.4)"  },
-      { id: "GH-06", name: "HOUSE VAN SAAR", role: "TECH",      color: "#00e5ff", roleBorder: "rgba(0,229,255,.4)"   },
+      { id: "GH-01", slug: "house-cawdor",   name: "HOUSE CAWDOR",   role: "ZEALOT",    color: "#ffc23d", roleBorder: "rgba(255,194,61,.4)"  },
+      { id: "GH-02", slug: "house-delaque",  name: "HOUSE DELAQUE",  role: "INFILTRATE", color: "#b07bff", roleBorder: "rgba(176,123,255,.4)" },
+      { id: "GH-03", slug: "house-escher",   name: "HOUSE ESCHER",   role: "TOXIN",     color: "#ff2d6f", roleBorder: "rgba(255,45,111,.4)"  },
+      { id: "GH-04", slug: "house-goliath",  name: "HOUSE GOLIATH",  role: "BRAWN",     color: "#ff8a3d", roleBorder: "rgba(255,138,61,.4)"  },
+      { id: "GH-05", slug: "house-orlock",   name: "HOUSE ORLOCK",   role: "VERSATILE", color: "#59e36b", roleBorder: "rgba(89,227,107,.4)"  },
+      { id: "GH-06", slug: "house-van-saar", name: "HOUSE VAN SAAR", role: "TECH",      color: "#00e5ff", roleBorder: "rgba(0,229,255,.4)"   },
     ],
   },
   {
     key: "independent",
     accent: "#00e5ff",
     gangs: [
-      { id: "IG-01", name: "CORPSE GRINDER CULTS", role: "MELEE",    color: "#ff2d6f", roleBorder: "rgba(255,45,111,.4)"  },
-      { id: "IG-02", name: "PALANITE ENFORCERS",   role: "LAW",      color: "#00e5ff", roleBorder: "rgba(0,229,255,.4)"   },
-      { id: "IG-03", name: "SLAVE OGRYN GANGS",    role: "BRUTE",    color: "#ff8a3d", roleBorder: "rgba(255,138,61,.4)"  },
-      { id: "IG-04", name: "HELOT CHAOS CULTS",    role: "CHAOS",    color: "#b07bff", roleBorder: "rgba(176,123,255,.4)" },
-      { id: "IG-05", name: "GENESTEALER CULTS",    role: "XENOS",    color: "#59e36b", roleBorder: "rgba(89,227,107,.4)"  },
-      { id: "IG-06", name: "VENATOR GANGS",        role: "HUNTER",   color: "#ffc23d", roleBorder: "rgba(255,194,61,.4)"  },
-      { id: "IG-07", name: "UNDERHIVE OUTCASTS",   role: "WILDCARD", color: "#c9c9d4", roleBorder: "rgba(201,201,212,.4)" },
+      { id: "IG-01", slug: "corpse-grinder-cults", name: "CORPSE GRINDER CULTS", role: "MELEE",    color: "#ff2d6f", roleBorder: "rgba(255,45,111,.4)"  },
+      { id: "IG-02", slug: "palanite-enforcers",   name: "PALANITE ENFORCERS",   role: "LAW",      color: "#00e5ff", roleBorder: "rgba(0,229,255,.4)"   },
+      { id: "IG-03", slug: "slave-ogryn",          name: "SLAVE OGRYN GANGS",    role: "BRUTE",    color: "#ff8a3d", roleBorder: "rgba(255,138,61,.4)"  },
+      { id: "IG-04", slug: "helot-chaos",          name: "HELOT CHAOS CULTS",    role: "CHAOS",    color: "#b07bff", roleBorder: "rgba(176,123,255,.4)" },
+      { id: "IG-05", slug: "genestealer-cults",    name: "GENESTEALER CULTS",    role: "XENOS",    color: "#59e36b", roleBorder: "rgba(89,227,107,.4)"  },
+      { id: "IG-06", slug: "venators",             name: "VENATOR GANGS",        role: "HUNTER",   color: "#ffc23d", roleBorder: "rgba(255,194,61,.4)"  },
+      { id: "IG-07", slug: "underhive-outcasts",   name: "UNDERHIVE OUTCASTS",   role: "WILDCARD", color: "#c9c9d4", roleBorder: "rgba(201,201,212,.4)" },
     ],
   },
   {
     key: "ashWastes",
     accent: "#ff8a3d",
     gangs: [
-      { id: "AW-01", name: "ASH WASTE NOMADS",           role: "AMBUSH",  color: "#59e36b", roleBorder: "rgba(89,227,107,.4)" },
-      { id: "AW-02", name: "IRONHEAD SQUAT PROSPECTORS", role: "DURABLE", color: "#ff8a3d", roleBorder: "rgba(255,138,61,.4)" },
+      { id: "AW-01", slug: "ash-waste-nomads", name: "ASH WASTE NOMADS",           role: "AMBUSH",  color: "#59e36b", roleBorder: "rgba(89,227,107,.4)" },
+      { id: "AW-02", slug: "ironhead-squats",  name: "IRONHEAD SQUAT PROSPECTORS", role: "DURABLE", color: "#ff8a3d", roleBorder: "rgba(255,138,61,.4)" },
     ],
   },
   {
     key: "hiveSecundus",
     accent: "#b07bff",
     gangs: [
-      { id: "HS-01", name: "SPYRER HUNTING PARTY", role: "ELITE", color: "#00e5ff", roleBorder: "rgba(0,229,255,.4)"  },
-      { id: "HS-02", name: "MALSTRAIN GANG",       role: "HORDE", color: "#ff2d6f", roleBorder: "rgba(255,45,111,.4)" },
+      { id: "HS-01", slug: "spyrers",   name: "SPYRER HUNTING PARTY", role: "ELITE", color: "#00e5ff", roleBorder: "rgba(0,229,255,.4)"  },
+      { id: "HS-02", slug: "malstrain", name: "MALSTRAIN GANG",       role: "HORDE", color: "#ff2d6f", roleBorder: "rgba(255,45,111,.4)" },
     ],
   },
 ];
@@ -76,9 +81,12 @@ export default function Houses() {
         {/* Header */}
         <div className="ncf-houses-head mb-[14px] flex items-end justify-between gap-6">
           <span className="font-mono text-[13px] tracking-[4px] text-hazard">{t("sectionLabel")}</span>
-          <span className="ncf-util-link font-mono text-[13px] tracking-[2px] text-[rgba(245,245,250,.6)]">
+          <Link
+            href="/gangs"
+            className="ncf-util-link font-mono text-[13px] tracking-[2px] text-[rgba(245,245,250,.6)] no-underline"
+          >
             {t("compareAll")}
-          </span>
+          </Link>
         </div>
 
         <h2 className="ncf-section-h m-0 mb-[48px] text-[40px] font-bold tracking-[1px]">
@@ -104,9 +112,10 @@ export default function Houses() {
             {/* Cards */}
             <div className="ncf-houses grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(230px,1fr))]">
               {group.gangs.map((g) => (
-                <div
+                <Link
                   key={g.id}
-                  className="ncf-house-card relative cursor-pointer overflow-hidden border border-white/[0.09] bg-[linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01))] clip-card"
+                  href={`/gangs#${g.slug}`}
+                  className="ncf-house-card relative cursor-pointer overflow-hidden border border-white/[0.09] bg-[linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01))] clip-card no-underline text-ink"
                 >
                   {/* Colored top bar */}
                   <div className="h-1" style={{ background: g.color, boxShadow: `0 0 12px ${g.roleBorder}` }} />
@@ -132,7 +141,7 @@ export default function Houses() {
                       <span className="text-[18px]" style={{ color: g.color }}>→</span>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>

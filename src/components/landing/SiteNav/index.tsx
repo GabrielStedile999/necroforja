@@ -8,13 +8,14 @@ import s from "./SiteNav.module.scss";
 
 // House names are canonical game terms and stay in English (issue #12:
 // identifiers/logic in English — only display copy is translated).
+// hrefs point at the house dossier anchors on the Gangs page (issue #8).
 const GREAT_HOUSES = [
-  { key: "cawdor",  name: "House Cawdor",   color: "#ffc23d", shadow: "rgba(255,194,61,.6)"  },
-  { key: "delaque", name: "House Delaque",  color: "#b07bff", shadow: "rgba(176,123,255,.6)" },
-  { key: "escher",  name: "House Escher",   color: "#ff2d6f", shadow: "rgba(255,45,111,.6)"  },
-  { key: "goliath", name: "House Goliath",  color: "#ff8a3d", shadow: "rgba(255,138,61,.6)"  },
-  { key: "orlock",  name: "House Orlock",   color: "#59e36b", shadow: "rgba(89,227,107,.6)"  },
-  { key: "vanSaar", name: "House Van Saar", color: "#00e5ff", shadow: "rgba(0,229,255,.6)"   },
+  { key: "cawdor",  name: "House Cawdor",   href: "/gangs#house-cawdor",   color: "#ffc23d", shadow: "rgba(255,194,61,.6)"  },
+  { key: "delaque", name: "House Delaque",  href: "/gangs#house-delaque",  color: "#b07bff", shadow: "rgba(176,123,255,.6)" },
+  { key: "escher",  name: "House Escher",   href: "/gangs#house-escher",   color: "#ff2d6f", shadow: "rgba(255,45,111,.6)"  },
+  { key: "goliath", name: "House Goliath",  href: "/gangs#house-goliath",  color: "#ff8a3d", shadow: "rgba(255,138,61,.6)"  },
+  { key: "orlock",  name: "House Orlock",   href: "/gangs#house-orlock",   color: "#59e36b", shadow: "rgba(89,227,107,.6)"  },
+  { key: "vanSaar", name: "House Van Saar", href: "/gangs#house-van-saar", color: "#00e5ff", shadow: "rgba(0,229,255,.6)"   },
 ] as const;
 
 const GAME_OVERVIEW_LINKS = [
@@ -71,13 +72,14 @@ export default function SiteNav() {
               {t("game")} <span className="text-[9px] opacity-70">▼</span>
             </span>
 
-            <span
+            <Link
+              href="/gangs"
               onMouseEnter={() => setMenu("factions")}
-              className={`${s.navLink} ${menu === "factions" ? s.active : ""}`}
+              className={`${s.navLink} ${menu === "factions" ? s.active : ""} no-underline`}
               style={{ borderBottomColor: menu === "factions" ? "#00e5ff" : "transparent" }}
             >
               {t("factions")} <span className="text-[9px] opacity-70">▼</span>
-            </span>
+            </Link>
 
             <Link href="/lore" onMouseEnter={() => setMenu(null)} className={`${s.navText} no-underline`}>{t("world")}</Link>
             <span onMouseEnter={() => setMenu(null)} className={s.navText}>{t("news")}</span>
@@ -171,13 +173,13 @@ export default function SiteNav() {
                 <div className="mb-[22px] font-mono text-[11px] tracking-[3px] text-cyan">{t("factionsMenu.housesLabel")}</div>
                 <div className="grid grid-cols-2 gap-x-[40px] gap-y-[14px]">
                   {GREAT_HOUSES.map((h) => (
-                    <div key={h.name} className={s.houseRow}>
+                    <Link key={h.name} href={h.href} className={`${s.houseRow} no-underline text-ink`}>
                       <span className="h-[34px] w-1 shrink-0" style={{ background: h.color, boxShadow: `0 0 10px ${h.shadow}` }} />
                       <div>
                         <div className="text-[15px] font-semibold">{h.name}</div>
                         <div className="font-mono text-[11px] text-[rgba(245,245,250,.45)]">{t(`houses.${h.key}`)}</div>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -191,7 +193,7 @@ export default function SiteNav() {
                   <div className="mb-5 max-w-[280px] text-[13px] leading-[1.55] text-[rgba(245,245,250,.6)]">
                     {t("factionsMenu.chooseDesc")}
                   </div>
-                  <span className={s.compareLink}>{t("factionsMenu.compareAll")}</span>
+                  <Link href="/gangs" className={`${s.compareLink} no-underline`}>{t("factionsMenu.compareAll")}</Link>
                 </div>
               </div>
             </div>
@@ -227,7 +229,7 @@ export default function SiteNav() {
             {[
               { num: "01", label: t("game") },
               { num: "02", label: t("howToPlay"), href: "/how-to-play" },
-              { num: "03", label: t("factions") },
+              { num: "03", label: t("factions"), href: "/gangs" },
               { num: "04", label: t("world"), href: "/lore" },
               { num: "05", label: t("news") },
               { num: "06", label: t("dashboard"), href: "/dashboard" },
@@ -248,13 +250,13 @@ export default function SiteNav() {
             <div className="mb-[14px] mt-[30px] font-mono text-[11px] tracking-[3px] text-cyan">{t("factionsMenu.housesLabel")}</div>
             <div className="flex flex-col gap-3">
               {GREAT_HOUSES.map((h) => (
-                <div key={h.name} onClick={closeNav} className={s.mobileHouseRow}>
+                <Link key={h.name} href={h.href} onClick={closeNav} className={`${s.mobileHouseRow} no-underline text-ink`}>
                   <span className="h-[30px] w-1 shrink-0" style={{ background: h.color, boxShadow: `0 0 10px ${h.shadow}` }} />
                   <div>
                     <div className="text-[15px] font-semibold">{h.name}</div>
                     <div className="font-mono text-[11px] text-[rgba(245,245,250,.45)]">{t(`houses.${h.key}`)}</div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
 
