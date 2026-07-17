@@ -7,6 +7,14 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Changed
+- **Landing "Dispatches" section renamed to "Reports"** (EN "Reports" /
+  PT-BR "Relatórios") and now loads the 3 latest published journal posts
+  from the database, each row linking to /blog/<slug>; static placeholder
+  items removed from messages. Landing wrapper switched from
+  `overflow-x: hidden` to `overflow-x-clip` so the SiteNav is sticky like
+  on the other pages. Blog seed now covers 3 posts (Ambush at the Sump
+  Gates, the retitled "Season 1 Mid-Point: The Map Redrawn", and the
+  Painting the Rust proxy).
 - **PDF gang sheet** redesigned: "dossier" spaced layout with NecroForja theme
   (dark header + hazard stripe, metrics in mono, fighter blocks with side band,
   equipment with line breaks, dead fighters highlighted).

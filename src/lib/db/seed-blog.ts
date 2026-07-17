@@ -1,9 +1,14 @@
 /**
- * Seed do jornal de campanha (issue #5) — insere o primeiro post: o
- * Relatório das Missões da Semana 1 (idempotente: pula se o slug já existir).
+ * Seed do jornal de campanha (issue #5) — idempotente, seguro de rodar
+ * quantas vezes quiser:
  *
- * A capa aponta para o bucket público `blog` no Supabase Storage; envie a
- * imagem com o nome `week-1-mission-report.png` (via /admin/blog ou console).
+ * - `ambush-at-the-sump-gates` (battle report, proxy oficial) — insere se faltar;
+ * - `week-1-mission-report` — insere se faltar; se já existir, atualiza o
+ *   título para "Season 1 Mid-Point: The Map Redrawn" (rebatizado);
+ * - `painting-the-rust` (diário de pintura, proxy) — insere se faltar.
+ *
+ * A capa do mission report aponta para o bucket público `blog`; envie a
+ * imagem como `week-1-mission-report.png` (via /admin/blog ou console).
  *
  * Uso: configure DATABASE_URL (e SUPABASE_URL) no .env e rode
  *   npm run db:seed:blog
@@ -12,13 +17,18 @@ import "dotenv/config";
 import { eq } from "drizzle-orm";
 import { db, schema } from "./index";
 
-const SLUG = "week-1-mission-report";
-
-const COVER = process.env.SUPABASE_URL
-	? `${process.env.SUPABASE_URL.replace(/\/+$/, "")}/storage/v1/object/public/blog/${SLUG}.png`
+const STORAGE_BASE = process.env.SUPABASE_URL
+	? `${process.env.SUPABASE_URL.replace(/\/+$/, "")}/storage/v1/object/public/blog`
 	: null;
 
-const BODY_PT = `> Transmissão de Campanha // Necromunda
+/* ────────────────── week-1-mission-report (session report) ─────────────── */
+
+const MISSION_SLUG = "week-1-mission-report";
+
+const MISSION_TITLE_EN = "Season 1 Mid-Point: The Map Redrawn";
+const MISSION_TITLE_PT = "Metade da Temporada 1: O Mapa Redesenhado";
+
+const MISSION_BODY_PT = `> Transmissão de Campanha // Necromunda
 
 Duas zonas de guerra arderam nesta semana. Nos badzones, uma posição Delaque ruiu sob lâminas, fumaça e carne moída. Em outro front, um tanque de gunk resistiu a uma maré de fanáticos e mutantes.
 
@@ -48,7 +58,7 @@ Enquanto os Thick Boys tentavam proteger e drenar um tanque de gunk, o Cult of t
 - **Baixas pesadas:** Shadow Syndicate / Thick Boys
 `;
 
-const BODY_EN = `> Campaign Transmission // Necromunda
+const MISSION_BODY_EN = `> Campaign Transmission // Necromunda
 
 Two war zones burned this week. In the badzones, a Delaque position collapsed under blades, smoke and ground meat. On another front, a gunk tank held out against a tide of fanatics and mutants.
 
@@ -78,38 +88,152 @@ While the Thick Boys tried to protect and drain a gunk tank, the Cult of the Wyr
 - **Heavy casualties:** Shadow Syndicate / Thick Boys
 `;
 
-async function seedBlog() {
-	console.log("→ Seeding campaign journal (issue #5)...");
+/* ─────────────── ambush-at-the-sump-gates (battle report, proxy) ────────── */
 
-	const existing = await db.query.posts.findFirst({
-		where: eq(schema.posts.slug, SLUG),
-		columns: { id: true },
-	});
-	if (existing) {
-		console.log(`  • Post "${SLUG}" already exists — nothing to do.`);
-		return;
-	}
+const AMBUSH_BODY_PT = `> Transmissão de Campanha // Necromunda
 
-	await db.insert(schema.posts).values({
-		slug: SLUG,
+Zelotes Cawdor incendiaram um antro químico Escher em uma guerra de território brutal nos portões do Sump. O que começou como uma patrulha de rotina terminou em chamas purificadoras: as Escher, encurraladas entre os tanques de químicos e a horda em avanço, venderam caro cada passarela.
+
+Quando o fogo baixou, o antro era cinza — e a conta final do açougueiro, pesada para os dois lados.
+
+---
+
+*Relato completo da mesa, com fotos e a conta final do açougueiro, em breve.*
+`;
+
+const AMBUSH_BODY_EN = `> Campaign Transmission // Necromunda
+
+Cawdor zealots torched an Escher chem-den in a brutal turf war at the Sump gates. What began as a routine patrol ended in cleansing flame: the Escher, cornered between the chem-vats and the advancing horde, sold every walkway dearly.
+
+When the fire died down, the den was ash — and the final butcher's bill heavy on both sides.
+
+---
+
+*Full report from the tabletop, with photos and the final butcher's bill, coming soon.*
+`;
+
+/* ──────────────────── painting-the-rust (painting, proxy) ───────────────── */
+
+const PAINTING_BODY_PT = `> Diário de Pintura // NecroForja
+
+Do plástico cru à sujeira da sub-colmeia — as técnicas por trás da gangue destaque do mês, passo a passo.
+
+## O plano
+
+- Base e primer
+- Ferrugem em camadas (chipping + pigmentos)
+- Weathering final: óleos, grime e poeira dos Ash Wastes
+
+---
+
+*Passo a passo completo, com fotos de cada etapa, em breve.*
+`;
+
+const PAINTING_BODY_EN = `> Painting Log // NecroForja
+
+From bare plastic to underhive grime — the techniques behind this month's featured gang, step by step.
+
+## The plan
+
+- Base coat and primer
+- Layered rust (chipping + pigments)
+- Final weathering: oils, grime and Ash Wastes dust
+
+---
+
+*Full step-by-step, with photos of every stage, coming soon.*
+`;
+
+/* ───────────────────────────────── seed ─────────────────────────────────── */
+
+type SeedPost = typeof schema.posts.$inferInsert;
+
+const POSTS: SeedPost[] = [
+	{
+		slug: MISSION_SLUG,
 		type: "session_report",
-		titleEn: "Weekly Mission Report",
-		titlePt: "Relatório das Missões da Semana",
+		titleEn: MISSION_TITLE_EN,
+		titlePt: MISSION_TITLE_PT,
 		excerptEn:
 			"Two war zones burned this week: the fall of the Badzones Outpost and the Gunk War — victories for the Corpse Grinders and the Squat Prospectors.",
 		excerptPt:
 			"Duas zonas de guerra arderam nesta semana: a queda do Badzones Outpost e a Gunk War — vitórias de Corpse Grinders e Squat Prospectors.",
-		bodyEn: BODY_EN,
-		bodyPt: BODY_PT,
-		coverImage: COVER,
+		bodyEn: MISSION_BODY_EN,
+		bodyPt: MISSION_BODY_PT,
+		coverImage: STORAGE_BASE ? `${STORAGE_BASE}/${MISSION_SLUG}.png` : null,
 		coverAlt: "Weekly mission report — campaign transmission poster",
 		published: true,
 		publishedAt: new Date("2026-07-17T12:00:00Z"),
-	});
+	},
+	{
+		slug: "ambush-at-the-sump-gates",
+		type: "session_report",
+		titleEn: "Ambush at the Sump Gates",
+		titlePt: "Emboscada nos Portões do Sump",
+		excerptEn:
+			"Cawdor zealots torch an Escher chem-den in a brutal turf war — full report from the tabletop, with photos and the final butcher's bill.",
+		excerptPt:
+			"Zelotes Cawdor incendeiam um antro químico Escher em uma guerra de território brutal — relato completo da mesa, com fotos e a conta final do açougueiro.",
+		bodyEn: AMBUSH_BODY_EN,
+		bodyPt: AMBUSH_BODY_PT,
+		coverImage: null,
+		coverAlt: null,
+		published: true,
+		publishedAt: new Date("2026-06-28T12:00:00Z"),
+	},
+	{
+		slug: "painting-the-rust",
+		type: "painting",
+		titleEn: "Painting the Rust: Weathering the Underhive",
+		titlePt: "Pintando a Ferrugem: Weathering na Sub-colmeia",
+		excerptEn:
+			"From bare plastic to underhive grime — the techniques behind this month's featured gang, step by step.",
+		excerptPt:
+			"Do plástico cru à sujeira da sub-colmeia — as técnicas por trás da gangue destaque do mês, passo a passo.",
+		bodyEn: PAINTING_BODY_EN,
+		bodyPt: PAINTING_BODY_PT,
+		coverImage: null,
+		coverAlt: null,
+		published: true,
+		publishedAt: new Date("2026-06-05T12:00:00Z"),
+	},
+];
 
-	console.log(`  ✓ Post "${SLUG}" created${COVER ? "" : " (no cover — SUPABASE_URL not set)"}.`);
-	if (COVER) {
-		console.log(`  ↳ Upload the cover as blog/${SLUG}.png in Supabase Storage.`);
+async function seedBlog() {
+	console.log("→ Seeding campaign journal (issue #5)...");
+
+	for (const post of POSTS) {
+		const existing = await db.query.posts.findFirst({
+			where: eq(schema.posts.slug, post.slug),
+			columns: { id: true, titleEn: true },
+		});
+
+		if (!existing) {
+			await db.insert(schema.posts).values(post);
+			console.log(`  ✓ Post "${post.slug}" created.`);
+			continue;
+		}
+
+		// Já existe: só o mission report tem update pendente (rebatizado).
+		if (post.slug === MISSION_SLUG && existing.titleEn !== MISSION_TITLE_EN) {
+			await db
+				.update(schema.posts)
+				.set({
+					titleEn: MISSION_TITLE_EN,
+					titlePt: MISSION_TITLE_PT,
+					updatedAt: new Date(),
+				})
+				.where(eq(schema.posts.id, existing.id));
+			console.log(`  ✓ Post "${post.slug}" retitled to "${MISSION_TITLE_EN}".`);
+		} else {
+			console.log(`  • Post "${post.slug}" already exists — skipped.`);
+		}
+	}
+
+	if (STORAGE_BASE) {
+		console.log(`  ↳ Cover: upload blog/${MISSION_SLUG}.png in Supabase Storage.`);
+	} else {
+		console.log("  ↳ SUPABASE_URL not set — mission report seeded without cover.");
 	}
 }
 

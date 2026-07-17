@@ -22,12 +22,12 @@ export type PostListItem = {
 const STRINGS: Record<Locale, { all: string; empty: string; offline: string }> = {
 	en: {
 		all: "ALL",
-		empty: "No dispatches published yet — the presses of the Underhive are warming up.",
+		empty: "No reports published yet — the presses of the Underhive are warming up.",
 		offline: "Campaign journal is unavailable right now. Try again in a moment.",
 	},
 	"pt-BR": {
 		all: "TODOS",
-		empty: "Nenhum despacho publicado ainda — as prensas do Underhive estão esquentando.",
+		empty: "Nenhum relatório publicado ainda — as prensas do Underhive estão esquentando.",
 		offline: "O jornal de campanha está indisponível no momento. Tente de novo em instantes.",
 	},
 };

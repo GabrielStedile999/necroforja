@@ -22,8 +22,8 @@ export const revalidate = 300;
 type Params = { slug: string };
 
 const STRINGS: Record<Locale, { back: string }> = {
-	en: { back: "← ALL DISPATCHES" },
-	"pt-BR": { back: "← TODOS OS DESPACHOS" },
+	en: { back: "← ALL REPORTS" },
+	"pt-BR": { back: "← TODOS OS RELATÓRIOS" },
 };
 
 async function loadPost(slug: string) {

@@ -125,13 +125,9 @@
 		}
 	},
 	"News": {
-		"sectionLabel": "03 // DESPACHOS",
-		"readAll": "LER TODOS OS DESPACHOS →",
-		"items": {
-			"0": { "tag": "RELATO DE BATALHA", "title": "Emboscada nos Portões do Sump", "summary": "Zelotes Cawdor incendeiam um antro químico Escher em uma guerra de território brutal — relato completo da mesa, com fotos e a conta final do açougueiro." },
-			"1": { "tag": "CAMPANHA", "title": "Metade da Temporada 1: O Mapa Redesenhado", "summary": "Territórios trocam de mãos enquanto a Aranthian Succession esquenta. Classificação, rivalidades e traições da campanha até aqui." },
-			"2": { "tag": "HOBBY", "title": "Pintando a Ferrugem: Weathering na Sub-colmeia", "summary": "Do plástico cru à sujeira da sub-colmeia — as técnicas por trás da gangue destaque do mês, passo a passo." }
-		}
+		"sectionLabel": "03 // RELATÓRIOS",
+		"readAll": "LER TODOS OS RELATÓRIOS →",
+		"empty": "Nenhum relatório publicado ainda — as prensas do Underhive estão esquentando."
 	},
 	"CTA": {
 		"kicker": "SKIRMISH DE MESA · MINIATURAS · DADOS · CAMPANHA NARRATIVA",

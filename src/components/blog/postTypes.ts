@@ -30,7 +30,7 @@ export const POST_TYPES: Record<PostType, PostTypeMeta> = {
 		shadow: "rgba(255,138,61,.4)",
 	},
 	news: {
-		labels: { en: "DISPATCH", "pt-BR": "DESPACHO" },
+		labels: { en: "REPORT", "pt-BR": "RELATÓRIO" },
 		color: "#00e5ff",
 		shadow: "rgba(0,229,255,.4)",
 	},

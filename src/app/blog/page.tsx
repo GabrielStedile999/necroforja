@@ -12,7 +12,7 @@ import { logger } from "@/lib/logger";
 
 /**
  * Jornal de campanha (issue #5) — listagem pública dos posts publicados:
- * relatos de sessão, crônicas, diários de pintura e despachos.
+ * relatos de sessão, crônicas, diários de pintura e relatórios.
  *
  * ISR: revalidate a cada 5 min; o filtro por tipo é client-side para manter
  * a página estática (sem searchParams).
@@ -22,7 +22,7 @@ export const revalidate = 300;
 export const metadata: Metadata = {
 	title: "Campaign Journal",
 	description:
-		"The campaign journal of The Aranthian Succession: session reports, character chronicles, painting logs and dispatches from the Underhive.",
+		"The campaign journal of The Aranthian Succession: session reports, character chronicles, painting logs and reports from the Underhive.",
 	alternates: { canonical: "/blog" },
 	openGraph: {
 		title: "Campaign Journal · NecroForja",
@@ -36,13 +36,13 @@ const PAGE_STRINGS: Record<Locale, { kicker: string; lead: string; body: string 
 		kicker: "// CAMPAIGN JOURNAL",
 		lead: "Every battle leaves a record.",
 		body:
-			"Session reports from the table, chronicles of fighters who lived (and died) in the Underhive, painting logs and campaign dispatches — the living memory of The Aranthian Succession.",
+			"Session reports from the table, chronicles of fighters who lived (and died) in the Underhive, painting logs and campaign reports — the living memory of The Aranthian Succession.",
 	},
 	"pt-BR": {
 		kicker: "// DIÁRIO DE CAMPANHA",
 		lead: "Toda batalha deixa registro.",
 		body:
-			"Relatos de sessão direto da mesa, crônicas de fighters que viveram (e morreram) no Underhive, diários de pintura e despachos da campanha — a memória viva de The Aranthian Succession.",
+			"Relatos de sessão direto da mesa, crônicas de fighters que viveram (e morreram) no Underhive, diários de pintura e relatórios da campanha — a memória viva de The Aranthian Succession.",
 	},
 };
 

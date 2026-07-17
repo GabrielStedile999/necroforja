@@ -125,13 +125,9 @@
 		}
 	},
 	"News": {
-		"sectionLabel": "03 // DISPATCHES",
-		"readAll": "READ ALL DISPATCHES →",
-		"items": {
-			"0": { "tag": "BATTLE REPORT", "title": "Ambush at the Sump Gates", "summary": "Cawdor zealots torch an Escher chem-den in a brutal turf war — full report from the tabletop, with photos and the final butcher's bill." },
-			"1": { "tag": "CAMPAIGN", "title": "Season 1 Mid-Point: The Map Redrawn", "summary": "Territories change hands as the Aranthian Succession heats up. Standings, rivalries and betrayals from the campaign so far." },
-			"2": { "tag": "HOBBY", "title": "Painting the Rust: Weathering the Underhive", "summary": "From bare plastic to underhive grime — the techniques behind this month's featured gang, step by step." }
-		}
+		"sectionLabel": "03 // REPORTS",
+		"readAll": "READ ALL REPORTS →",
+		"empty": "No reports published yet — the presses of the Underhive are warming up."
 	},
 	"CTA": {
 		"kicker": "TABLETOP SKIRMISH · MINIATURES · DICE · NARRATIVE CAMPAIGN",

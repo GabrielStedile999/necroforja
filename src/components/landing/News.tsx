@@ -1,38 +1,34 @@
+import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 /**
- * 03 // DISPATCHES — three static news rows.
- * Tailwind layout + globals.css stripe utilities.
+ * 03 // REPORTS — os relatórios mais recentes do jornal de campanha
+ * (issue #5). A landing carrega os posts publicados no servidor e passa
+ * itens prontos para exibição; cada linha linka para /blog/<slug>.
  *
- * i18n: visual metadata stays here; tag/title/summary come from
- * messages/<locale>.json (News.items keyed by index).
+ * i18n: rótulos do cabeçalho vêm de messages/<locale>.json (News);
+ * título/resumo/tag chegam já resolvidos para o locale.
  */
-const DISPATCHES = [
-	{
-		tagColor: "text-hazard",
-		date: "2026.06.28",
-		thumbBg: "bg-[linear-gradient(135deg,#1a1320,#0a0810)]",
-		thumbStripe: "stripe-thumb-magenta",
-		borderBottom: false,
-	},
-	{
-		tagColor: "text-cyan",
-		date: "2026.06.18",
-		thumbBg: "bg-[linear-gradient(135deg,#0a1418,#06090d)]",
-		thumbStripe: "stripe-thumb-cyan",
-		borderBottom: false,
-	},
-	{
-		tagColor: "text-hazard",
-		date: "2026.06.05",
-		thumbBg: "bg-[linear-gradient(135deg,#16101b,#0a070d)]",
-		thumbStripe: "stripe-thumb-magenta-16",
-		borderBottom: true,
-	},
+export type NewsItem = {
+	slug: string;
+	title: string;
+	excerpt: string;
+	tagLabel: string;
+	tagColor: string;
+	date: string;
+	coverImage: string | null;
+	coverAlt: string | null;
+};
+
+/** Fundos de thumb para posts sem capa (mesma rotação do design original). */
+const THUMB_FALLBACKS = [
+	{ bg: "bg-[linear-gradient(135deg,#1a1320,#0a0810)]", stripe: "stripe-thumb-magenta" },
+	{ bg: "bg-[linear-gradient(135deg,#0a1418,#06090d)]", stripe: "stripe-thumb-cyan" },
+	{ bg: "bg-[linear-gradient(135deg,#16101b,#0a070d)]", stripe: "stripe-thumb-magenta-16" },
 ];
 
-export default function News() {
+export default function News({ items }: { items: NewsItem[] }) {
 	const t = useTranslations("News");
 
 	return (
@@ -51,49 +47,73 @@ export default function News() {
 					</Link>
 				</div>
 
-				<div className="flex flex-col">
-					{DISPATCHES.map((d, i) => (
-						<div
-							key={i}
-							className={`
-                ncf-news-row ncf-news-row-item
-                flex items-center gap-7 px-2 py-6
-                border-t border-white/[0.09]
-                ${d.borderBottom ? "border-b border-white/[0.09]" : ""}
-              `}
-						>
-							{/* Tag + date */}
-							<div className="w-[130px] shrink-0 font-mono">
-								<div className={`text-xs tracking-[1px] ${d.tagColor}`}>
-									{t(`items.${i}.tag`)}
-								</div>
-								<div className="mt-1 text-xs text-[rgba(245,245,250,.4)]">
-									{d.date}
-								</div>
-							</div>
+				{items.length === 0 ? (
+					<p className="m-0 border-y border-white/[0.09] px-2 py-8 text-[14px] text-[rgba(245,245,250,.5)]">
+						{t("empty")}
+					</p>
+				) : (
+					<div className="flex flex-col">
+						{items.map((item, i) => {
+							const fallback =
+								THUMB_FALLBACKS[i % THUMB_FALLBACKS.length] ??
+								{ bg: "bg-[linear-gradient(135deg,#1a1320,#0a0810)]", stripe: "stripe-thumb-magenta" };
+							return (
+								<Link
+									key={item.slug}
+									href={`/blog/${item.slug}`}
+									className={`
+                    ncf-news-row ncf-news-row-item
+                    flex items-center gap-7 px-2 py-6
+                    border-t border-white/[0.09] no-underline text-ink
+                    ${i === items.length - 1 ? "border-b border-white/[0.09]" : ""}
+                  `}
+								>
+									{/* Tag + date */}
+									<div className="w-[150px] shrink-0 font-mono">
+										<div className="text-xs tracking-[1px]" style={{ color: item.tagColor }}>
+											{item.tagLabel}
+										</div>
+										<div className="mt-1 text-xs text-[rgba(245,245,250,.4)]">{item.date}</div>
+									</div>
 
-							{/* Thumbnail */}
-							<div
-								className={`ncf-news-thumb relative h-[84px] w-[160px] shrink-0 overflow-hidden border border-white/[0.08] ${d.thumbBg}`}
-							>
-								<div className={`absolute inset-0 ${d.thumbStripe}`} />
-							</div>
+									{/* Thumbnail */}
+									<div
+										className={`ncf-news-thumb relative h-[84px] w-[160px] shrink-0 overflow-hidden border border-white/[0.08] ${fallback.bg}`}
+									>
+										{item.coverImage ? (
+											<Image
+												src={item.coverImage}
+												alt={item.coverAlt ?? item.title}
+												width={320}
+												height={168}
+												className="h-full w-full object-cover object-top"
+											/>
+										) : (
+											<div className={`absolute inset-0 ${fallback.stripe}`} />
+										)}
+									</div>
 
-							{/* Text */}
-							<div className="flex-1">
-								<div className="ncf-news-text-h mb-1.5 text-[25px] font-bold tracking-[0.5px]">
-									{t(`items.${i}.title`)}
-								</div>
-								<div className="text-[14px] leading-[1.55] text-[rgba(245,245,250,.55)]">
-									{t(`items.${i}.summary`)}
-								</div>
-							</div>
+									{/* Text */}
+									<div className="min-w-0 flex-1">
+										<div className="ncf-news-text-h mb-1.5 text-[25px] font-bold tracking-[0.5px]">
+											{item.title}
+										</div>
+										{item.excerpt && (
+											<div className="text-[14px] leading-[1.55] text-[rgba(245,245,250,.55)]">
+												{item.excerpt}
+											</div>
+										)}
+									</div>
 
-							{/* Arrow */}
-							<span className="ncf-news-arrow text-[22px] text-hazard">→</span>
-						</div>
-					))}
-				</div>
+									{/* Arrow */}
+									<span className="ncf-news-arrow text-[22px]" style={{ color: item.tagColor }}>
+										→
+									</span>
+								</Link>
+							);
+						})}
+					</div>
+				)}
 			</div>
 		</section>
 	);
