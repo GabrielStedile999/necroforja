@@ -30,9 +30,14 @@ export default async function AdminPage() {
             Arbitrator Dashboard
           </h1>
           <Badge variant="hazard">Admin</Badge>
-          <Link href="/admin/campaign" className="ml-auto">
-            <Button variant="outline">Campaign Panel →</Button>
-          </Link>
+          <div className="ml-auto flex gap-2">
+            <Link href="/admin/blog">
+              <Button variant="outline">Journal →</Button>
+            </Link>
+            <Link href="/admin/campaign">
+              <Button variant="outline">Campaign Panel →</Button>
+            </Link>
+          </div>
         </div>
 
         <Card>
