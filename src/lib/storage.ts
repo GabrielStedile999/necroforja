@@ -43,7 +43,10 @@ export async function uploadToBucket(
 	const res = await fetch(`${url}/storage/v1/object/${bucket}/${path}`, {
 		method: "POST",
 		headers: {
+			// Ambos os headers: a service_role legada (JWT) usa Authorization;
+			// as chaves novas (sb_secret_...) exigem o header apikey.
 			Authorization: `Bearer ${serviceKey}`,
+			apikey: serviceKey,
 			"Content-Type": file.type,
 			"x-upsert": "true",
 			"Cache-Control": "public, max-age=31536000, immutable",
