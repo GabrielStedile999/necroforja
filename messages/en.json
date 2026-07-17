@@ -29,17 +29,17 @@
 		"gameMenu": {
 			"overviewLabel": "// OVERVIEW",
 			"modesLabel": "// MODES",
+			"toolsLabel": "// CAMPAIGN TOOLS",
 			"overview": {
-				"gameOverview": "Game Overview",
 				"howToPlay": "How to Play",
-				"loreSetting": "Lore & Setting",
-				"campaignJournal": "Campaign Journal"
+				"loreSetting": "Lore",
+				"campaignJournal": "Reports"
 			},
 			"modes": {
 				"campaign": "Campaign",
-				"territoryWar": "Territory War",
-				"skirmish": "Skirmish",
-				"ashWastes": "Ash Wastes",
+				"skirmish": "Skirmish"
+			},
+			"tools": {
 				"publicDashboard": "Public Dashboard"
 			},
 			"featuredKicker": "FEATURED · S2",

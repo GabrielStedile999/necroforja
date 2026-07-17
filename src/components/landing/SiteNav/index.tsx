@@ -19,13 +19,14 @@ const GREAT_HOUSES = [
 ] as const;
 
 const GAME_OVERVIEW_LINKS = [
-  { key: "gameOverview" },
   { key: "howToPlay", href: "/how-to-play" },
   { key: "loreSetting", href: "/lore" },
   { key: "campaignJournal", href: "/blog" },
 ] as const;
 
-const GAME_MODE_KEYS = ["campaign", "territoryWar", "skirmish", "ashWastes", "publicDashboard"] as const;
+const GAME_MODE_KEYS = ["campaign", "skirmish"] as const;
+
+const GAME_TOOLS_LINKS = [{ key: "publicDashboard", href: "/dashboard" }] as const;
 
 export default function SiteNav() {
   const t = useTranslations("Nav");
@@ -127,13 +128,9 @@ export default function SiteNav() {
                 <div>
                   <div className="mb-5 font-mono text-[11px] tracking-[3px] text-hazard">{t("gameMenu.overviewLabel")}</div>
                   <div className="flex flex-col gap-[15px]">
-                    {GAME_OVERVIEW_LINKS.map((item) =>
-                      "href" in item ? (
-                        <Link key={item.key} href={item.href} className={`${s.megaLink} no-underline`}>{t(`gameMenu.overview.${item.key}`)}</Link>
-                      ) : (
-                        <span key={item.key} className={s.megaLink}>{t(`gameMenu.overview.${item.key}`)}</span>
-                      ),
-                    )}
+                    {GAME_OVERVIEW_LINKS.map((item) => (
+                      <Link key={item.key} href={item.href} className={`${s.megaLink} no-underline`}>{t(`gameMenu.overview.${item.key}`)}</Link>
+                    ))}
                   </div>
                 </div>
                 <div>
@@ -141,6 +138,14 @@ export default function SiteNav() {
                   <div className="flex flex-col gap-[15px]">
                     {GAME_MODE_KEYS.map((k) => (
                       <span key={k} className={s.megaLink}>{t(`gameMenu.modes.${k}`)}</span>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-5 font-mono text-[11px] tracking-[3px] text-toxic">{t("gameMenu.toolsLabel")}</div>
+                  <div className="flex flex-col gap-[15px]">
+                    {GAME_TOOLS_LINKS.map((item) => (
+                      <Link key={item.key} href={item.href} className={`${s.megaLink} no-underline`}>{t(`gameMenu.tools.${item.key}`)}</Link>
                     ))}
                   </div>
                 </div>

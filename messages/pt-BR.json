@@ -29,17 +29,17 @@
 		"gameMenu": {
 			"overviewLabel": "// VISÃO GERAL",
 			"modesLabel": "// MODOS",
+			"toolsLabel": "// FERRAMENTAS DE CAMPANHA",
 			"overview": {
-				"gameOverview": "Visão Geral do Jogo",
 				"howToPlay": "Como Jogar",
-				"loreSetting": "Lore & Cenário",
-				"campaignJournal": "Diário de Campanha"
+				"loreSetting": "Lore",
+				"campaignJournal": "Relatórios"
 			},
 			"modes": {
 				"campaign": "Campanha",
-				"territoryWar": "Guerra de Território",
-				"skirmish": "Skirmish",
-				"ashWastes": "Ash Wastes",
+				"skirmish": "Skirmish"
+			},
+			"tools": {
 				"publicDashboard": "Dashboard Público"
 			},
 			"featuredKicker": "DESTAQUE · T2",
