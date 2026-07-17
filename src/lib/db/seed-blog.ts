@@ -24,6 +24,7 @@ const STORAGE_BASE = process.env.SUPABASE_URL
 /* ────────────────── week-1-mission-report (session report) ─────────────── */
 
 const MISSION_SLUG = "week-1-mission-report";
+const AMBUSH_SLUG = "ambush-at-the-sump-gates";
 
 const MISSION_TITLE_EN = "Season 1 Mid-Point: The Map Redrawn";
 const MISSION_TITLE_PT = "Metade da Temporada 1: O Mapa Redesenhado";
@@ -166,8 +167,10 @@ const POSTS: SeedPost[] = [
 		publishedAt: new Date("2026-07-17T12:00:00Z"),
 	},
 	{
-		slug: "ambush-at-the-sump-gates",
-		type: "session_report",
+		slug: AMBUSH_SLUG,
+		// battle report: jogo único, isolado — diferente do session report,
+		// que é um jogo da campanha em andamento.
+		type: "battle_report",
 		titleEn: "Ambush at the Sump Gates",
 		titlePt: "Emboscada nos Portões do Sump",
 		excerptEn:
@@ -205,7 +208,7 @@ async function seedBlog() {
 	for (const post of POSTS) {
 		const existing = await db.query.posts.findFirst({
 			where: eq(schema.posts.slug, post.slug),
-			columns: { id: true, titleEn: true },
+			columns: { id: true, titleEn: true, type: true },
 		});
 
 		if (!existing) {
@@ -214,8 +217,9 @@ async function seedBlog() {
 			continue;
 		}
 
-		// Já existe: só o mission report tem update pendente (rebatizado).
+		// Já existe: updates pontuais pendentes por slug.
 		if (post.slug === MISSION_SLUG && existing.titleEn !== MISSION_TITLE_EN) {
+			// Rebatizado na metade da temporada.
 			await db
 				.update(schema.posts)
 				.set({
@@ -225,6 +229,13 @@ async function seedBlog() {
 				})
 				.where(eq(schema.posts.id, existing.id));
 			console.log(`  ✓ Post "${post.slug}" retitled to "${MISSION_TITLE_EN}".`);
+		} else if (post.slug === AMBUSH_SLUG && existing.type !== "battle_report") {
+			// Reclassificado: jogo isolado → battle report (não session report).
+			await db
+				.update(schema.posts)
+				.set({ type: "battle_report", updatedAt: new Date() })
+				.where(eq(schema.posts.id, existing.id));
+			console.log(`  ✓ Post "${post.slug}" reclassified as battle_report.`);
 		} else {
 			console.log(`  • Post "${post.slug}" already exists — skipped.`);
 		}

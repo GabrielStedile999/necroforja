@@ -176,6 +176,7 @@ export const assignSympathiserSchema = z.object({
 
 export const postTypeEnum = z.enum([
   "session_report",
+  "battle_report",
   "chronicle",
   "painting",
   "news",

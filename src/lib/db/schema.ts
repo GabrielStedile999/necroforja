@@ -60,10 +60,11 @@ export const equipmentCategory = pgEnum("equipment_category", [
 
 /** Campaign journal post kinds (issue #5). */
 export const postType = pgEnum("post_type", [
-  "session_report", // relatos de sessão/batalha
+  "session_report", // jogo que faz parte da campanha em andamento
   "chronicle", // história de personagens e acontecimentos
   "painting", // passo a passo / acompanhamento de pintura
   "news", // avisos e notícias gerais da campanha
+  "battle_report", // jogo único, isolado (fora da campanha)
 ]);
 
 /* --------------------------- Tables -------------------------------- */

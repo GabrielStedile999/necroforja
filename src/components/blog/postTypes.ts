@@ -4,7 +4,12 @@
 
 import type { Locale } from "@/i18n/config";
 
-export type PostType = "session_report" | "chronicle" | "painting" | "news";
+export type PostType =
+	| "session_report"
+	| "battle_report"
+	| "chronicle"
+	| "painting"
+	| "news";
 
 export type PostTypeMeta = {
 	labels: Record<Locale, string>;
@@ -14,10 +19,17 @@ export type PostTypeMeta = {
 };
 
 export const POST_TYPES: Record<PostType, PostTypeMeta> = {
+	// Jogo que faz parte da campanha em andamento.
 	session_report: {
 		labels: { en: "SESSION REPORT", "pt-BR": "RELATO DE SESSÃO" },
 		color: "#ff2d6f",
 		shadow: "rgba(255,45,111,.4)",
+	},
+	// Jogo único, isolado (fora da campanha).
+	battle_report: {
+		labels: { en: "BATTLE REPORT", "pt-BR": "RELATO DE BATALHA" },
+		color: "#00e5ff",
+		shadow: "rgba(0,229,255,.4)",
 	},
 	chronicle: {
 		labels: { en: "CHRONICLE", "pt-BR": "CRÔNICA" },
@@ -29,10 +41,11 @@ export const POST_TYPES: Record<PostType, PostTypeMeta> = {
 		color: "#ff8a3d",
 		shadow: "rgba(255,138,61,.4)",
 	},
+	// Cor dourada para não colidir com o cyan do battle report.
 	news: {
 		labels: { en: "REPORT", "pt-BR": "RELATÓRIO" },
-		color: "#00e5ff",
-		shadow: "rgba(0,229,255,.4)",
+		color: "#ffc23d",
+		shadow: "rgba(255,194,61,.4)",
 	},
 };
 
