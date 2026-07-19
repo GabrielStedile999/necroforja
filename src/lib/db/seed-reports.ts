@@ -208,7 +208,7 @@ async function seedReports() {
 	for (const post of POSTS) {
 		const existing = await db.query.posts.findFirst({
 			where: eq(schema.posts.slug, post.slug),
-			columns: { id: true, titleEn: true, type: true },
+			columns: { id: true, titleEn: true, type: true, coverImage: true },
 		});
 
 		if (!existing) {
@@ -217,27 +217,38 @@ async function seedReports() {
 			continue;
 		}
 
-		// Já existe: updates pontuais pendentes por slug.
+		// Já existe: aplica updates pontuais pendentes por slug.
+		const patch: Partial<typeof schema.posts.$inferInsert> = {};
+
 		if (post.slug === MISSION_SLUG && existing.titleEn !== MISSION_TITLE_EN) {
 			// Rebatizado na metade da temporada.
-			await db
-				.update(schema.posts)
-				.set({
-					titleEn: MISSION_TITLE_EN,
-					titlePt: MISSION_TITLE_PT,
-					updatedAt: new Date(),
-				})
-				.where(eq(schema.posts.id, existing.id));
-			console.log(`  ✓ Post "${post.slug}" retitled to "${MISSION_TITLE_EN}".`);
-		} else if (post.slug === AMBUSH_SLUG && existing.type !== "battle_report") {
+			patch.titleEn = MISSION_TITLE_EN;
+			patch.titlePt = MISSION_TITLE_PT;
+		}
+		if (post.slug === AMBUSH_SLUG && existing.type !== "battle_report") {
 			// Reclassificado: jogo isolado → battle report (não session report).
+			patch.type = "battle_report";
+		}
+		// Capa apontando para o bucket antigo (`blog`) ou divergente do seed —
+		// corrige para a URL atual (bucket `reports`).
+		if (
+			post.coverImage &&
+			(existing.coverImage?.includes("/public/blog/") ||
+				existing.coverImage !== post.coverImage)
+		) {
+			patch.coverImage = post.coverImage;
+		}
+
+		if (Object.keys(patch).length > 0) {
 			await db
 				.update(schema.posts)
-				.set({ type: "battle_report", updatedAt: new Date() })
+				.set({ ...patch, updatedAt: new Date() })
 				.where(eq(schema.posts.id, existing.id));
-			console.log(`  ✓ Post "${post.slug}" reclassified as battle_report.`);
+			console.log(
+				`  ✓ Post "${post.slug}" updated (${Object.keys(patch).join(", ")}).`,
+			);
 		} else {
-			console.log(`  • Post "${post.slug}" already exists — skipped.`);
+			console.log(`  • Post "${post.slug}" already up to date — skipped.`);
 		}
 	}
 
