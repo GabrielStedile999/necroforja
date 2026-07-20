@@ -5,6 +5,15 @@ import TrailerModal from "./TrailerModal";
 import { mediaUrlOr } from "@/lib/storage";
 
 /**
+ * URL pública do trailer no bucket `media` (issue #24). Não é segredo — é a
+ * mesma URL que qualquer visitante recebe. Fica hardcoded como fallback para
+ * o site não depender de SUPABASE_URL estar setada no ambiente de deploy
+ * (o arquivo saiu de public/, então "/trailer.mp4" não existe mais).
+ */
+const TRAILER_FALLBACK_URL =
+	"https://pcrxxbehvqtdqtwsblcc.supabase.co/storage/v1/object/public/media/trailer.mp4";
+
+/**
  * Hero — Tailwind layout + globals.css visual utilities + SCSS for
  * text-shadow, complex gradients, and hover transitions.
  */
@@ -115,9 +124,8 @@ export default function Hero() {
 					</Link>
 
 					{/* Watch Trailer — opens video modal */}
-					{/* Trailer servido do Supabase Storage (issue #24) — fallback local
-					    apenas quando os envs do Supabase não estão configurados. */}
-					<TrailerModal src={mediaUrlOr("trailer.mp4", "/trailer.mp4")} />
+					{/* Trailer servido do Supabase Storage (issue #24). */}
+					<TrailerModal src={mediaUrlOr("trailer.mp4", TRAILER_FALLBACK_URL)} />
 				</div>
 			</div>
 
