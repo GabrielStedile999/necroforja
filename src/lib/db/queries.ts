@@ -283,3 +283,21 @@ export async function listGangsBasic(campaignId: string) {
     columns: { id: true, name: true, ratingCached: true },
   });
 }
+
+/* ------------------------- Gallery (issues #6/#24) ------------------------- */
+
+/** Published gallery images for the public /gallery page, newest first. */
+export async function listPublishedGalleryImages(limit = 200) {
+  return db.query.galleryImages.findMany({
+    where: eq(schema.galleryImages.published, true),
+    orderBy: [desc(schema.galleryImages.createdAt)],
+    limit,
+  });
+}
+
+/** Every gallery image (drafts included) for the admin panel. */
+export async function listGalleryImagesAdmin() {
+  return db.query.galleryImages.findMany({
+    orderBy: [desc(schema.galleryImages.createdAt)],
+  });
+}

@@ -221,6 +221,90 @@ export const REPORT_IMAGE_MIME_TYPES = [
   "image/gif",
 ] as const;
 
+/* ------------------------- Gallery (issues #6/#24) ------------------------- */
+
+/**
+ * Fixed gallery categories (issue #6: gangs, battles, painting…).
+ * Single source of truth — the Drizzle pg enum, the zod schema, the object
+ * path prefix in the bucket and the i18n filter chips all derive from this.
+ */
+export const GALLERY_CATEGORIES = [
+  "battle",
+  "painting",
+  "gang",
+  "terrain",
+  "misc",
+] as const;
+export type GalleryCategory = (typeof GALLERY_CATEGORIES)[number];
+
+/** Upload constraints for the gallery bucket (mirrored in the bucket config). */
+export const GALLERY_IMAGE_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+export const GALLERY_IMAGE_MIME_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+] as const;
+
+export const galleryCategoryEnum = z.enum(GALLERY_CATEGORIES);
+
+/** Step 1 — admin asks for a signed upload URL (file goes direct to storage). */
+export const galleryUploadRequestSchema = z.object({
+  filename: z.string().min(1).max(200),
+  mime: z.enum(GALLERY_IMAGE_MIME_TYPES),
+  bytes: z
+    .number()
+    .int()
+    .positive()
+    .max(GALLERY_IMAGE_MAX_BYTES, "File too large (max 10 MB)."),
+  category: galleryCategoryEnum,
+});
+
+/** Step 2 — after the direct upload, persist the image metadata row. */
+export const galleryConfirmSchema = z.object({
+  path: z
+    .string()
+    .min(1)
+    .max(300)
+    // category prefix + slug segment, extension included ("battle/foo-a1b2c3.webp")
+    .regex(
+      /^[a-z]+\/[a-z0-9-]+\.[a-z0-9]+$/,
+      "Unexpected object path format.",
+    ),
+  category: galleryCategoryEnum,
+  altEn: z.string().min(3, "English alt text is required.").max(300),
+  altPt: z.string().max(300).default(""),
+  captionEn: z.string().max(500).default(""),
+  captionPt: z.string().max(500).default(""),
+  tags: z.array(z.string().min(1).max(40)).max(12).default([]),
+  width: z.number().int().positive().max(20_000),
+  height: z.number().int().positive().max(20_000),
+});
+
+/** Metadata edit (alt/captions/category/tags/published) for an existing image. */
+export const galleryUpdateSchema = galleryConfirmSchema
+  .omit({ path: true, width: true, height: true })
+  .extend({
+    id: z.string().uuid(),
+    published: z.coerce.boolean().default(true),
+  });
+
+/** Parses the comma-separated tags field of the admin forms. */
+export function parseTagList(raw: string): string[] {
+  return [
+    ...new Set(
+      raw
+        .split(",")
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  ].slice(0, 12);
+}
+
+export type GalleryUploadRequest = z.infer<typeof galleryUploadRequestSchema>;
+export type GalleryConfirmInput = z.infer<typeof galleryConfirmSchema>;
+export type GalleryUpdateInput = z.infer<typeof galleryUpdateSchema>;
+
 export type AssignSympathiserInput = z.infer<typeof assignSympathiserSchema>;
 export type CreatePlayerInput = z.infer<typeof createPlayerSchema>;
 export type FighterInput = z.infer<typeof fighterSchema>;

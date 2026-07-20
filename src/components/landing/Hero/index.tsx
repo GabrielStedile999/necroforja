@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import s from "./Hero.module.scss";
 import TrailerModal from "./TrailerModal";
+import { mediaUrlOr } from "@/lib/storage";
 
 /**
  * Hero — Tailwind layout + globals.css visual utilities + SCSS for
@@ -114,7 +115,9 @@ export default function Hero() {
 					</Link>
 
 					{/* Watch Trailer — opens video modal */}
-					<TrailerModal />
+					{/* Trailer servido do Supabase Storage (issue #24) — fallback local
+					    apenas quando os envs do Supabase não estão configurados. */}
+					<TrailerModal src={mediaUrlOr("trailer.mp4", "/trailer.mp4")} />
 				</div>
 			</div>
 

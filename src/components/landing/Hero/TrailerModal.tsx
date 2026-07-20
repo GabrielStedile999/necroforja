@@ -11,7 +11,7 @@ import s from "./Hero.module.scss";
  * - Close: top-right button, ESC, or backdrop click
  * - Body scroll locked while open
  */
-export default function TrailerModal() {
+export default function TrailerModal({ src = "/trailer.mp4" }: { src?: string }) {
 	const t = useTranslations("Hero");
 	const [open, setOpen] = useState(false);
 	const videoRef = useRef<HTMLVideoElement>(null);
@@ -93,7 +93,7 @@ export default function TrailerModal() {
 					>
 						<video
 							ref={videoRef}
-							src="/trailer.mp4"
+							src={src}
 							autoPlay
 							controls
 							playsInline

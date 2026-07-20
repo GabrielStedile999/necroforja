@@ -18,6 +18,7 @@ import {
   vector,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import { GALLERY_CATEGORIES } from "@/lib/validation";
 
 /** Embedding dimensions (OpenAI text-embedding-3-small). */
 export const EMBEDDING_DIMENSIONS = 1536;
@@ -66,6 +67,9 @@ export const postType = pgEnum("post_type", [
   "news", // avisos e notícias gerais da campanha
   "battle_report", // jogo único, isolado (fora da campanha)
 ]);
+
+/** Gallery albums (issues #6/#24) — mirrors GALLERY_CATEGORIES (validation.ts). */
+export const galleryCategory = pgEnum("gallery_category", GALLERY_CATEGORIES);
 
 /* --------------------------- Tables -------------------------------- */
 export const campaigns = pgTable("campaign", {
@@ -244,6 +248,43 @@ export const posts = pgTable(
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
   (t) => [index("post_published_at_idx").on(t.published, t.publishedAt)],
+);
+
+/**
+ * Gallery images (issues #6/#24) — metadata for objects in the public
+ * `gallery` bucket on Supabase Storage. The object itself lives at
+ * `gallery/<path>` (path is prefixed by category, e.g. "battle/…"); the row
+ * carries everything the site needs to render the grid without touching
+ * storage: dimensions (next/image layout), alt/captions (en/pt) and filters.
+ */
+export const galleryImages = pgTable(
+  "gallery_image",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    /** Object path inside the gallery bucket ("battle/foo-a1b2c3.webp"). */
+    path: text("path").notNull().unique(),
+    category: galleryCategory("category").notNull().default("misc"),
+    /** Free-form lowercase tags (gang names, scenario, etc.). */
+    tags: text("tags").array().notNull().default([]),
+    altEn: text("alt_en").notNull(),
+    altPt: text("alt_pt").notNull().default(""),
+    captionEn: text("caption_en").notNull().default(""),
+    captionPt: text("caption_pt").notNull().default(""),
+    /** Intrinsic pixel size — required by next/image to avoid layout shift. */
+    width: integer("width").notNull(),
+    height: integer("height").notNull(),
+    mime: text("mime").notNull(),
+    bytes: integer("bytes").notNull(),
+    published: boolean("published").notNull().default(true),
+    uploadedByUserId: uuid("uploaded_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("gallery_image_pub_idx").on(t.published, t.createdAt),
+    index("gallery_image_category_idx").on(t.category),
+  ],
 );
 
 /**

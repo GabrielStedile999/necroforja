@@ -22,6 +22,7 @@ const GAME_OVERVIEW_LINKS = [
   { key: "howToPlay", href: "/how-to-play" },
   { key: "loreSetting", href: "/lore" },
   { key: "campaignJournal", href: "/reports" },
+  { key: "gallery", href: "/gallery" },
 ] as const;
 
 const GAME_MODE_KEYS = ["campaign", "skirmish"] as const;
@@ -236,7 +237,8 @@ export default function SiteNav() {
               { num: "03", label: t("factions"), href: "/gangs" },
               { num: "04", label: t("world"), href: "/lore" },
               { num: "05", label: t("news"), href: "/reports" },
-              { num: "06", label: t("dashboard"), href: "/dashboard" },
+              { num: "06", label: t("gallery"), href: "/gallery" },
+              { num: "07", label: t("dashboard"), href: "/dashboard" },
             ].map((item) =>
               item.href ? (
                 <Link key={item.num} href={item.href} onClick={closeNav} className={`${s.mobileNavItem} no-underline text-ink`}>
