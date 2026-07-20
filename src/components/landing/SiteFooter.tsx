@@ -22,6 +22,7 @@ const LINK_GROUPS = [
 		links: [
 			{ key: "discord", href: "/" },
 			{ key: "news", href: "/reports" },
+			{ key: "gallery", href: "/gallery" },
 			{ key: "creators", href: "/" },
 			{ key: "forums", href: "/" },
 		],

@@ -18,6 +18,7 @@
 		"factions": "FACTIONS",
 		"world": "WORLD",
 		"news": "NEWS",
+		"gallery": "GALLERY",
 		"dashboard": "DASHBOARD",
 		"howToPlay": "HOW TO PLAY",
 		"signIn": "SIGN IN",
@@ -33,7 +34,8 @@
 			"overview": {
 				"howToPlay": "How to Play",
 				"loreSetting": "Lore",
-				"campaignJournal": "Reports"
+				"campaignJournal": "Reports",
+				"gallery": "Gallery"
 			},
 			"modes": {
 				"campaign": "Campaign",
@@ -148,6 +150,7 @@
 			"dashboard": "Dashboard",
 			"discord": "Discord",
 			"news": "News",
+			"gallery": "Gallery",
 			"creators": "Creators",
 			"forums": "Forums",
 			"help": "Help",
