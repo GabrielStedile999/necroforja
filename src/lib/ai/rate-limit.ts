@@ -1,5 +1,6 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import { logger } from "@/lib/logger";
 
 /* ------------------------------------------------------------------ */
 /*  In-memory fallback (single-instance / development)                 */
@@ -83,8 +84,18 @@ export async function rateLimit(
   const rl = getUpstashRatelimit(limit, windowSec);
 
   if (rl) {
-    const { success } = await rl.limit(key);
-    return success;
+    try {
+      const { success } = await rl.limit(key);
+      return success;
+    } catch (error) {
+      // Fail OPEN: uma indisponibilidade do Upstash (rede, DNS, banco
+      // deletado, credenciais velhas) nunca pode derrubar o fluxo protegido —
+      // visto em prod: getaddrinfo ENOTFOUND *.upstash.io quebrava o upload
+      // da galeria com 500. O rate limit é proteção acessória; sem Redis,
+      // caímos no limitador em memória da instância.
+      logger.warn("rate-limit: Upstash unavailable, failing open", { key, error });
+      return inMemoryRateLimit(key, limit, windowSec * 1_000);
+    }
   }
 
   return inMemoryRateLimit(key, limit, windowSec * 1_000);
