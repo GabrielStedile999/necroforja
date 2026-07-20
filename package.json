@@ -2,6 +2,7 @@
   "name": "necroforja",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "npm@10.9.8",
   "description": "NecroForja — gestor de campanhas de Necromunda (projeto de portfólio). Next.js 16 + TypeScript + Drizzle.",
   "type": "module",
   "scripts": {
@@ -63,6 +64,7 @@
     "vitest": "^2.1.8"
   },
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=20.9.0",
+    "npm": ">=10"
   }
 }
