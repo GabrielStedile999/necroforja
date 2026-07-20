@@ -1,0 +1,42 @@
+name: Upstash keep-alive
+
+# Mantém o Redis free do Upstash ativo: o plano free desativa bancos que
+# ficam muito tempo sem comandos — foi o que derrubou o rate limit em
+# jul/2026 (host ENOTFOUND → fix #32 passou a falhar aberto). Um SET
+# semanal via REST API conta como atividade real e evita a desativação.
+#
+# Secrets necessários (Settings → Secrets and variables → Actions):
+#   UPSTASH_REDIS_REST_URL    ex.: https://<nome>.upstash.io
+#   UPSTASH_REDIS_REST_TOKEN  token da seção "REST API" do console Upstash
+#
+# Obs.: o GitHub desativa schedules após ~60 dias sem atividade no repo
+# (manda e-mail antes); qualquer push reativa.
+
+on:
+  schedule:
+    - cron: "0 9 * * 1" # segundas, 09:00 UTC (06:00 América/São_Paulo)
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    name: SET + PING via REST API
+    runs-on: ubuntu-latest
+    steps:
+      - name: Keep-alive
+        env:
+          URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+        run: |
+          if [ -z "$URL" ] || [ -z "$TOKEN" ]; then
+            echo "::error::Secrets UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN não configurados no repositório."
+            exit 1
+          fi
+          set -euo pipefail
+          # Escrita com TTL de 30 dias — conta como atividade e não acumula lixo
+          stamp=$(date -u +%Y-%m-%dT%H-%M-%SZ)
+          set_resp=$(curl -sS --fail-with-body -H "Authorization: Bearer $TOKEN" \
+            "$URL/set/keepalive/$stamp?EX=2592000")
+          echo "SET keepalive=$stamp → $set_resp"
+          ping_resp=$(curl -sS --fail-with-body -H "Authorization: Bearer $TOKEN" "$URL/ping")
+          echo "PING → $ping_resp"
+          echo "$ping_resp" | grep -qi pong
