@@ -3,8 +3,9 @@ import { listPublishedPosts } from "@/lib/db/queries";
 import { logger } from "@/lib/logger";
 
 /**
- * Sitemap — public pages only: /, /lore, /how-to-play, /gangs, /reports (plus
- * published posts) and /dashboard. Authenticated pages are excluded.
+ * Sitemap — public pages only: /, /lore, /how-to-play, /skirmish, /campaign,
+ * /gangs, /reports (plus published posts), /gallery and /dashboard.
+ * Authenticated pages are excluded.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl =
@@ -42,6 +43,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.8,
+    },
+    {
+      url: `${siteUrl}/skirmish`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: `${siteUrl}/campaign`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.7,
     },
     {
       url: `${siteUrl}/gangs`,
