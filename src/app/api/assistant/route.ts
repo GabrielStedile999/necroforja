@@ -7,6 +7,11 @@ import { logger } from "@/lib/logger";
 
 export const maxDuration = 30;
 
+// Daily message quota per logged-in user (issue #13) — caps API cost exposure
+// independently of the short burst window below. Configurable via env so the
+// limit can be tuned without a code change; `||` treats an empty string as unset.
+const DAILY_MESSAGE_LIMIT = Number(process.env.ASSISTANT_DAILY_MESSAGE_LIMIT || "50");
+
 /**
  * Rules assistant (RAG). Authenticated and rate-limited.
  * Retrieves relevant chunks via pgvector and responds with Claude, citing sources.
@@ -21,7 +26,8 @@ export async function POST(req: Request) {
     return new Response("Not authenticated.", { status: 401 });
   }
 
-  // ---- Rate limiting (async — supports Upstash in production) --------
+  // ---- Burst rate limiting (async — supports Upstash in production) --
+  // Protects against rapid-fire spam (default: 20 requests / 60 s).
   const allowed = await rateLimit(session.user.id);
   if (!allowed) {
     logger.warn("Rate limit exceeded on /api/assistant", {
@@ -30,6 +36,25 @@ export async function POST(req: Request) {
     return new Response("Too many questions in a short time. Please wait a moment.", {
       status: 429,
     });
+  }
+
+  // ---- Daily quota -----------------------------------------------------
+  // Separate key/window from the burst limiter above: caps total questions
+  // per user per day, which is what actually bounds Anthropic API cost.
+  const dailyAllowed = await rateLimit(
+    `daily:${session.user.id}`,
+    DAILY_MESSAGE_LIMIT,
+    24 * 60 * 60,
+  );
+  if (!dailyAllowed) {
+    logger.warn("Daily message limit reached on /api/assistant", {
+      userId: session.user.id,
+      limit: DAILY_MESSAGE_LIMIT,
+    });
+    return new Response(
+      `You've reached the daily limit of ${DAILY_MESSAGE_LIMIT} questions for the rules assistant. Please try again tomorrow.`,
+      { status: 429 },
+    );
   }
 
   const { messages } = (await req.json()) as { messages: CoreMessage[] };

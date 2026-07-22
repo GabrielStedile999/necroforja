@@ -90,14 +90,20 @@ export const metadata: Metadata = {
 	},
 
 	// ---- Icons ----
+	// `?v=2` força o refresh do cache de favicon do Google/navegadores após a
+	// troca para o crest oficial (issue #28) — sem isso o ícone antigo pode
+	// ficar em cache por dias/semanas mesmo com o arquivo já atualizado.
 	icons: {
 		// Apple-touch-icon for iOS home-screen add (manifest icons are ignored there)
 		apple: [
-			{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+			{ url: "/icons/apple-touch-icon.png?v=2", sizes: "180x180", type: "image/png" },
 		],
 		icon: [
-			{ url: "/icon.svg", type: "image/svg+xml" },
-			{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+			// `src/app/favicon.ico` (16/32/48px) é servido automaticamente pelo
+			// Next.js em "/favicon.ico" — elimina o 404 que impedia o crawler
+			// de favicon do Google de pegar o ícone novo.
+			{ url: "/icon.svg?v=2", type: "image/svg+xml" },
+			{ url: "/icons/icon-192.png?v=2", sizes: "192x192", type: "image/png" },
 		],
 	},
 };
