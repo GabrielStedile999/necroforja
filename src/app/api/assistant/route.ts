@@ -10,7 +10,7 @@ export const maxDuration = 30;
 // Daily message quota per logged-in user (issue #13) — caps API cost exposure
 // independently of the short burst window below. Configurable via env so the
 // limit can be tuned without a code change; `||` treats an empty string as unset.
-const DAILY_MESSAGE_LIMIT = Number(process.env.ASSISTANT_DAILY_MESSAGE_LIMIT || "50");
+const DAILY_MESSAGE_LIMIT = Number(process.env.ASSISTANT_DAILY_MESSAGE_LIMIT || "10");
 
 /**
  * Rules assistant (RAG). Authenticated and rate-limited.
