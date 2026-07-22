@@ -25,7 +25,10 @@ const GAME_OVERVIEW_LINKS = [
   { key: "gallery", href: "/gallery" },
 ] as const;
 
-const GAME_MODE_KEYS = ["campaign", "skirmish"] as const;
+const GAME_MODE_LINKS = [
+  { key: "campaign", href: "/campaign" },
+  { key: "skirmish", href: "/skirmish" },
+] as const;
 
 const GAME_TOOLS_LINKS = [{ key: "publicDashboard", href: "/dashboard" }] as const;
 
@@ -137,8 +140,8 @@ export default function SiteNav() {
                 <div>
                   <div className="mb-5 font-mono text-[11px] tracking-[3px] text-cyan">{t("gameMenu.modesLabel")}</div>
                   <div className="flex flex-col gap-[15px]">
-                    {GAME_MODE_KEYS.map((k) => (
-                      <span key={k} className={s.megaLink}>{t(`gameMenu.modes.${k}`)}</span>
+                    {GAME_MODE_LINKS.map((item) => (
+                      <Link key={item.key} href={item.href} className={`${s.megaLink} no-underline`}>{t(`gameMenu.modes.${item.key}`)}</Link>
                     ))}
                   </div>
                 </div>
@@ -234,11 +237,13 @@ export default function SiteNav() {
             {[
               { num: "01", label: t("game") },
               { num: "02", label: t("howToPlay"), href: "/how-to-play" },
-              { num: "03", label: t("factions"), href: "/gangs" },
-              { num: "04", label: t("world"), href: "/lore" },
-              { num: "05", label: t("news"), href: "/reports" },
-              { num: "06", label: t("gallery"), href: "/gallery" },
-              { num: "07", label: t("dashboard"), href: "/dashboard" },
+              { num: "03", label: t("gameMenu.modes.campaign"), href: "/campaign" },
+              { num: "04", label: t("gameMenu.modes.skirmish"), href: "/skirmish" },
+              { num: "05", label: t("factions"), href: "/gangs" },
+              { num: "06", label: t("world"), href: "/lore" },
+              { num: "07", label: t("news"), href: "/reports" },
+              { num: "08", label: t("gallery"), href: "/gallery" },
+              { num: "09", label: t("dashboard"), href: "/dashboard" },
             ].map((item) =>
               item.href ? (
                 <Link key={item.num} href={item.href} onClick={closeNav} className={`${s.mobileNavItem} no-underline text-ink`}>
