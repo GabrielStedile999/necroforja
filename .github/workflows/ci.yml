@@ -34,22 +34,28 @@ jobs:
       - name: Test
         run: npm test
 
-  # Opcional: descomente para validar o build de produção em cada PR.
   # O `next build` carrega os módulos de rota; como `db/index.ts` exige
   # DATABASE_URL na importação, passamos valores DUMMY (não há conexão em build,
   # pois as páginas autenticadas são dynamic e só consultam em request time).
-  #
-  # build:
-  #   name: Build
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 20
-  #         cache: npm
-  #     - run: npm ci
-  #     - run: npm run build
-  #       env:
-  #         DATABASE_URL: postgres://user:pass@localhost:5432/db
-  #         AUTH_SECRET: dummy-build-secret-not-used
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Pin npm (packageManager)
+        run: npm install -g "npm@$(node -p "require('./package.json').packageManager.split('@')[1]")"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          DATABASE_URL: postgres://user:pass@localhost:5432/db
+          AUTH_SECRET: dummy-build-secret-not-used
