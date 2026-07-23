@@ -6,6 +6,7 @@ import "./globals.css";
 import { PwaRegister } from "@/components/PwaRegister";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { Analytics } from "@vercel/analytics/next";
+import { SITE_URL } from "@/lib/site-url";
 
 const chakra = Chakra_Petch({
 	subsets: ["latin"],
@@ -19,8 +20,7 @@ const shareMono = Share_Tech_Mono({
 });
 
 // Canonical base URL — used by Next.js to prefix relative metadata URLs.
-// Falls back to a sensible default so builds never fail without env vars.
-const siteUrl = process.env.AUTH_URL || "https://necroforja.vercel.app";
+const siteUrl = SITE_URL;
 
 export const metadata: Metadata = {
 	// ---- Base URL (makes all relative URLs canonical) ----

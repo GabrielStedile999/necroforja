@@ -14,6 +14,7 @@ import { buildWebsiteJsonLd, buildAppJsonLd } from "@/lib/seo/json-ld";
 import { listPublishedPosts } from "@/lib/db/queries";
 import { formatPostDate, pickPostText } from "@/lib/reports";
 import { logger } from "@/lib/logger";
+import { SITE_URL } from "@/lib/site-url";
 
 /**
  * Hi-Fi marketing landing page — pixel-faithful React implementation
@@ -27,7 +28,7 @@ import { logger } from "@/lib/logger";
  * campanha (issue #5), com fallback gracioso se o banco estiver fora.
  */
 
-const siteUrl = process.env.AUTH_URL || "https://necroforja.vercel.app";
+const siteUrl = SITE_URL;
 
 export const metadata: Metadata = {
   title: "NecroForja — Necromunda Campaign Manager",
