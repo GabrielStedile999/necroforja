@@ -141,6 +141,47 @@ More "just database" (auth you handle with Auth.js).
 db + RLS in one place) and evaluate/migrate to Neon if the cold start becomes
 an issue. In both, **select the São Paulo region** on creation.
 
+### 3.2a Image storage strategy (issue #21)
+
+Three different needs share the "image" label but have different lifecycles:
+
+1. **Static content images** (lore, journal/news) — small volume, versioned
+   together with the code. Stay in `public/` (e.g. `public/lore/*.webp`, issue
+   #9); no reason to move them to object storage while the volume is small.
+2. **Gallery photos** (campaign photos, user-submitted) — grows over time,
+   needs public read access and a simple upload flow.
+3. **Future uploads tied to entities** (fighter/gang sheet images, avatars) —
+   not built yet; no issue currently requests this feature.
+
+**Options considered:** Supabase Storage, Cloudflare R2, AWS S3 + CloudFront,
+Vercel Blob (see issue #21 for the full comparison). **Decision: Supabase
+Storage.** The project already runs on Supabase (Postgres + this), so there is
+no new provider/credential to manage; `next.config.ts` already whitelists
+`*.supabase.co` in `images.remotePatterns`. Free tier (1 GB) and no egress
+billing are enough at this scale; revisit Cloudflare R2 only if storage/egress
+cost becomes a real line item.
+
+**Implemented (gallery, issues #6/#24):** direct-to-Storage signed uploads
+(client uploads straight to the `gallery` bucket, bypassing the Vercel
+serverless 4.5 MB body limit), admin at `/admin/gallery`, public read at
+`/gallery`. Modeling: `gallery_image` table (owner-independent — no per-user
+uploads yet) + `gallery_category` enum, indexed by
+`(published, created_at)`/`category`. Buckets `gallery` (10 MB, images) and
+`media` (50 MB, video — `trailer.mp4`) are public; RLS is enabled with no
+policies because the app only writes through the service role / signed URLs,
+never directly from the client with the anon key.
+
+**Deferred:**
+- Orphan cleanup (Storage objects left behind by a failed/abandoned upload) —
+  no automated job yet; low risk at the current volume, revisit if the bucket
+  grows.
+- Migrating existing `public/lore` images to Storage — not worth it while
+  static content stays small; reconsider if content images start needing
+  runtime updates without a redeploy.
+- Fichas/avatar uploads — no feature request for this yet; when it lands,
+  reuse the same signed-upload pattern with a per-entity (fighter/gang) owner
+  column instead of introducing a new storage decision.
+
 ### 3.3 ORM: Drizzle
 
 **Drizzle ORM** — SQL-like, type-safe, lightweight, with versioned migrations. Runs

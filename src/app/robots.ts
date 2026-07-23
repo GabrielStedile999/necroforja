@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/site-url";
 
 /**
  * Robots.txt generation.
@@ -7,8 +8,7 @@ import type { MetadataRoute } from "next";
  * Private: /admin, /player, /portal (role dispatcher), /api/, /login.
  */
 export default function robots(): MetadataRoute.Robots {
-  const siteUrl =
-    process.env.AUTH_URL || "https://necroforja.vercel.app";
+  const siteUrl = SITE_URL;
 
   return {
     rules: [

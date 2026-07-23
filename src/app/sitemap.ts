@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { listPublishedPosts } from "@/lib/db/queries";
 import { logger } from "@/lib/logger";
+import { SITE_URL } from "@/lib/site-url";
 
 /**
  * Sitemap — public pages only: /, /lore, /how-to-play, /skirmish, /campaign,
@@ -8,8 +9,7 @@ import { logger } from "@/lib/logger";
  * Authenticated pages are excluded.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl =
-    process.env.AUTH_URL || "https://necroforja.vercel.app";
+  const siteUrl = SITE_URL;
 
   // Posts publicados (issue #5) — fallback gracioso se o banco estiver fora.
   let postEntries: MetadataRoute.Sitemap = [];
