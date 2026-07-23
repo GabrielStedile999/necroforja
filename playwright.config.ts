@@ -48,10 +48,15 @@ export default defineConfig({
 
   // Reuses a server you already have running (e.g. `npm run dev`) instead of
   // spawning a second one — set PLAYWRIGHT_SKIP_WEB_SERVER=1 for that.
+  //
+  // The port is passed explicitly to next's CLI (via `-- -p`) instead of
+  // relying on the default — `npm run start`/`npm run dev` alone always bind
+  // 3000, so without this the server never answers on PORT/baseURL above and
+  // Playwright times out waiting for `webServer` (this bit us in CI once).
   webServer: process.env.PLAYWRIGHT_SKIP_WEB_SERVER
     ? undefined
     : {
-        command: process.env.CI ? "npm run start" : "npm run dev",
+        command: `npm run ${process.env.CI ? "start" : "dev"} -- -p ${PORT}`,
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
