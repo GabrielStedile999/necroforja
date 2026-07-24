@@ -2,7 +2,7 @@
  * Read layer (Drizzle). Maps database rows to the domain types
  * used by lib/scoring.ts. All functions run server-side only.
  */
-import { eq, and, desc, type SQL } from "drizzle-orm";
+import { eq, and, or, ilike, desc, type SQL } from "drizzle-orm";
 import { db, schema } from "./index";
 import type {
   Fighter,
@@ -299,5 +299,52 @@ export async function listPublishedGalleryImages(limit = 200) {
 export async function listGalleryImagesAdmin() {
   return db.query.galleryImages.findMany({
     orderBy: [desc(schema.galleryImages.createdAt)],
+  });
+}
+
+/* ------------------------- Site search (issue #15) ----------------------- */
+
+/** Escapes ILIKE wildcards so a user-typed `%`/`_` is matched literally. */
+function toIlikePattern(term: string): string {
+  return `%${term.replace(/[%_\\]/g, (c) => `\\${c}`)}%`;
+}
+
+/**
+ * Published posts whose bilingual title/excerpt/slug loosely match `term`
+ * (plain `ILIKE`, not the vector search used by the rules assistant — a
+ * live-as-you-type search box can't afford an embedding call per keystroke).
+ */
+export async function searchPublishedPosts(term: string, limit = 5) {
+  const pattern = toIlikePattern(term);
+  return db.query.posts.findMany({
+    where: and(
+      eq(schema.posts.published, true),
+      or(
+        ilike(schema.posts.titleEn, pattern),
+        ilike(schema.posts.titlePt, pattern),
+        ilike(schema.posts.excerptEn, pattern),
+        ilike(schema.posts.excerptPt, pattern),
+        ilike(schema.posts.slug, pattern),
+      ),
+    ),
+    orderBy: [desc(schema.posts.publishedAt), desc(schema.posts.createdAt)],
+    limit,
+  });
+}
+
+/**
+ * Rule chunks whose heading/content loosely match `term` — reuses the
+ * `rule_chunk` table populated for the RAG assistant (issue #13), but as a
+ * plain keyword search rather than the semantic/embedding search in
+ * `lib/ai/retrieval.ts`, which is too slow/costly to run on every keystroke.
+ */
+export async function searchRuleChunksByText(term: string, limit = 5) {
+  const pattern = toIlikePattern(term);
+  return db.query.ruleChunks.findMany({
+    where: or(
+      ilike(schema.ruleChunks.heading, pattern),
+      ilike(schema.ruleChunks.content, pattern),
+    ),
+    limit,
   });
 }

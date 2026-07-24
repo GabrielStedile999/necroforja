@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -8,6 +9,7 @@ import Ticker from "@/components/landing/Ticker";
 import SiteNav from "@/components/landing/SiteNav";
 import SiteFooter from "@/components/landing/SiteFooter";
 import PostBody from "@/components/reports/PostBody";
+import ScrollToTerm from "@/components/reports/ScrollToTerm";
 import { POST_TYPES, toPostType } from "@/components/reports/postTypes";
 import { getPublishedPostBySlug } from "@/lib/db/queries";
 import { formatPostDate, pickPostText } from "@/lib/reports";
@@ -137,6 +139,13 @@ export default async function ReportPostPage({ params }: { params: Promise<Param
 			</main>
 
 			<SiteFooter />
+
+			{/* Scrolls to + highlights a search result's matched term (issue #15
+			    follow-up) — reads ?q= via useSearchParams, which requires a
+			    Suspense boundary to keep this route's static/ISR rendering. */}
+			<Suspense fallback={null}>
+				<ScrollToTerm containerId="post-body" />
+			</Suspense>
 		</div>
 	);
 }

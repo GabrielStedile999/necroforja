@@ -64,6 +64,18 @@
 			"vanSaar": "Tech & Precision · Marksman"
 		}
 	},
+	"Search": {
+		"ariaLabel": "Site search",
+		"placeholder": "Search pages, reports, rules…",
+		"hint": "Type to search pages, journal reports and rules.",
+		"searching": "Searching…",
+		"noResults": "No results for “{query}”.",
+		"tryAssistant": "Try the Rules Assistant →",
+		"groupPages": "// PAGES",
+		"groupReports": "// JOURNAL",
+		"groupRules": "// RULES",
+		"close": "Close search"
+	},
 	"Hero": {
 		"rec": "REC",
 		"liveFeed": "LIVE FEED · SECTOR-7G",

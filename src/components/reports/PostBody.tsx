@@ -76,7 +76,9 @@ const components: Components = {
 
 export default function PostBody({ markdown }: { markdown: string }) {
 	return (
-		<div className="max-w-[820px]">
+		// id targeted by <ScrollToTerm> (issue #15 follow-up) — a search result
+		// for this post scrolls to and highlights the first match in here.
+		<div id="post-body" className="max-w-[820px]">
 			<ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
 				{markdown}
 			</ReactMarkdown>

@@ -64,6 +64,18 @@
 			"vanSaar": "Tecnologia & Precisão · Atirador"
 		}
 	},
+	"Search": {
+		"ariaLabel": "Busca do site",
+		"placeholder": "Buscar páginas, relatórios, regras…",
+		"hint": "Digite para buscar páginas, relatórios do jornal e regras.",
+		"searching": "Buscando…",
+		"noResults": "Nenhum resultado para “{query}”.",
+		"tryAssistant": "Experimente o Assistente de Regras →",
+		"groupPages": "// PÁGINAS",
+		"groupReports": "// JORNAL",
+		"groupRules": "// REGRAS",
+		"close": "Fechar busca"
+	},
 	"Hero": {
 		"rec": "REC",
 		"liveFeed": "TRANSMISSÃO AO VIVO · SETOR-7G",
