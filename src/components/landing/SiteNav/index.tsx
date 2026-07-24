@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
+import { SiteSearch, type SiteSearchHandle } from "@/components/search/SiteSearch";
 import s from "./SiteNav.module.scss";
 
 // House names are canonical game terms and stay in English (issue #12:
@@ -36,6 +37,7 @@ export default function SiteNav() {
   const t = useTranslations("Nav");
   const [menu, setMenu]       = useState<"game" | "factions" | null>(null);
   const [navOpen, setNavOpen] = useState(false);
+  const searchRef = useRef<SiteSearchHandle>(null);
 
   const openNav = () => {
     document.body.style.overflow = "hidden";
@@ -95,11 +97,16 @@ export default function SiteNav() {
             onMouseEnter={() => setMenu(null)}
             className="ncf-nav-util flex shrink-0 items-center gap-[11px]"
           >
-            <span className={s.searchBtn}>
+            <button
+              type="button"
+              onClick={() => searchRef.current?.open()}
+              aria-label={t("search")}
+              className={`${s.searchBtn} bg-transparent p-0`}
+            >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.5" y2="16.5" />
               </svg>
-            </span>
+            </button>
 
             <span className="h-[20px] w-px bg-white/[0.14]" />
 
@@ -272,12 +279,19 @@ export default function SiteNav() {
             </div>
 
             <div className="mt-[30px] flex items-center gap-5 font-mono text-[13px] tracking-[1px] text-[rgba(245,245,250,.7)]">
-              <span className="flex cursor-pointer items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  closeNav();
+                  searchRef.current?.open();
+                }}
+                className="flex cursor-pointer items-center gap-2 bg-transparent p-0 text-[13px] tracking-[1px] text-[rgba(245,245,250,.7)]"
+              >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.5" y2="16.5" />
                 </svg>
                 {t("search")}
-              </span>
+              </button>
               <LocaleSwitcher align="left" />
             </div>
 
@@ -287,6 +301,8 @@ export default function SiteNav() {
           </div>
         </div>
       )}
+
+      <SiteSearch ref={searchRef} />
     </>
   );
 }
