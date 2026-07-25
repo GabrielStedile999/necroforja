@@ -121,6 +121,24 @@ jobs:
       - name: Run Playwright smoke tests
         run: npx playwright test
 
+      # Lighthouse CI (issue #42) — baseline NÃO bloqueante: as assertions do
+      # lighthouserc.json são todas "warn" e o passo tem continue-on-error até
+      # existir um baseline real pra calibrar thresholds. Roda aqui no job e2e
+      # porque ele já tem o build + Postgres seedado que o `next start` usa.
+      # O link do relatório (temporary-public-storage) sai no log do passo e
+      # os JSONs ficam como artifact.
+      - name: Lighthouse CI (non-blocking)
+        run: npx lhci autorun
+        continue-on-error: true
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci/
+          retention-days: 7
+
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
