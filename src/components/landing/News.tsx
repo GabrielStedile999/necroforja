@@ -35,10 +35,11 @@ export default function News({ items }: { items: NewsItem[] }) {
 		<section className="ncf-section border-t border-white/[0.06] bg-[#0a090c] py-[96px]">
 			<div className="ncf-wrap mx-auto max-w-[1380px] px-[48px]">
 				{/* Header */}
+				{/* Section label — <h2> real (issue #42), mantendo o visual de label. */}
 				<div className="ncf-houses-head mb-[44px] flex items-end justify-between gap-4">
-					<span className="font-mono text-[13px] tracking-[4px] text-hazard">
+					<h2 className="m-0 font-mono text-[13px] font-normal tracking-[4px] text-hazard">
 						{t("sectionLabel")}
-					</span>
+					</h2>
 					<Link
 						href="/reports"
 						className="ncf-util-link font-mono text-[13px] tracking-[2px] text-[rgba(245,245,250,.7)] no-underline"
@@ -73,7 +74,8 @@ export default function News({ items }: { items: NewsItem[] }) {
 										<div className="text-xs tracking-[1px]" style={{ color: item.tagColor }}>
 											{item.tagLabel}
 										</div>
-										<div className="mt-1 text-xs text-[rgba(245,245,250,.4)]">{item.date}</div>
+										{/* .55 = contraste AA sobre o fundo escuro (issue #42). */}
+										<div className="mt-1 text-xs text-[rgba(245,245,250,.55)]">{item.date}</div>
 									</div>
 
 									{/* Thumbnail */}
@@ -93,11 +95,11 @@ export default function News({ items }: { items: NewsItem[] }) {
 										)}
 									</div>
 
-									{/* Text */}
+									{/* Text — título do report é heading real (issue #42). */}
 									<div className="min-w-0 flex-1">
-										<div className="ncf-news-text-h mb-1.5 text-[25px] font-bold tracking-[0.5px]">
+										<h3 className="ncf-news-text-h m-0 mb-1.5 text-[25px] font-bold tracking-[0.5px]">
 											{item.title}
-										</div>
+										</h3>
 										{item.excerpt && (
 											<div className="text-[14px] leading-[1.55] text-[rgba(245,245,250,.55)]">
 												{item.excerpt}

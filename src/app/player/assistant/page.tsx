@@ -1,7 +1,9 @@
 import { SiteHeader } from "@/components/SiteHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { RulesChat } from "@/components/assistant/RulesChat";
+// Carregado via next/dynamic (issue #42) — mantém @ai-sdk/react fora do
+// bundle inicial e do SSR desta rota.
+import { RulesChat } from "@/components/assistant/RulesChatLazy";
 import { requireUser } from "@/lib/auth/guards";
 import { Bot } from "lucide-react";
 import type { Metadata } from "next";
