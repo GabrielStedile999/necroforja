@@ -40,6 +40,19 @@ All notable changes to this project. Format based on
 - PWA (installable) and SEO/Lighthouse adjustments.
 - Integration tests and general hardening.
 
+### Security
+- **Pre-open-source hardening (issue #43):** `db:seed` now refuses to run
+  with the default admin/player passwords whenever `DATABASE_URL` doesn't
+  point at `localhost`/`127.0.0.1`, preventing an accidental seed of
+  production with publicly-known credentials. Added a `LICENSE`
+  (All rights reserved).
+
+### Fixed
+- `opengraph-image.tsx` no longer declares `runtime = "edge"` (the image is
+  fully static, so it's now pre-rendered at build time) and loads its local
+  crest asset via `fs.readFile` instead of an Edge-only `fetch(new URL(...))`
+  pattern, which failed under the Node.js runtime.
+
 > Update this section with every PR. When publishing a version, move items to a
 > versioned section (e.g. `## [0.2.0] - 2026-07-01`).
 

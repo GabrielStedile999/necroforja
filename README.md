@@ -126,3 +126,9 @@ Necromunda content, rules, art, and trademarks are © Games Workshop. This
 project uses functional terms and **original identity/art**; any rule text derived
 from the books is **restricted to authenticated players** who own the material.
 Nothing official is reproduced in the public area.
+
+## License
+
+This repository is public for portfolio and review purposes — see
+[`LICENSE`](./LICENSE). All rights reserved; reuse, redistribution, or
+copying the code requires prior written permission.

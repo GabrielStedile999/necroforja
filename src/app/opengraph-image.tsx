@@ -1,14 +1,29 @@
 import { ImageResponse } from "next/og";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
 /**
- * Dynamic Open Graph image for the public landing.
+ * Open Graph image for the public landing.
  * Served at /opengraph-image by Next.js App Router.
  *
  * Size: 1200 × 630 (standard OG / Twitter card dimensions).
  * Design: Hi-Fi magenta/cyan aesthetic matching the new design system.
+ *
+ * Conteúdo é totalmente estático (sem params/dados dinâmicos), então não usa
+ * `runtime = "edge"` — isso deixava o Next tratar a rota como dinâmica e pular
+ * a geração estática dela no build (aviso "Using edge runtime on a page
+ * currently disables static generation for that page"). Sem a declaração, a
+ * imagem é pré-renderizada uma vez no build e servida como asset estático.
+ *
+ * Correção (25/jul): a primeira tentativa de remover o edge runtime manteve
+ * `fetch(new URL("./og-crest.png", import.meta.url))` pra carregar o crest —
+ * esse padrão só funciona sob Edge runtime (o fetch do Next lá sabe resolver
+ * URLs de asset "bundladas"). No runtime Node.js padrão, o `fetch` nativo não
+ * suporta `file://` e a build falhava ("TypeError: fetch failed" / "not
+ * implemented... yet..."). Trocado por leitura direta do arquivo via
+ * `fs.readFile`, o jeito documentado pelo Next.js pra assets locais fora do
+ * Edge runtime (caminho relativo à raiz do projeto via `process.cwd()`).
  */
-export const runtime = "edge";
-
 export const alt =
   "NecroForja — Necromunda campaign manager. Track gangs, Sympathisers and the campaign ranking in real time.";
 
@@ -17,9 +32,11 @@ export const contentType = "image/png";
 
 export default async function OgImage() {
   // Official crest (transparent PNG bundled next to this file)
-  const crest = await fetch(new URL("./og-crest.png", import.meta.url)).then(
-    (res) => res.arrayBuffer(),
+  const crestBase64 = await readFile(
+    join(process.cwd(), "src/app/og-crest.png"),
+    "base64",
   );
+  const crest = `data:image/png;base64,${crestBase64}`;
 
   return new ImageResponse(
     (
@@ -34,10 +51,11 @@ export default async function OgImage() {
           justifyContent: "space-between",
         }}
       >
-        {/* Official crest — right side */}
-        {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text */}
+        {/* Official crest — right side (decorativo: renderizado como PNG pelo
+            ImageResponse, sem árvore de acessibilidade real) */}
         <img
-          src={crest as unknown as string}
+          src={crest}
+          alt=""
           width={360}
           height={360}
           style={{
