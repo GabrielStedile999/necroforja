@@ -11,8 +11,28 @@ import { GANGS, CAMPAIGN, SYMPATHISER_CONTROL } from "../data/campaign";
 import { gangRating, gangWealth } from "../scoring";
 import { hashPassword } from "../auth/password";
 
-// Initial seed credentials — defined via .env (with generic fallbacks).
-// Change them after the first login. See .env.example.
+// Initial seed credentials — defined via .env (with generic fallbacks for
+// local development). Change them after the first login. See .env.example.
+//
+// Segurança (issue #43): o repositório é público, então os defaults abaixo
+// (change-me-admin/change-me-player) são conhecidos por qualquer um. Detectar
+// "banco local" pela própria DATABASE_URL (em vez de NODE_ENV) porque o seed
+// é rodado manualmente com `npm run db:seed` — NODE_ENV normalmente continua
+// "development" no terminal do Gabriel mesmo quando DATABASE_URL aponta para
+// o Supabase de produção. Fora do banco local, ADMIN_PASSWORD/PLAYER_PASSWORD
+// passam a ser obrigatórias.
+const isLocalDatabase = /@(localhost|127\.0\.0\.1)(:|\/)/.test(
+	process.env.DATABASE_URL ?? "",
+);
+if (!isLocalDatabase && (!process.env.ADMIN_PASSWORD || !process.env.PLAYER_PASSWORD)) {
+	throw new Error(
+		"ADMIN_PASSWORD e PLAYER_PASSWORD precisam estar definidas em .env quando " +
+			"DATABASE_URL não aponta para localhost — o seed não usa os defaults " +
+			"conhecidos publicamente (change-me-admin/change-me-player) fora do " +
+			"banco local. Defina-as em .env antes de rodar `npm run db:seed`.",
+	);
+}
+
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "admin@example.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "change-me-admin";
 const PLAYER_PASSWORD = process.env.PLAYER_PASSWORD ?? "change-me-player";
