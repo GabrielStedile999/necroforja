@@ -1,11 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
-import { SiteSearch, type SiteSearchHandle } from "@/components/search/SiteSearch";
+import type { SiteSearchHandle } from "@/components/search/SiteSearch";
 import s from "./SiteNav.module.scss";
+
+/**
+ * Busca em chunk separado (issue #42): fora do bundle inicial de toda página
+ * pública que renderiza o SiteNav. `React.lazy` em vez de `next/dynamic`
+ * porque o SiteSearch é controlado por ref (`SiteSearchHandle`) e o
+ * `next/dynamic` não repassa refs — `lazy` repassa. O import de tipo acima
+ * não puxa o módulo pro bundle.
+ */
+const SiteSearch = lazy(() =>
+  import("@/components/search/SiteSearch").then((m) => ({ default: m.SiteSearch })),
+);
 
 // House names are canonical game terms and stay in English (issue #12:
 // identifiers/logic in English — only display copy is translated).
@@ -38,6 +49,40 @@ export default function SiteNav() {
   const [menu, setMenu]       = useState<"game" | "factions" | null>(null);
   const [navOpen, setNavOpen] = useState(false);
   const searchRef = useRef<SiteSearchHandle>(null);
+
+  // issue #42 — a busca monta depois da hidratação (num idle callback), pra
+  // não competir com o first paint; o atalho global Ctrl/Cmd+K vive dentro
+  // do SiteSearch e passa a funcionar assim que o chunk monta. Se o usuário
+  // clicar na lupa antes disso, `pendingOpen` guarda a intenção e o callback
+  // ref abre o modal assim que o handle ficar disponível.
+  const [searchMounted, setSearchMounted] = useState(false);
+  const pendingOpen = useRef(false);
+
+  useEffect(() => {
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(() => setSearchMounted(true));
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(() => setSearchMounted(true), 1);
+    return () => window.clearTimeout(id);
+  }, []);
+
+  const openSearch = () => {
+    if (searchRef.current) {
+      searchRef.current.open();
+    } else {
+      pendingOpen.current = true;
+      setSearchMounted(true);
+    }
+  };
+
+  const attachSearchRef = (handle: SiteSearchHandle | null) => {
+    searchRef.current = handle;
+    if (handle && pendingOpen.current) {
+      pendingOpen.current = false;
+      handle.open();
+    }
+  };
 
   const openNav = () => {
     document.body.style.overflow = "hidden";
@@ -99,7 +144,7 @@ export default function SiteNav() {
           >
             <button
               type="button"
-              onClick={() => searchRef.current?.open()}
+              onClick={openSearch}
               aria-label={t("search")}
               className={`${s.searchBtn} bg-transparent p-0`}
             >
@@ -283,7 +328,7 @@ export default function SiteNav() {
                 type="button"
                 onClick={() => {
                   closeNav();
-                  searchRef.current?.open();
+                  openSearch();
                 }}
                 className="flex cursor-pointer items-center gap-2 bg-transparent p-0 text-[13px] tracking-[1px] text-[rgba(245,245,250,.7)]"
               >
@@ -302,7 +347,11 @@ export default function SiteNav() {
         </div>
       )}
 
-      <SiteSearch ref={searchRef} />
+      {searchMounted && (
+        <Suspense fallback={null}>
+          <SiteSearch ref={attachSearchRef} />
+        </Suspense>
+      )}
     </>
   );
 }

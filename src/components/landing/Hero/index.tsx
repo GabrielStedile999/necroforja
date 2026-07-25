@@ -1,7 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import s from "./Hero.module.scss";
 import TrailerModal from "./TrailerModal";
+import heroArt from "./hero.webp";
 import { mediaUrlOr } from "@/lib/storage";
 
 /**
@@ -20,15 +22,24 @@ const TRAILER_FALLBACK_URL =
 export default function Hero() {
 	const t = useTranslations("Hero");
 	return (
-		<div
-			className="ncf-hero relative flex min-h-screen max-h-screen items-end overflow-hidden bg-[#0a0507]"
-			style={{
-				backgroundImage: "url(/hero.png)",
-				backgroundSize: "auto 100%",
-				backgroundPosition: "right center",
-				backgroundRepeat: "no-repeat",
-			}}
-		>
+		<div className="ncf-hero relative flex min-h-screen max-h-screen items-end overflow-hidden bg-[#0a0507]">
+			{/*
+			 * Arte do hero (issue #42) — antes era um background-image inline com
+			 * public/hero.png (1.2 MB, sem srcset). Agora é next/image com import
+			 * estático (WebP 77 KB, srcset/AVIF automáticos, priority = preload do
+			 * LCP). `h-full w-auto` + `right-0` reproduzem exatamente o antigo
+			 * `background-size: auto 100%; background-position: right center` —
+			 * o overflow-hidden do container corta a sobra à esquerda, coberta
+			 * pelo gradiente de legibilidade.
+			 */}
+			<Image
+				src={heroArt}
+				alt=""
+				priority
+				sizes="100vw"
+				className="absolute inset-y-0 right-0 z-0 h-full w-auto max-w-none"
+			/>
+
 			{/* Left-to-right gradient (text legibility) */}
 			<div
 				className={`ncf-hero-gradient absolute inset-0 z-[1] ${s.heroGradient}`}
@@ -55,7 +66,8 @@ export default function Hero() {
 					<span className={s.recDot} />
 					{t("rec")}
 				</span>
-				<span className="text-[rgba(245,245,250,.4)]">
+				{/* Opacidades ≥ .55 nos textos pequenos = contraste AA (≥4.5:1) sobre o fundo escuro (issue #42). */}
+				<span className="text-[rgba(245,245,250,.55)]">
 					{t("liveFeed")}
 				</span>
 				<span className="border border-white/[0.15] px-2 py-[3px]">
@@ -64,13 +76,13 @@ export default function Hero() {
 			</div>
 
 			{/* Left vertical text */}
-			<div className="ncf-hero-deco absolute left-5 top-1/2 z-[21] -translate-y-1/2 rotate-180 writing-vertical font-mono text-[11px] tracking-[5px] text-[rgba(245,245,250,.32)]">
+			<div className="ncf-hero-deco absolute left-5 top-1/2 z-[21] -translate-y-1/2 rotate-180 writing-vertical font-mono text-[11px] tracking-[5px] text-[rgba(245,245,250,.55)]">
 				{t("verticalDeco")}
 			</div>
 
 			{/* Scroll cue */}
 			<div className="ncf-hero-deco absolute bottom-[40px] right-[48px] z-[21] flex flex-col items-center gap-[10px]">
-				<span className="writing-vertical font-mono text-[10px] tracking-[3px] text-[rgba(245,245,250,.4)]">
+				<span className="writing-vertical font-mono text-[10px] tracking-[3px] text-[rgba(245,245,250,.55)]">
 					{t("scroll")}
 				</span>
 				<span className={s.scrollMouse}>

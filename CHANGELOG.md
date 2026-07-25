@@ -7,6 +7,15 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Changed
+- **Performance/a11y da landing e code-splitting** (issue #42): arte do hero
+  convertida de `public/hero.png` (1.2 MB, background-image inline) para
+  WebP de 77 KB servido via `next/image` com `priority` (preload do LCP,
+  srcset/AVIF automáticos); `RulesChat` (@ai-sdk/react), `SiteSearch` e o
+  lightbox da galeria (extraído para `GalleryLightbox.tsx`) agora carregam
+  em chunks separados sob demanda (`next/dynamic`/`React.lazy`), fora do JS
+  inicial das rotas; hierarquia de headings corrigida na landing (`<h2>`
+  reais em Features/News, título de report em `<h3>`) e textos decorativos
+  de baixa opacidade elevados para contraste AA (≥4.5:1).
 - **Landing "Dispatches" section renamed to "Reports"** (EN "Reports" /
   PT-BR "Relatórios") and now loads the 3 latest published journal posts
   from the database, each row linking to /reports/<slug>; static placeholder
@@ -20,6 +29,12 @@ All notable changes to this project. Format based on
   equipment with line breaks, dead fighters highlighted).
 
 ### Added
+- **Lighthouse CI + axe-core no pipeline** (issue #42): `@lhci/cli` roda no
+  job e2e contra o build de produção (home/gallery/reports/skirmish) com
+  thresholds "warn" não bloqueantes (`lighthouserc.json`) e relatório por PR
+  (link no log + artifact); `@axe-core/playwright` em `e2e/a11y.spec.ts`
+  cobre as mesmas rotas — violações `critical` falham, demais impactos são
+  logados como baseline.
 - **Campaign journal** (`/reports`, issue #5): Postgres-backed posts (bilingual
   EN/PT-BR, four types: session report, chronicle, painting log, dispatch),
   public listing with client-side type filter + post page rendering Markdown

@@ -1,11 +1,24 @@
 "use client";
 
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale } from "next-intl";
 import type { Locale } from "@/i18n/config";
 import type { GalleryItem } from "@/lib/gallery";
 import { GALLERY_CATEGORIES, type GalleryCategory } from "@/lib/validation";
+
+/**
+ * Lightbox carregado via next/dynamic (issue #42): o chunk só é baixado
+ * quando o usuário abre a primeira foto. Enquanto carrega, mostra o mesmo
+ * backdrop escuro para feedback imediato do clique.
+ */
+const GalleryLightbox = dynamic(() => import("./GalleryLightbox"), {
+	ssr: false,
+	loading: () => (
+		<div className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-sm" />
+	),
+});
 
 /** Cores dos chips de filtro — paleta das casas/tema do site. */
 const CATEGORY_COLORS: Record<GalleryCategory, string> = {
@@ -177,77 +190,15 @@ export default function GalleryGrid({
 				))}
 			</div>
 
-			{/* Lightbox */}
+			{/* Lightbox — chunk separado, ver GalleryLightbox.tsx (issue #42). */}
 			{current && (
-				<div
-					role="dialog"
-					aria-modal="true"
-					aria-label={current.alt}
-					className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
-					onClick={close}
-				>
-					<button
-						type="button"
-						onClick={close}
-						aria-label={s.close}
-						className="absolute right-4 top-4 z-[210] cursor-pointer appearance-none border border-white/30 bg-black/60 px-3 py-1 font-mono text-sm text-white hover:border-hazard"
-					>
-						✕
-					</button>
-
-					{visible.length > 1 && (
-						<>
-							<button
-								type="button"
-								onClick={(e) => {
-									e.stopPropagation();
-									step(-1);
-								}}
-								aria-label={s.prev}
-								className="absolute left-2 z-[210] cursor-pointer appearance-none border border-white/30 bg-black/60 px-3 py-2 font-mono text-lg text-white hover:border-hazard sm:left-6"
-							>
-								←
-							</button>
-							<button
-								type="button"
-								onClick={(e) => {
-									e.stopPropagation();
-									step(1);
-								}}
-								aria-label={s.next}
-								className="absolute right-2 z-[210] cursor-pointer appearance-none border border-white/30 bg-black/60 px-3 py-2 font-mono text-lg text-white hover:border-hazard sm:right-6"
-							>
-								→
-							</button>
-						</>
-					)}
-
-					<figure
-						className="m-0 flex max-h-full max-w-[1200px] flex-col items-center gap-3"
-						onClick={(e) => e.stopPropagation()}
-					>
-						<Image
-							src={current.url}
-							alt={current.alt}
-							width={current.width}
-							height={current.height}
-							sizes="100vw"
-							quality={90}
-							className="h-auto max-h-[82vh] w-auto max-w-full border border-white/20"
-							priority
-						/>
-						{(current.caption || current.tags.length > 0) && (
-							<figcaption className="flex flex-wrap items-center gap-3 font-mono text-[12px] tracking-[1px] text-[rgba(245,245,250,.7)]">
-								{current.caption && <span>{current.caption}</span>}
-								{current.tags.map((tag) => (
-									<span key={tag} className="text-[rgba(0,229,255,.8)]">
-										#{tag}
-									</span>
-								))}
-							</figcaption>
-						)}
-					</figure>
-				</div>
+				<GalleryLightbox
+					current={current}
+					count={visible.length}
+					labels={{ close: s.close, prev: s.prev, next: s.next }}
+					onClose={close}
+					onStep={step}
+				/>
 			)}
 		</div>
 	);

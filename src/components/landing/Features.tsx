@@ -10,9 +10,10 @@ export default function Features() {
     <section id="game" className="ncf-section bg-[#0a090c] py-[104px]">
       <div className="ncf-wrap mx-auto max-w-[1380px] px-[48px]">
 
-        {/* Section label */}
+        {/* Section label — <h2> real (issue #42): a página tinha h1 → h3 sem
+            nível intermediário; o heading da seção mantém o visual de label. */}
         <div className="mb-[56px] flex items-center gap-[14px]">
-          <span className="font-mono text-[13px] tracking-[4px] text-cyan">{t("sectionLabel")}</span>
+          <h2 className="m-0 font-mono text-[13px] font-normal tracking-[4px] text-cyan">{t("sectionLabel")}</h2>
           <span className="h-px flex-1 bg-white/[0.1]" />
         </div>
 
