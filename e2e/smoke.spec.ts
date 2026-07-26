@@ -58,7 +58,9 @@ test.describe("primary navigation", () => {
 
   test("desktop nav links reach their destination", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: /world/i }).click();
+    // Label renomeado de "WORLD" para "LORE" (issue #19, limpeza do nav);
+    // âncora exata pra não colidir com o título "Lore & Setting" da página.
+    await page.getByRole("link", { name: /^lore$/i }).click();
     await expect(page).toHaveURL(/\/lore$/);
   });
 

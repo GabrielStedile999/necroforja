@@ -30,10 +30,11 @@ const GREAT_HOUSES = [
   { key: "vanSaar", name: "House Van Saar", href: "/gangs#house-van-saar", color: "#00e5ff", shadow: "rgba(0,229,255,.6)"   },
 ] as const;
 
+// Enxugado (issue #19, pedido do Gabriel): Lore e Reports saíram do
+// mega-panel — já existem como links de topo ("LORE" e "REPORTS"), eram
+// destinos duplicados no mesmo menu.
 const GAME_OVERVIEW_LINKS = [
   { key: "howToPlay", href: "/how-to-play" },
-  { key: "loreSetting", href: "/lore" },
-  { key: "campaignJournal", href: "/reports" },
   { key: "gallery", href: "/gallery" },
 ] as const;
 
