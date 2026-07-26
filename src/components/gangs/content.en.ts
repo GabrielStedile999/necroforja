@@ -515,7 +515,7 @@ export const CAMPAIGN_SECTION = {
 	num: "04",
 	title: "In the campaign",
 	intro:
-		"The gangs currently registered in The Aranthian Succession: Cinderak Burning — NecroForja's live season. Data straight from the campaign database.",
+		"The gangs currently registered in The Aranthian Succession: Cinderak Burning — NecroForja's live season.",
 };
 
 /**

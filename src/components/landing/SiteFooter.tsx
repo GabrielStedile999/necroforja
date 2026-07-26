@@ -88,7 +88,24 @@ export default function SiteFooter() {
 
 				{/* Bottom bar */}
 				<div className="flex flex-wrap items-center justify-between gap-[14px] border-t border-white/[0.07] pt-[26px] font-mono text-[11px] tracking-[1px] text-[rgba(245,245,250,.35)]">
-					<span>{t("copyright")}</span>
+					<div className="flex flex-col gap-[6px]">
+						<span>{t("copyright")}</span>
+						{/* Créditos do criador (issue #49) */}
+						<span className="text-[rgba(245,245,250,.45)]">
+							{t.rich("credit", {
+								link: (chunks) => (
+									<a
+										href="https://www.linkedin.com/in/gabriel-stedile/"
+										target="_blank"
+										rel="noopener noreferrer"
+										className="ncf-util-link text-[rgba(245,245,250,.65)] underline underline-offset-2"
+									>
+										{chunks}
+									</a>
+								),
+							})}
+						</span>
+					</div>
 					<div className="flex gap-[18px]">
 						<span className="cursor-pointer">{t("privacy")}</span>
 						<span className="cursor-pointer">{t("terms")}</span>

@@ -568,7 +568,7 @@ export const CAMPAIGN_SECTION = {
 	num: "04",
 	title: "Na campanha",
 	intro:
-		"As gangues registradas agora em The Aranthian Succession: Cinderak Burning — a temporada ao vivo da NecroForja. Dados direto do banco da campanha.",
+		"As gangues registradas agora em The Aranthian Succession: Cinderak Burning — a temporada ao vivo da NecroForja.",
 };
 
 /**
