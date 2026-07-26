@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import s from "./Hero.module.scss";
 
@@ -10,6 +11,10 @@ import s from "./Hero.module.scss";
  * - Autoplay on open (allowed with sound: triggered by user click)
  * - Close: top-right button, ESC, or backdrop click
  * - Body scroll locked while open
+ * - Rendered via portal on document.body (issue #49): dentro da árvore do
+ *   Hero (overflow-hidden + camadas com efeitos), o Safari iOS tratava o
+ *   `position: fixed` como relativo ao hero (containing block) e o vídeo
+ *   aparecia cortado quando a página estava scrollada.
  */
 export default function TrailerModal({ src = "/trailer.mp4" }: { src?: string }) {
 	const t = useTranslations("Hero");
@@ -64,44 +69,47 @@ export default function TrailerModal({ src = "/trailer.mp4" }: { src?: string })
 				</div>
 			</button>
 
-			{/* Modal */}
-			{open && (
-				<div
-					role="dialog"
-					aria-modal="true"
-					aria-label={t("trailerAria")}
-					onClick={close}
-					className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-[2px] p-4 md:p-10"
-				>
-					{/* Close — top right of the screen */}
-					<button
-						type="button"
-						onClick={close}
-						aria-label={t("closeTrailer")}
-						className="absolute right-5 top-5 z-[2] flex h-11 w-11 cursor-pointer items-center justify-center border border-white/[0.25] bg-black/50 text-ink transition-colors hover:border-hazard hover:text-hazard"
-					>
-						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-							<line x1="5" y1="5" x2="19" y2="19" />
-							<line x1="19" y1="5" x2="5" y2="19" />
-						</svg>
-					</button>
-
-					{/* Video — clicks inside must not close the modal */}
+			{/* Modal — via portal no <body>, fora de qualquer containing block (issue #49) */}
+			{/* `open` só vira true com clique (client) — portal nunca roda no SSR */}
+			{open &&
+				createPortal(
 					<div
-						onClick={(e) => e.stopPropagation()}
-						className="w-full max-w-[960px] border border-white/[0.15] bg-black shadow-[0_0_60px_rgba(0,0,0,.8)]"
+						role="dialog"
+						aria-modal="true"
+						aria-label={t("trailerAria")}
+						onClick={close}
+						className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-[2px] p-4 md:p-10"
 					>
-						<video
-							ref={videoRef}
-							src={src}
-							autoPlay
-							controls
-							playsInline
-							className="block h-auto w-full"
-						/>
-					</div>
-				</div>
-			)}
+						{/* Close — top right of the screen */}
+						<button
+							type="button"
+							onClick={close}
+							aria-label={t("closeTrailer")}
+							className="absolute right-5 top-5 z-[2] flex h-11 w-11 cursor-pointer items-center justify-center border border-white/[0.25] bg-black/50 text-ink transition-colors hover:border-hazard hover:text-hazard"
+						>
+							<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+								<line x1="5" y1="5" x2="19" y2="19" />
+								<line x1="19" y1="5" x2="5" y2="19" />
+							</svg>
+						</button>
+
+						{/* Video — clicks inside must not close the modal */}
+						<div
+							onClick={(e) => e.stopPropagation()}
+							className="w-full max-w-[960px] border border-white/[0.15] bg-black shadow-[0_0_60px_rgba(0,0,0,.8)]"
+						>
+							<video
+								ref={videoRef}
+								src={src}
+								autoPlay
+								controls
+								playsInline
+								className="block h-auto w-full"
+							/>
+						</div>
+					</div>,
+					document.body,
+				)}
 		</>
 	);
 }

@@ -6,7 +6,23 @@ All notable changes to this project. Format based on
 
 ## [Unreleased]
 
+### Fixed
+- **Trailer cortado no mobile** (issue #49): o modal do trailer agora é
+  renderizado via portal em `document.body` — dentro da árvore do Hero
+  (overflow-hidden + camadas com efeitos), o Safari iOS tratava o
+  `position: fixed` como relativo ao hero e o vídeo aparecia cortado
+  quando a página estava scrollada.
+
+### Added
+- **Créditos do criador no footer** (issue #49): linha na bottom bar com
+  link para o LinkedIn (`noopener noreferrer`), i18n en/pt-BR;
+  `metadata.authors` do layout agora aponta para o LinkedIn.
+
 ### Changed
+- **Ajustes de conteúdo** (issue #49): intro da seção "Na campanha" de
+  /gangs sem a frase "Dados direto do banco da campanha." (en e pt-BR);
+  card externo YAKTRIBE.GAMES removido do How to Play (mantido o da
+  Games Workshop).
 - **Limpeza do menu principal** (junto da issue #19): link de topo "NEWS"
   renomeado para "REPORTS"/"RELATÓRIOS" e "WORLD"/"MUNDO" para "LORE"
   (nomes iguais às páginas de destino); "Lore" e "Reports" removidos do

@@ -60,11 +60,6 @@ const STRINGS: Record<
 				label: "WARHAMMER.COM",
 				text: "Official Necromunda miniatures, books and releases (Games Workshop).",
 			},
-			{
-				href: "https://yaktribe.games",
-				label: "YAKTRIBE.GAMES",
-				text: "Community tools: gang manager, tables and references.",
-			},
 		],
 	},
 	"pt-BR": {
@@ -102,11 +97,6 @@ const STRINGS: Record<
 				href: "https://www.warhammer.com",
 				label: "WARHAMMER.COM",
 				text: "Miniaturas, livros e lançamentos oficiais de Necromunda (Games Workshop).",
-			},
-			{
-				href: "https://yaktribe.games",
-				label: "YAKTRIBE.GAMES",
-				text: "Ferramentas da comunidade: gang manager, tabelas e referências.",
 			},
 		],
 	},

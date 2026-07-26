@@ -40,7 +40,13 @@ export const metadata: Metadata = {
 	alternates: { canonical: "/" },
 
 	// ---- Author ----
-	authors: [{ name: "Gabriel Stedile", url: siteUrl }],
+	// LinkedIn como URL do autor (issue #49) — mesma referência do crédito no footer.
+	authors: [
+		{
+			name: "Gabriel Stedile",
+			url: "https://www.linkedin.com/in/gabriel-stedile/",
+		},
+	],
 	creator: "Gabriel Stedile",
 
 	// ---- Keywords (secondary signal; not critical for modern SEO) ----
