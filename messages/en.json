@@ -137,8 +137,12 @@
 			"HS-02": { "tagline": "THE TWISTED BROOD", "desc": "The mutant Genestealers of Hive Secundus: hordes of Brood Scum backed by terrifying monsters, built for the Underhells." }
 		}
 	},
+	"Players": {
+		"sectionLabel": "03 // THE PLAYERS",
+		"standings": "SEE THE STANDINGS →"
+	},
 	"News": {
-		"sectionLabel": "03 // REPORTS",
+		"sectionLabel": "04 // REPORTS",
 		"readAll": "READ ALL REPORTS →",
 		"empty": "No reports published yet — the presses of the Underhive are warming up."
 	},
