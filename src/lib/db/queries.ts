@@ -244,6 +244,32 @@ export async function listGangsPublic() {
   });
 }
 
+/**
+ * Jogadores ativos da campanha (issue #18) — carrossel da landing.
+ * Critério de "ativo": gangue registrada na campanha cujo dono é um
+ * `app_user` com role `player` e `is_active = true`. Retorna só o que a
+ * seção pública precisa (nome do jogador, gangue e casa).
+ */
+export async function listActivePlayersPublic() {
+  const rows = await db.query.gangs.findMany({
+    columns: { id: true, name: true, house: true },
+    with: {
+      owner: {
+        columns: { displayName: true, isActive: true, role: true },
+      },
+    },
+    orderBy: [desc(schema.gangs.ratingCached)],
+  });
+  return rows
+    .filter((g) => g.owner?.isActive && g.owner.role === "player")
+    .map((g) => ({
+      id: g.id,
+      playerName: g.owner!.displayName,
+      gangName: g.name,
+      house: g.house,
+    }));
+}
+
 /* ------------------------- Campaign journal (issue #5) ------------------ */
 
 /** Published posts, newest first (public /reports listing). */

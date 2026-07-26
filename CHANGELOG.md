@@ -29,6 +29,15 @@ All notable changes to this project. Format based on
   equipment with line breaks, dead fighters highlighted).
 
 ### Added
+- **Carrossel de jogadores da campanha na landing** (issue #18): nova seção
+  "03 // THE PLAYERS" entre Gangs e Reports (Reports renumerada para 04) —
+  marquee infinito em CSS puro (mesmo keyframe do Ticker, pausa no hover,
+  respeita `prefers-reduced-motion`) com os jogadores ativos vindos do banco
+  (`listActivePlayersPublic`: gangues cujo dono é `player` com
+  `is_active = true`), cards com retrato, nome, gangue e cor da casa
+  (`matchHouseSlug`), retratos como assets estáticos WebP otimizados
+  (~30–58 KB) e placeholder temático para jogador sem retrato; seção some
+  graciosamente com banco offline ou sem jogadores.
 - **Lighthouse CI + axe-core no pipeline** (issue #42): `@lhci/cli` roda no
   job e2e contra o build de produção (home/gallery/reports/skirmish) com
   thresholds "warn" não bloqueantes (`lighthouserc.json`) e relatório por PR

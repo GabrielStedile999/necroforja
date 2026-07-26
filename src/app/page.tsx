@@ -6,12 +6,13 @@ import SiteNav from "@/components/landing/SiteNav";
 import Hero from "@/components/landing/Hero";
 import Features from "@/components/landing/Features";
 import Houses from "@/components/landing/Houses";
+import Players, { type PlayerCardData } from "@/components/landing/Players";
 import News, { type NewsItem } from "@/components/landing/News";
 import BigCTA from "@/components/landing/BigCTA";
 import SiteFooter from "@/components/landing/SiteFooter";
 import { POST_TYPES, toPostType } from "@/components/reports/postTypes";
 import { buildWebsiteJsonLd, buildAppJsonLd } from "@/lib/seo/json-ld";
-import { listPublishedPosts } from "@/lib/db/queries";
+import { listActivePlayersPublic, listPublishedPosts } from "@/lib/db/queries";
 import { formatPostDate, pickPostText } from "@/lib/reports";
 import { logger } from "@/lib/logger";
 import { SITE_URL } from "@/lib/site-url";
@@ -61,9 +62,22 @@ async function loadLatestReports(locale: Locale): Promise<NewsItem[]> {
   }
 }
 
+/** Jogadores ativos para a seção 03 // THE PLAYERS (issue #18). */
+async function loadActivePlayers(): Promise<PlayerCardData[]> {
+  try {
+    return await listActivePlayersPublic();
+  } catch (error) {
+    logger.error("landing: failed to load active players", { error });
+    return []; // seção some graciosamente com banco offline
+  }
+}
+
 export default async function LandingPage() {
   const locale = (await getLocale()) as Locale;
-  const reports = await loadLatestReports(locale);
+  const [reports, players] = await Promise.all([
+    loadLatestReports(locale),
+    loadActivePlayers(),
+  ]);
   const websiteJsonLd = buildWebsiteJsonLd(siteUrl);
   const appJsonLd = buildAppJsonLd(siteUrl);
 
@@ -96,6 +110,7 @@ export default async function LandingPage() {
         <Hero />
         <Features />
         <Houses />
+        <Players players={players} />
         <News items={reports} />
         <BigCTA />
       </main>

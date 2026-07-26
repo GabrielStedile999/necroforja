@@ -137,8 +137,12 @@
 			"HS-02": { "tagline": "A NINHADA DISTORCIDA", "desc": "Os Genestealers mutantes de Hive Secundus: hordas de Brood Scum apoiadas por monstros aterrorizantes, feitas para os Underhells." }
 		}
 	},
+	"Players": {
+		"sectionLabel": "03 // OS JOGADORES",
+		"standings": "VER O RANKING →"
+	},
 	"News": {
-		"sectionLabel": "03 // RELATÓRIOS",
+		"sectionLabel": "04 // RELATÓRIOS",
 		"readAll": "LER TODOS OS RELATÓRIOS →",
 		"empty": "Nenhum relatório publicado ainda — as prensas do Underhive estão esquentando."
 	},

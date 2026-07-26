@@ -300,6 +300,13 @@ body {
 .animate-blink     { animation: ncf-blink 1.4s steps(1) infinite; }
 .animate-scrolldot { animation: ncf-scrolldot 1.8s ease-in-out infinite; }
 .animate-ticker    { animation: ncf-ticker 26s linear infinite; }
+/* Marquee dos jogadores (issue #18) — mesmo keyframe do ticker (loop -50%
+   com lista duplicada), mais lento, e pausando no hover da seção. */
+.animate-players   { animation: ncf-ticker 45s linear infinite; }
+.ncf-players-marquee:hover .animate-players { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-players { animation: none; }
+}
 .animate-flicker   { animation: ncf-flicker 5s steps(1) infinite; }
 .animate-ncf-menu  { animation: ncf-menu .16s ease both; }
 .animate-sweep     { animation: ncf-sweep 4s linear infinite; }
