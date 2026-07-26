@@ -7,6 +7,11 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Changed
+- **Limpeza do menu principal** (junto da issue #19): link de topo "NEWS"
+  renomeado para "REPORTS"/"RELATÓRIOS" e "WORLD"/"MUNDO" para "LORE"
+  (nomes iguais às páginas de destino); "Lore" e "Reports" removidos do
+  mega-panel GAME — eram links duplicados para os mesmos destinos dos
+  links de topo.
 - **Performance/a11y da landing e code-splitting** (issue #42): arte do hero
   convertida de `public/hero.png` (1.2 MB, background-image inline) para
   WebP de 77 KB servido via `next/image` com `priority` (preload do LCP,
@@ -29,6 +34,14 @@ All notable changes to this project. Format based on
   equipment with line breaks, dead fighters highlighted).
 
 ### Added
+- **Símbolos das gangues nos cards da landing** (issue #19): faixa de arte
+  (~110px) no topo de cada card da seção "The Gangs" com o emblema da gangue
+  — arte própria estilizada (stencil spray-paint), sem arte oficial da GW
+  (ver issue #17). Cobertura completa: **17 símbolos** como WebP 640px em
+  `src/components/gangs/symbols/` chaveados por slug do catálogo
+  (`symbols.ts`, pensado para reuso no nav/página de gangues). Fallback
+  defensivo (logos de marca por hash determinístico do slug, evitando
+  hydration mismatch) fica disponível para gangues futuras sem arte.
 - **Carrossel de jogadores da campanha na landing** (issue #18): nova seção
   "03 // THE PLAYERS" entre Gangs e Reports (Reports renumerada para 04) —
   marquee infinito em CSS puro (mesmo keyframe do Ticker, pausa no hover,

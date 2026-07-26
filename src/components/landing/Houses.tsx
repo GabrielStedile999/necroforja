@@ -1,5 +1,11 @@
+import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import {
+  BRAND_LOGO_SIZE,
+  fallbackBrandLogo,
+  gangSymbol,
+} from "@/components/gangs/symbols";
 
 /**
  * 02 // THE GANGS — Necromunda factions in four grouped rows.
@@ -115,10 +121,37 @@ export default function Houses() {
                 <Link
                   key={g.id}
                   href={`/gangs#${g.slug}`}
-                  className="ncf-house-card relative cursor-pointer overflow-hidden border border-white/[0.09] bg-[linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01))] clip-card no-underline text-ink"
+                  className="ncf-house-card group relative cursor-pointer overflow-hidden border border-white/[0.09] bg-[linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01))] clip-card no-underline text-ink"
                 >
                   {/* Colored top bar */}
                   <div className="h-1" style={{ background: g.color, boxShadow: `0 0 12px ${g.roleBorder}` }} />
+
+                  {/* Símbolo da gangue (issue #19) — faixa de arte no topo do
+                      card. alt="" proposital: o nome da gangue está em texto
+                      logo abaixo. Gangues ainda sem símbolo caem no fallback
+                      de marca (ver symbols.ts). */}
+                  <div className="ncf-house-symbol relative h-[110px] overflow-hidden border-b border-white/[0.08] bg-[#131018]">
+                    {(() => {
+                      const art = gangSymbol(g.slug);
+                      return art ? (
+                        <Image
+                          src={art}
+                          alt=""
+                          sizes="(max-width: 640px) 100vw, 280px"
+                          className="h-full w-full object-cover opacity-90 transition-opacity duration-300 group-hover:opacity-100"
+                        />
+                      ) : (
+                        <Image
+                          src={fallbackBrandLogo(g.slug)}
+                          alt=""
+                          width={BRAND_LOGO_SIZE}
+                          height={BRAND_LOGO_SIZE}
+                          sizes="(max-width: 640px) 100vw, 280px"
+                          className="h-full w-full object-cover object-center opacity-60"
+                        />
+                      );
+                    })()}
+                  </div>
 
                   <div className="flex min-h-[280px] flex-col px-[22px] pb-[26px] pt-6">
                     <div className="mb-[18px] font-mono text-[11px] tracking-[2px] text-[rgba(245,245,250,.4)]">

@@ -16,8 +16,8 @@
 	"Nav": {
 		"game": "GAME",
 		"factions": "FACTIONS",
-		"world": "WORLD",
-		"news": "NEWS",
+		"world": "LORE",
+		"news": "REPORTS",
 		"gallery": "GALLERY",
 		"dashboard": "DASHBOARD",
 		"howToPlay": "HOW TO PLAY",
@@ -33,8 +33,6 @@
 			"toolsLabel": "// CAMPAIGN TOOLS",
 			"overview": {
 				"howToPlay": "How to Play",
-				"loreSetting": "Lore",
-				"campaignJournal": "Reports",
 				"gallery": "Gallery"
 			},
 			"modes": {
