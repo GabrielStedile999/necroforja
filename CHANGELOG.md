@@ -6,6 +6,31 @@ All notable changes to this project. Format based on
 
 ## [Unreleased]
 
+### Added
+- **Páginas FAQ e Campaign Custom Rules** (issue #41): duas rotas novas —
+  `/faq` com perguntas frequentes agrupadas por tema (geral, campanha,
+  site & conta) em `<details>`/`<summary>` nativos (acessível, zero JS), e
+  `/house-rules` com as regras da casa da campanha (primeira: "Infiltrate
+  & Hidden Deployment", 5 cláusulas, do corpo da issue); conteúdo en/pt-BR
+  no padrão `content.ts`/`content.en.ts`/`content.i18n.ts`; links "FAQ" e
+  "Campaign Custom Rules" na coluna Campaign Tools do mega-menu GAME e
+  entradas no menu mobile; páginas indexadas no sitemap e na busca do
+  site (páginas + seções).
+- **Seção "What is NecroForja" na landing** (issue #47): bloco 05 // ABOUT
+  com 3 parágrafos indexáveis dizendo o que a NecroForja é (web app,
+  gerenciador digital de campanha, projeto de portfólio) e o que não é
+  (loja de miniaturas — desambiguação da marca alemã NecroForge), com
+  links para o repositório público e o FAQ; texto puro, sem assets novos.
+
+### Changed
+- **JSON-LD enriquecido** (issue #47): `WebSite` e `SoftwareApplication`
+  ganham `alternateName`, `sameAs` (repositório GitHub público),
+  `inLanguage` (en/pt-BR) e `publisher`; autor agora aponta para o
+  LinkedIn (mesma referência do footer, issue #49); novo builder
+  `buildFaqJsonLd` emite `FAQPage` em `/faq`; descriptions/OG do layout e
+  da landing reforçam "digital campaign manager / web app" para ancorar a
+  entidade; testes unitários atualizados/adicionados.
+
 ### Fixed
 - **Trailer cortado no mobile** (issue #49): o modal do trailer agora é
   renderizado via portal em `document.body` — dentro da árvore do Hero

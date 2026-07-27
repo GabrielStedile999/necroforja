@@ -40,7 +40,9 @@
 				"skirmish": "Skirmish"
 			},
 			"tools": {
-				"publicDashboard": "Public Dashboard"
+				"publicDashboard": "Public Dashboard",
+				"faq": "FAQ",
+				"customRules": "Campaign Custom Rules"
 			},
 			"featuredKicker": "FEATURED · S2",
 			"featuredTitle": "The Aranthian Succession",
@@ -143,6 +145,15 @@
 		"sectionLabel": "04 // REPORTS",
 		"readAll": "READ ALL REPORTS →",
 		"empty": "No reports published yet — the presses of the Underhive are warming up."
+	},
+	"About": {
+		"sectionLabel": "05 // WHAT IS NECROFORJA",
+		"title": "A digital campaign manager for Necromunda",
+		"p1": "NecroForja is a free web app: a digital campaign manager and dashboard for Necromunda, the tabletop skirmish game by Games Workshop. It tracks our table's campaign — The Aranthian Succession: Cinderak Burning — in real time: gang rankings, territories, Sympathisers, battle reports and a gallery of painted miniatures.",
+		"p2": "NecroForja is not a store: it does not produce or sell miniatures, resin kits or 3D prints. It is an independent, non-commercial fan project — and the portfolio project of Gabriel Stedile, who designed and built it. The source code is public on GitHub.",
+		"p3": "The site is available in English and Brazilian Portuguese, works as an app on your phone (PWA) and most of it — dashboard, reports, gallery and the rules pages — is open to everyone, no account needed.",
+		"repoLink": "VIEW THE CODE ON GITHUB →",
+		"faqLink": "READ THE FAQ →"
 	},
 	"CTA": {
 		"kicker": "TABLETOP SKIRMISH · MINIATURES · DICE · NARRATIVE CAMPAIGN",

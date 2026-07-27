@@ -71,15 +71,31 @@ const LORE_SECTIONS = [
 	{ id: "casas", titleEn: "The Houses of Necromunda", titlePt: "As Casas de Necromunda" },
 ];
 
+const FAQ_SECTIONS = [
+	{ id: "geral", titleEn: "General", titlePt: "Geral" },
+	{ id: "campanha", titleEn: "Campaign", titlePt: "Campanha" },
+	{ id: "site-conta", titleEn: "Site & account", titlePt: "Site & conta" },
+];
+
+const HOUSE_RULES_SECTIONS = [
+	{
+		id: "infiltrate-hidden-deployment",
+		titleEn: "Infiltrate & Hidden Deployment",
+		titlePt: "Infiltrate & Hidden Deployment",
+	},
+];
+
 const PAGES = [
 	{ href: "/gangs", titleEn: "Gangs & Houses", titlePt: "Gangues & Casas" },
 	{ href: "/how-to-play", titleEn: "How to Play", titlePt: "Como Jogar" },
 	{ href: "/skirmish", titleEn: "Skirmish Mode", titlePt: "Modo Skirmish" },
 	{ href: "/campaign", titleEn: "Campaign Mode", titlePt: "Modo Campanha" },
 	{ href: "/lore", titleEn: "Lore & Setting", titlePt: "Lore & Cenário" },
+	{ href: "/faq", titleEn: "FAQ", titlePt: "FAQ" },
+	{ href: "/house-rules", titleEn: "Campaign Custom Rules", titlePt: "Custom Rules da Campanha" },
 ] as const;
 
-const [GANGS_PAGE, HTP_PAGE, SKIRMISH_PAGE, CAMPAIGN_PAGE, LORE_PAGE] = PAGES;
+const [GANGS_PAGE, HTP_PAGE, SKIRMISH_PAGE, CAMPAIGN_PAGE, LORE_PAGE, FAQ_PAGE, HR_PAGE] = PAGES;
 
 export const SEARCHABLE_SECTIONS: SearchableSection[] = [
 	...GANGS_HOUSES.map((h) => ({
@@ -119,6 +135,22 @@ export const SEARCHABLE_SECTIONS: SearchableSection[] = [
 		href: `${LORE_PAGE.href}#${s.id}`,
 		pageTitleEn: LORE_PAGE.titleEn,
 		pageTitlePt: LORE_PAGE.titlePt,
+		titleEn: s.titleEn,
+		titlePt: s.titlePt,
+	})),
+	...FAQ_SECTIONS.map((s) => ({
+		id: `faq-${s.id}`,
+		href: `${FAQ_PAGE.href}#${s.id}`,
+		pageTitleEn: FAQ_PAGE.titleEn,
+		pageTitlePt: FAQ_PAGE.titlePt,
+		titleEn: s.titleEn,
+		titlePt: s.titlePt,
+	})),
+	...HOUSE_RULES_SECTIONS.map((s) => ({
+		id: `house-rules-${s.id}`,
+		href: `${HR_PAGE.href}#${s.id}`,
+		pageTitleEn: HR_PAGE.titleEn,
+		pageTitlePt: HR_PAGE.titlePt,
 		titleEn: s.titleEn,
 		titlePt: s.titlePt,
 	})),

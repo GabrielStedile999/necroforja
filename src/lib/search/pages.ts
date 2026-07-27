@@ -69,6 +69,22 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		keywordsPt: "modo de jogo partida avulsa",
 	},
 	{
+		id: "faq",
+		href: "/faq",
+		titleEn: "FAQ",
+		titlePt: "FAQ",
+		keywordsEn: "questions answers frequently asked help",
+		keywordsPt: "perguntas respostas frequentes ajuda dúvidas",
+	},
+	{
+		id: "house-rules",
+		href: "/house-rules",
+		titleEn: "Campaign Custom Rules",
+		titlePt: "Custom Rules da Campanha",
+		keywordsEn: "house rules infiltrate hidden deployment custom skill",
+		keywordsPt: "regras da casa infiltrate hidden deployment skill custom",
+	},
+	{
 		id: "reports",
 		href: "/reports",
 		titleEn: "Campaign Journal",

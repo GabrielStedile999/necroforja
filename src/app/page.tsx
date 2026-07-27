@@ -8,6 +8,7 @@ import Features from "@/components/landing/Features";
 import Houses from "@/components/landing/Houses";
 import Players, { type PlayerCardData } from "@/components/landing/Players";
 import News, { type NewsItem } from "@/components/landing/News";
+import About from "@/components/landing/About";
 import BigCTA from "@/components/landing/BigCTA";
 import SiteFooter from "@/components/landing/SiteFooter";
 import { POST_TYPES, toPostType } from "@/components/reports/postTypes";
@@ -34,7 +35,7 @@ const siteUrl = SITE_URL;
 export const metadata: Metadata = {
   title: "NecroForja — Necromunda Campaign Manager",
   description:
-    "The ultimate Necromunda campaign manager. Track gangs, Sympathisers, and the ranking of The Aranthian Succession: Cinderak Burning.",
+    "NecroForja is a free web app — a digital campaign manager for Necromunda. Track gangs, Sympathisers, and the ranking of The Aranthian Succession: Cinderak Burning.",
   alternates: { canonical: "/" },
 };
 
@@ -112,6 +113,8 @@ export default async function LandingPage() {
         <Houses />
         <Players players={players} />
         <News items={reports} />
+        {/* Texto "sobre" indexável — ancora a entidade p/ crawlers (issue #47). */}
+        <About />
         <BigCTA />
       </main>
 
