@@ -30,6 +30,21 @@ export function Label({
   );
 }
 
+export function Textarea({
+  className,
+  ...props
+}: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      className={cn(
+        "min-h-[160px] w-full border border-rivet bg-elevated px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-hazard focus:outline-none clip-chamfer-sm",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
 export function Select({
   className,
   ...props

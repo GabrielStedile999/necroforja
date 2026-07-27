@@ -177,3 +177,45 @@ export function buildFaqJsonLd(siteUrl: string, items: FaqJsonLdItem[]): FaqPage
     })),
   };
 }
+
+export interface ProfilePageJsonLd {
+  "@context": "https://schema.org";
+  "@type": "ProfilePage";
+  url: string;
+  inLanguage: string[];
+  mainEntity: {
+    "@type": "Person";
+    name: string;
+    url: string;
+    sameAs: string[];
+    knowsAbout: string[];
+  };
+}
+
+/**
+ * ProfilePage schema for /creator (issue #39 follow-up) — anchors the
+ * "Gabriel Stedile" entity (also referenced as author/publisher of the
+ * WebSite schema) to a real page, with sameAs pointing at the LinkedIn
+ * profile and the public GitHub repository.
+ */
+export function buildCreatorJsonLd(siteUrl: string): ProfilePageJsonLd {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    url: `${siteUrl}/creator`,
+    inLanguage: [...SITE_LANGUAGES],
+    mainEntity: {
+      "@type": "Person",
+      name: "Gabriel Stedile",
+      url: `${siteUrl}/creator`,
+      sameAs: [AUTHOR_LINKEDIN_URL, SITE_REPO_URL],
+      knowsAbout: [
+        "Necromunda",
+        "Warhammer 40,000",
+        "miniature painting",
+        "tabletop wargames",
+        "web development",
+      ],
+    },
+  };
+}

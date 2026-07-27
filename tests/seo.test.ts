@@ -3,6 +3,7 @@ import {
   buildWebsiteJsonLd,
   buildAppJsonLd,
   buildFaqJsonLd,
+  buildCreatorJsonLd,
   SITE_REPO_URL,
   AUTHOR_LINKEDIN_URL,
 } from "@/lib/seo/json-ld";
@@ -123,5 +124,33 @@ describe("buildFaqJsonLd", () => {
 
   it("returns an empty mainEntity for an empty list", () => {
     expect(buildFaqJsonLd(SITE, []).mainEntity).toEqual([]);
+  });
+});
+
+describe("buildCreatorJsonLd", () => {
+  const ld = buildCreatorJsonLd(SITE);
+
+  it("has the correct @type and url", () => {
+    expect(ld["@type"]).toBe("ProfilePage");
+    expect(ld.url).toBe(`${SITE}/creator`);
+  });
+
+  it("declares both site languages", () => {
+    expect(ld.inLanguage).toEqual(["en", "pt-BR"]);
+  });
+
+  it("mainEntity is the Gabriel Stedile Person anchored at /creator", () => {
+    expect(ld.mainEntity["@type"]).toBe("Person");
+    expect(ld.mainEntity.name).toBe("Gabriel Stedile");
+    expect(ld.mainEntity.url).toBe(`${SITE}/creator`);
+  });
+
+  it("sameAs links LinkedIn and the public repo (entity anchoring, issue #47)", () => {
+    expect(ld.mainEntity.sameAs).toContain(AUTHOR_LINKEDIN_URL);
+    expect(ld.mainEntity.sameAs).toContain(SITE_REPO_URL);
+  });
+
+  it("knowsAbout includes Necromunda", () => {
+    expect(ld.mainEntity.knowsAbout).toContain("Necromunda");
   });
 });

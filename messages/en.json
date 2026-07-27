@@ -149,10 +149,9 @@
 	"About": {
 		"sectionLabel": "05 // WHAT IS NECROFORJA",
 		"title": "A digital campaign manager for Necromunda",
-		"p1": "NecroForja is a free web app: a digital campaign manager and dashboard for Necromunda, the tabletop skirmish game by Games Workshop. It tracks our table's campaign — The Aranthian Succession: Cinderak Burning — in real time: gang rankings, territories, Sympathisers, battle reports and a gallery of painted miniatures.",
-		"p2": "NecroForja is not a store: it does not produce or sell miniatures, resin kits or 3D prints. It is an independent, non-commercial fan project — and the portfolio project of Gabriel Stedile, who designed and built it. The source code is public on GitHub.",
+		"p1": "NecroForja is a digital campaign manager and dashboard for Necromunda, Games Workshop's tabletop skirmish game set in the Warhammer 40k universe. It tracks the famous campaign — The Aranthian Succession — in real time: gang rankings, territories, Sympathisers, battle reports and a gallery of painted miniatures.",
+		"p2": "NecroForja is not a store: it does not produce or sell miniatures, resin kits or 3D prints. It is an independent fan project.",
 		"p3": "The site is available in English and Brazilian Portuguese, works as an app on your phone (PWA) and most of it — dashboard, reports, gallery and the rules pages — is open to everyone, no account needed.",
-		"repoLink": "VIEW THE CODE ON GITHUB →",
 		"faqLink": "READ THE FAQ →"
 	},
 	"CTA": {
@@ -165,21 +164,22 @@
 		"blurb": "Tales of Necromunda — The Aranthian Succession. A tabletop war of miniatures, dice and paint for the underhive.",
 		"headings": {
 			"game": "GAME",
-			"community": "COMMUNITY",
+			"campaign": "CAMPAIGN",
 			"support": "SUPPORT"
 		},
 		"links": {
 			"overview": "Overview",
+			"howToPlay": "How to Play",
+			"lore": "Lore & Setting",
 			"factions": "Factions",
-			"roadmap": "Roadmap",
+			"skirmish": "Skirmish Mode",
+			"campaignMode": "Campaign Mode",
 			"dashboard": "Dashboard",
-			"discord": "Discord",
-			"news": "News",
+			"reports": "Campaign Journal",
 			"gallery": "Gallery",
-			"creators": "Creators",
-			"forums": "Forums",
-			"help": "Help",
-			"status": "Status",
+			"houseRules": "Campaign Custom Rules",
+			"faq": "FAQ",
+			"creator": "Creator",
 			"contact": "Contact",
 			"account": "Account"
 		},

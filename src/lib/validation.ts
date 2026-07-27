@@ -318,3 +318,13 @@ export type UpdateFighterStatusInput = z.infer<typeof updateFighterStatusSchema>
 export type AddFighterXpInput = z.infer<typeof addFighterXpSchema>;
 export type CreateChallengeInput = z.infer<typeof createChallengeSchema>;
 export type ResolveChallengeInput = z.infer<typeof resolveChallengeSchema>;
+
+/** Contact form (issue #39 follow-up) — /contact. */
+export const contactSchema = z.object({
+  name: z.string().trim().min(2, "Name too short.").max(80, "Name too long."),
+  email: z.string().trim().email("Invalid e-mail.").max(200),
+  subject: z.string().trim().min(3, "Subject too short.").max(120, "Subject too long."),
+  message: z.string().trim().min(10, "Message too short.").max(4000, "Message too long."),
+});
+
+export type ContactInput = z.infer<typeof contactSchema>;

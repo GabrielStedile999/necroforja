@@ -7,32 +7,37 @@ import { useTranslations } from "next-intl";
  * i18n: hrefs/keys stay in English here; labels come from
  * messages/<locale>.json (Footer namespace).
  */
+/**
+ * Every entry points at a real, existing route (issue #39) — the old
+ * placeholder links (roadmap, discord, forums, help, status…) are gone.
+ */
 const LINK_GROUPS = [
 	{
 		headingKey: "game",
 		links: [
 			{ key: "overview", href: "/" },
+			{ key: "howToPlay", href: "/how-to-play" },
+			{ key: "lore", href: "/lore" },
 			{ key: "factions", href: "/gangs" },
-			{ key: "roadmap", href: "/" },
-			{ key: "dashboard", href: "/dashboard" },
+			{ key: "skirmish", href: "/skirmish" },
+			{ key: "campaignMode", href: "/campaign" },
 		],
 	},
 	{
-		headingKey: "community",
+		headingKey: "campaign",
 		links: [
-			{ key: "discord", href: "/" },
-			{ key: "news", href: "/reports" },
+			{ key: "dashboard", href: "/dashboard" },
+			{ key: "reports", href: "/reports" },
 			{ key: "gallery", href: "/gallery" },
-			{ key: "creators", href: "/" },
-			{ key: "forums", href: "/" },
+			{ key: "houseRules", href: "/house-rules" },
 		],
 	},
 	{
 		headingKey: "support",
 		links: [
-			{ key: "help", href: "/" },
-			{ key: "status", href: "/" },
-			{ key: "contact", href: "/" },
+			{ key: "faq", href: "/faq" },
+			{ key: "creator", href: "/creator" },
+			{ key: "contact", href: "/contact" },
 			{ key: "account", href: "/login" },
 		],
 	},
@@ -107,8 +112,18 @@ export default function SiteFooter() {
 						</span>
 					</div>
 					<div className="flex gap-[18px]">
-						<span className="cursor-pointer">{t("privacy")}</span>
-						<span className="cursor-pointer">{t("terms")}</span>
+						<Link
+							href="/privacy"
+							className="ncf-util-link no-underline text-[rgba(245,245,250,.35)]"
+						>
+							{t("privacy")}
+						</Link>
+						<Link
+							href="/terms"
+							className="ncf-util-link no-underline text-[rgba(245,245,250,.35)]"
+						>
+							{t("terms")}
+						</Link>
 						<span>◈ ◇ ◆</span>
 					</div>
 				</div>

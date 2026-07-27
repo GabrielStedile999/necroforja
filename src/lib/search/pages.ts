@@ -108,6 +108,22 @@ export const SEARCHABLE_PAGES: SearchablePage[] = [
 		keywordsEn: "rankings standings gangs live",
 		keywordsPt: "ranking classificação gangues ao vivo",
 	},
+	{
+		id: "creator",
+		href: "/creator",
+		titleEn: "Creator",
+		titlePt: "Criador",
+		keywordsEn: "about author Gabriel Stedile developer painter bio",
+		keywordsPt: "sobre autor Gabriel Stedile desenvolvedor pintor bio",
+	},
+	{
+		id: "contact",
+		href: "/contact",
+		titleEn: "Contact",
+		titlePt: "Contato",
+		keywordsEn: "message e-mail form support feedback bug report",
+		keywordsPt: "mensagem e-mail formulário suporte feedback reportar bug",
+	},
 ];
 
 /** Case/accent-insensitive normalization for matching. */

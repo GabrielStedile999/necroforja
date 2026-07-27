@@ -7,6 +7,45 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Added
+- **Página do criador `/creator`** (issue #39): foto (WebP estático via
+  `next/image`) + bio en/pt-BR no padrão `content.ts`/`content.en.ts`/
+  `content.i18n.ts`, ficha técnica do hobby, links para LinkedIn e
+  repositório público e JSON-LD `ProfilePage` (novo builder
+  `buildCreatorJsonLd`, ancorando a entidade "Gabriel Stedile" da issue
+  #47); indexada no sitemap e na busca do site.
+- **Página de contato `/contact`** (issue #39): formulário (nome, e-mail,
+  assunto, mensagem) com validação nativa + zod (`contactSchema`),
+  honeypot invisível, rate limit por IP e global (Upstash, fail-open) e
+  entrega por e-mail via API REST do Resend (sem SDK novo) com
+  `reply_to` do visitante; o endereço de destino vive só em env
+  (`CONTACT_EMAIL_TO`) — nunca no código nem no cliente (repo público);
+  novo componente `Textarea` em `ui/input.tsx`; indexada no sitemap e na
+  busca do site.
+- **Páginas legais `/privacy` e `/terms`** (issue #39): política de
+  privacidade (cookies essenciais, métricas anônimas, LGPD, remoção de
+  imagens) e termos de uso (natureza de fan project, uso aceitável,
+  disclaimer Games Workshop) escritos para a natureza real do projeto;
+  renderizador compartilhado `LegalDocument` com seções numeradas e
+  âncoras; linkadas na bottom bar do footer (antes `<span>`s mortos).
+
+### Changed
+- **Footer sem placeholders** (issue #39): os 7 links sem destino real
+  (Roadmap, Discord, Creators, Forums, Help, Status e o Contact "/")
+  saíram; colunas reorganizadas em JOGO (Visão Geral, Como Jogar, Lore,
+  Facções, Modo Skirmish, Modo Campanha), CAMPANHA (Dashboard, Jornal,
+  Galeria, Custom Rules) e SUPORTE (FAQ, Criador, Contato, Conta) — todo
+  link do footer agora aponta para uma página que existe.
+- **Seção About da landing enxugada** (follow-up da issue #47): texto novo
+  em 3 parágrafos (gerenciador de campanha no universo de Warhammer 40k,
+  "não é loja", idiomas/PWA/acesso sem conta) e remoção do link "VER O
+  CÓDIGO NO GITHUB" — o repositório continua linkado no /creator e no FAQ.
+
+### Fixed
+- **Botão "Conheça as gangues" do CTA** (follow-up): era um `<div>` morto
+  com TODO da época em que /gangs não existia (issue #8) — virou `Link`
+  real para `/gangs`.
+
+### Added
 - **Páginas FAQ e Campaign Custom Rules** (issue #41): duas rotas novas —
   `/faq` com perguntas frequentes agrupadas por tema (geral, campanha,
   site & conta) em `<details>`/`<summary>` nativos (acessível, zero JS), e

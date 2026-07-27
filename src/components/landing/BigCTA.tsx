@@ -36,10 +36,12 @@ export default function BigCTA() {
             {t("howToStart")}
           </Link>
 
-          {/* TODO: point to the Gangs page once it exists (issue #8) */}
-          <div className="inline-flex cursor-pointer items-center border border-white/[0.22] px-[42px] py-[18px] text-[18px] font-semibold tracking-[3px] text-ink transition-[border-color] hover:border-cyan">
+          <Link
+            href="/gangs"
+            className="inline-flex items-center border border-white/[0.22] px-[42px] py-[18px] text-[18px] font-semibold tracking-[3px] text-ink no-underline transition-[border-color] hover:border-cyan"
+          >
             {t("meetGangs")}
-          </div>
+          </Link>
         </div>
       </div>
     </section>
