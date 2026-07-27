@@ -149,10 +149,9 @@
 	"About": {
 		"sectionLabel": "05 // O QUE É A NECROFORJA",
 		"title": "Um gerenciador digital de campanha para Necromunda",
-		"p1": "A NecroForja é um web app gratuito: um gerenciador digital de campanha e dashboard para Necromunda, o skirmish game de mesa da Games Workshop. Ela acompanha a campanha da nossa mesa — The Aranthian Succession: Cinderak Burning — em tempo real: ranking das gangues, territórios, Sympathisers, relatórios de batalha e uma galeria de miniaturas pintadas.",
-		"p2": "A NecroForja não é uma loja: não produz nem vende miniaturas, kits de resina ou impressão 3D. É um projeto de fã independente e sem fins comerciais — e o projeto de portfólio do Gabriel Stedile, que a projetou e construiu. O código-fonte é público no GitHub.",
+		"p1": "A NecroForja é um gerenciador digital de campanha e dashboard para Necromunda, o skirmish game de mesa da Games Workshop que ocorre no universo de Warhammer 40k. Ela acompanha a famosa campanha — The Aranthian Succession — em tempo real: ranking das gangues, territórios, Sympathisers, relatórios de batalha e uma galeria de miniaturas pintadas.",
+		"p2": "A NecroForja não é uma loja: não produz nem vende miniaturas, kits de resina ou impressão 3D. É um projeto de fã independente.",
 		"p3": "O site está disponível em inglês e português (BR), funciona como app no celular (PWA) e a maior parte — dashboard, relatórios, galeria e páginas de regras — é aberta para todo mundo, sem precisar de conta.",
-		"repoLink": "VER O CÓDIGO NO GITHUB →",
 		"faqLink": "LER O FAQ →"
 	},
 	"CTA": {
@@ -165,21 +164,22 @@
 		"blurb": "Tales of Necromunda — The Aranthian Succession. Uma guerra de mesa com miniaturas, dados e tinta pela sub-colmeia.",
 		"headings": {
 			"game": "JOGO",
-			"community": "COMUNIDADE",
+			"campaign": "CAMPANHA",
 			"support": "SUPORTE"
 		},
 		"links": {
 			"overview": "Visão Geral",
+			"howToPlay": "Como Jogar",
+			"lore": "Lore & Cenário",
 			"factions": "Facções",
-			"roadmap": "Roadmap",
+			"skirmish": "Modo Skirmish",
+			"campaignMode": "Modo Campanha",
 			"dashboard": "Dashboard",
-			"discord": "Discord",
-			"news": "Notícias",
+			"reports": "Jornal de Campanha",
 			"gallery": "Galeria",
-			"creators": "Criadores",
-			"forums": "Fóruns",
-			"help": "Ajuda",
-			"status": "Status",
+			"houseRules": "Custom Rules da Campanha",
+			"faq": "FAQ",
+			"creator": "Criador",
 			"contact": "Contato",
 			"account": "Conta"
 		},

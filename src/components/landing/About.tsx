@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { SITE_REPO_URL } from "@/lib/seo/json-ld";
 
 /**
  * 05 // WHAT IS NECROFORJA — texto "sobre" indexável (issue #47).
@@ -11,8 +10,9 @@ import { SITE_REPO_URL } from "@/lib/seo/json-ld";
  * parágrafos claros e citáveis dizendo o que a NecroForja é — um gerenciador
  * digital de campanha — e o que não é (uma loja de miniaturas).
  *
- * Texto puro + 2 links (repo público e FAQ): nenhum asset novo, custo zero
- * de performance (issues #42/#46).
+ * Texto puro + 1 link (FAQ): nenhum asset novo, custo zero de performance
+ * (issues #42/#46). O link do repositório saiu a pedido do Gabriel (issue #39
+ * follow-up) — o código continua público, referenciado no /creator e no FAQ.
  */
 export default function About() {
   const t = useTranslations("About");
@@ -45,14 +45,6 @@ export default function About() {
         </div>
 
         <div className="mt-8 flex flex-wrap items-center gap-6 font-mono text-[13px] tracking-[2px]">
-          <a
-            href={SITE_REPO_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ncf-util-link text-[rgba(245,245,250,.7)] no-underline"
-          >
-            {t("repoLink")}
-          </a>
           <Link href="/faq" className="ncf-util-link text-[rgba(245,245,250,.7)] no-underline">
             {t("faqLink")}
           </Link>
