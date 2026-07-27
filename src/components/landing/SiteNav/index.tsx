@@ -43,7 +43,13 @@ const GAME_MODE_LINKS = [
   { key: "skirmish", href: "/skirmish" },
 ] as const;
 
-const GAME_TOOLS_LINKS = [{ key: "publicDashboard", href: "/dashboard" }] as const;
+// FAQ e Campaign Custom Rules na coluna Campaign Tools (issue #41, pedido
+// do Gabriel): duas rotas separadas, cada uma com seu link.
+const GAME_TOOLS_LINKS = [
+  { key: "publicDashboard", href: "/dashboard" },
+  { key: "faq", href: "/faq" },
+  { key: "customRules", href: "/house-rules" },
+] as const;
 
 export default function SiteNav() {
   const t = useTranslations("Nav");
@@ -296,7 +302,9 @@ export default function SiteNav() {
               { num: "06", label: t("world"), href: "/lore" },
               { num: "07", label: t("news"), href: "/reports" },
               { num: "08", label: t("gallery"), href: "/gallery" },
-              { num: "09", label: t("dashboard"), href: "/dashboard" },
+              { num: "09", label: t("gameMenu.tools.faq"), href: "/faq" },
+              { num: "10", label: t("gameMenu.tools.customRules"), href: "/house-rules" },
+              { num: "11", label: t("dashboard"), href: "/dashboard" },
             ].map((item) =>
               item.href ? (
                 <Link key={item.num} href={item.href} onClick={closeNav} className={`${s.mobileNavItem} no-underline text-ink`}>

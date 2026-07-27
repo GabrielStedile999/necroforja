@@ -33,8 +33,10 @@ export const metadata: Metadata = {
 	},
 
 	// ---- Description ----
+	// "digital campaign manager / web app" ancora a entidade (issue #47) —
+	// a NecroForja é um app, não uma loja de miniaturas (≠ NecroForge).
 	description:
-		"NecroForja: Necromunda campaign manager. Track gangs, Sympathisers and the campaign ranking in real time.",
+		"NecroForja is a digital campaign manager for Necromunda — a free web app to track gangs, Sympathisers and the campaign ranking in real time.",
 
 	// ---- Canonical ----
 	alternates: { canonical: "/" },
@@ -67,7 +69,7 @@ export const metadata: Metadata = {
 		siteName: "NecroForja",
 		title: "NecroForja — Necromunda Campaign Manager",
 		description:
-			"Track gangs, Sympathisers and the campaign ranking in real time.",
+			"A digital campaign manager for Necromunda — track gangs, Sympathisers and the campaign ranking in real time.",
 		locale: "en_US",
 		// The /opengraph-image.tsx route is picked up automatically by Next.js
 		// as the default OG image for all pages in this layout.
@@ -78,7 +80,7 @@ export const metadata: Metadata = {
 		card: "summary_large_image",
 		title: "NecroForja — Necromunda Campaign Manager",
 		description:
-			"Track gangs, Sympathisers and the campaign ranking in real time.",
+			"A digital campaign manager for Necromunda — track gangs, Sympathisers and the campaign ranking in real time.",
 		creator: "@gabrielstedile",
 	},
 

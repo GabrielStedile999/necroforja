@@ -5,8 +5,8 @@ import { SITE_URL } from "@/lib/site-url";
 
 /**
  * Sitemap — public pages only: /, /lore, /how-to-play, /skirmish, /campaign,
- * /gangs, /reports (plus published posts), /gallery and /dashboard.
- * Authenticated pages are excluded.
+ * /faq, /house-rules, /gangs, /reports (plus published posts), /gallery and
+ * /dashboard. Authenticated pages are excluded.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = SITE_URL;
@@ -55,6 +55,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.7,
+    },
+    {
+      url: `${siteUrl}/faq`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
+      url: `${siteUrl}/house-rules`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.6,
     },
     {
       url: `${siteUrl}/gangs`,
