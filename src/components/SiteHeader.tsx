@@ -1,12 +1,14 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import { Button } from "@/components/ui/button";
-import { SignOutButton } from "@/components/SignOutButton";
+import { UserMenu } from "@/components/auth/UserMenu";
 
 /** In-app header — shown on /dashboard, /admin, /player (not on the marketing landing). */
 export async function SiteHeader() {
   const session = await auth();
   const user = session?.user;
+  const t = await getTranslations("Nav");
 
   return (
     <header className="sticky top-0 z-20 border-b border-rivet bg-void/95 backdrop-blur-md">
@@ -20,23 +22,12 @@ export async function SiteHeader() {
 
         <nav className="flex items-center gap-2">
           {user ? (
-            <>
-              {user.role === "admin" && (
-                <Link href="/admin">
-                  <Button variant="ghost" className="text-xs">Arbitrator</Button>
-                </Link>
-              )}
-              <Link href="/player">
-                <Button variant="outline" className="text-xs">My Gang</Button>
-              </Link>
-              <span className="hidden font-mono text-xs text-muted sm:inline">
-                {user.name}
-              </span>
-              <SignOutButton />
-            </>
+            // issue #40 — área de usuário unificada com o SiteNav: avatar +
+            // nome + dropdown (My Gang/Arbitrator viraram atalhos do menu).
+            <UserMenu user={{ name: user.name, email: user.email, role: user.role }} />
           ) : (
             <Link href="/login">
-              <Button variant="outline" className="text-xs">Sign In</Button>
+              <Button variant="outline" className="text-xs">{t("signIn")}</Button>
             </Link>
           )}
         </nav>

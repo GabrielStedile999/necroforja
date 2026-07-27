@@ -6,7 +6,12 @@ import type { NextAuthConfig } from "next-auth";
  */
 export const authConfig = {
   pages: { signIn: "/login" },
-  session: { strategy: "jwt" },
+  // maxAge explícito (issue #40, pedido do Gabriel): sessão JWT de 7 dias
+  // — e ROLANTE: o Auth.js reemite o cookie a cada leitura da sessão,
+  // então na prática é "7 dias desde a última visita", não desde o login.
+  // (Default do Auth.js seria 30 dias; 7 é um equilíbrio melhor entre
+  // conveniência e segurança pra uma conta admin.)
+  session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 7 },
   providers: [],
   callbacks: {
     /** Route-based authorisation used by the middleware. */
