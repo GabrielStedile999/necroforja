@@ -64,6 +64,15 @@
 			"vanSaar": "Tecnologia & Precisão · Atirador"
 		}
 	},
+	"UserMenu": {
+		"openMenu": "Abrir menu do usuário",
+		"roleAdmin": "ARBITRATOR",
+		"rolePlayer": "GANGER",
+		"dashboard": "Dashboard",
+		"myGang": "Minha Gangue",
+		"adminArea": "Painel do Arbitrator",
+		"signOut": "Sair"
+	},
 	"Search": {
 		"ariaLabel": "Busca do site",
 		"placeholder": "Buscar páginas, relatórios, regras…",

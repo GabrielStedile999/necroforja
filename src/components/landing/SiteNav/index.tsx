@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
+import { UserMenu, UserMenuMobile } from "@/components/auth/UserMenu";
+import { useSessionUser } from "@/components/auth/useSessionUser";
 import type { SiteSearchHandle } from "@/components/search/SiteSearch";
 import s from "./SiteNav.module.scss";
 
@@ -56,6 +58,10 @@ export default function SiteNav() {
   const [menu, setMenu]       = useState<"game" | "factions" | null>(null);
   const [navOpen, setNavOpen] = useState(false);
   const searchRef = useRef<SiteSearchHandle>(null);
+
+  // issue #40 — sessão buscada client-side em idle (páginas públicas são
+  // estáticas; ver useSessionUser). Deslogado/carregando ⇒ botão SIGN IN.
+  const user = useSessionUser();
 
   // issue #42 — a busca monta depois da hidratação (num idle callback), pra
   // não competir com o first paint; o atalho global Ctrl/Cmd+K vive dentro
@@ -164,7 +170,11 @@ export default function SiteNav() {
 
             <LocaleSwitcher align="right" />
 
-            <Link href="/login" className={s.playFreeBtn}>{t("signIn")}</Link>
+            {user ? (
+              <UserMenu user={user} />
+            ) : (
+              <Link href="/login" className={s.playFreeBtn}>{t("signIn")}</Link>
+            )}
           </div>
 
           {/* Burger — mobile */}
@@ -349,9 +359,13 @@ export default function SiteNav() {
               <LocaleSwitcher align="left" />
             </div>
 
-            <Link href="/login" onClick={closeNav} className={s.mobilePlayBtn}>
-              {t("signInArrow")}
-            </Link>
+            {user ? (
+              <UserMenuMobile user={user} onNavigate={closeNav} />
+            ) : (
+              <Link href="/login" onClick={closeNav} className={s.mobilePlayBtn}>
+                {t("signInArrow")}
+              </Link>
+            )}
           </div>
         </div>
       )}

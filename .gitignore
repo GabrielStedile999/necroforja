@@ -15,6 +15,11 @@ next-env.d.ts
 .DS_Store
 *.pem
 
+# lixeira local do fluxo Cowork (a ponte não deleta arquivos, só move) —
+# precisa estar ignorada: o Tailwind v4 escaneia todo arquivo não-gitignorado
+# e caches binários aqui dentro geram classes corrompidas no globals.css
+/_to_delete
+
 # debug
 npm-debug.log*
 yarn-debug.log*

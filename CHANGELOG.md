@@ -7,6 +7,28 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Added
+- **Área de usuário logado no topo** (issue #40): novo componente único
+  `UserMenu` (avatar por iniciais com cor determinística derivada do nome
+  — paleta das seis Grandes Casas, helpers puros em `lib/avatar.ts` —,
+  nome e dropdown com identidade, atalhos Dashboard/Minha Gangue/Painel
+  do Arbitrator e sign out) usado pelos dois headers: no `SiteNav`
+  (páginas públicas, estáticas) a sessão é buscada client-side num idle
+  callback via `/api/auth/session` (hook `useSessionUser` com cache de
+  módulo — sem `SessionProvider` global e sem forçar render dinâmico;
+  mesmo padrão de perf do SiteSearch, issue #42), com variante inline
+  `UserMenuMobile` no menu fullscreen; no `SiteHeader`
+  (dashboard/admin/player, já dinâmicos) o usuário vem do `auth()`
+  server-side por prop — "My Gang"/"Arbitrator" viraram atalhos do
+  dropdown e o `SignOutButton` avulso foi removido. Dropdown com padrão
+  disclosure acessível (`aria-expanded`/`aria-controls`, Escape fecha e
+  devolve o foco, clique fora fecha); namespace i18n `UserMenu` en/pt-BR
+  com teste de paridade de chaves. O cache de sessão é
+  stale-while-revalidate: snapshot instantâneo em navegações client-side,
+  revalidado a cada mount (login/logout no meio da sessão SPA refletem no
+  header sem F5). Sessão JWT com `maxAge` explícito de 7 dias (rolante —
+  o cookie é reemitido a cada visita).
+
+### Added
 - **Página do criador `/creator`** (issue #39): foto (WebP estático via
   `next/image`) + bio en/pt-BR no padrão `content.ts`/`content.en.ts`/
   `content.i18n.ts`, ficha técnica do hobby, links para LinkedIn e

@@ -64,6 +64,15 @@
 			"vanSaar": "Tech & Precision · Marksman"
 		}
 	},
+	"UserMenu": {
+		"openMenu": "Open user menu",
+		"roleAdmin": "ARBITRATOR",
+		"rolePlayer": "GANGER",
+		"dashboard": "Dashboard",
+		"myGang": "My Gang",
+		"adminArea": "Arbitrator Panel",
+		"signOut": "Sign Out"
+	},
 	"Search": {
 		"ariaLabel": "Site search",
 		"placeholder": "Search pages, reports, rules…",
