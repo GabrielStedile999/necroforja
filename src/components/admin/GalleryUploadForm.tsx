@@ -54,6 +54,7 @@ export function GalleryUploadForm() {
 		const altPt = String(fd.get("altPt") ?? "").trim();
 		const captionEn = String(fd.get("captionEn") ?? "").trim();
 		const captionPt = String(fd.get("captionPt") ?? "").trim();
+		const authorName = String(fd.get("authorName") ?? "").trim();
 		const tags = parseTagList(String(fd.get("tags") ?? ""));
 
 		setFormError(null);
@@ -116,6 +117,7 @@ export function GalleryUploadForm() {
 					altPt,
 					captionEn,
 					captionPt,
+					authorName,
 					tags,
 					width,
 					height,
@@ -182,7 +184,11 @@ export function GalleryUploadForm() {
 					<Label htmlFor="captionPt">Caption (PT, optional)</Label>
 					<Input id="captionPt" name="captionPt" placeholder="Semana 3 — docas de Cinderak" />
 				</div>
-				<div className="sm:col-span-2">
+				<div>
+					<Label htmlFor="authorName">Author / painted by (optional)</Label>
+					<Input id="authorName" name="authorName" maxLength={60} placeholder="Gabriel Stedile" />
+				</div>
+				<div>
 					<Label htmlFor="tags">Tags (comma-separated, optional)</Label>
 					<Input id="tags" name="tags" placeholder="goliath, escher, week-3" />
 				</div>

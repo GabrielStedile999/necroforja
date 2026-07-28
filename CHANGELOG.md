@@ -7,6 +7,29 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Added
+- **Autor da pintura, rating 1–5 e comentários anônimos na galeria**
+  (issue #52): nova coluna `author_name` em `gallery_image` (campo no
+  upload e na edição do admin), exibida em destaque —
+  `PINTADO POR // NOME`, bold + cor de acento — na legenda do card e no
+  lightbox (i18n en/pt-BR). Qualquer visitante, sem login, avalia uma
+  foto de 1 a 5 estrelas: identidade anônima via cookie httpOnly
+  `ncf_anon` (UUID aleatório) guardado no banco só como
+  HMAC-SHA256 (`voter_hash` — nenhum IP ou identificador cru, LGPD),
+  1 voto por visitante por foto (`unique (image_id, voter_hash)`) com
+  upsert para mudar a nota; média/total chegam via ISR (card compacto
+  `★ 4.2 · 7`) e as estrelas interativas do lightbox fazem update
+  otimista contra `POST /api/gallery/[id]/rating`. Comentários anônimos
+  pré-moderados (`gallery_comment`, status `pending|approved|rejected`):
+  nascem pendentes via `POST /api/gallery/[id]/comments` (zod, honeypot
+  com sucesso falso para bots, rate-limit fail-open por voter+IP+dia) e
+  só aparecem — em chunk dinâmico carregado sob demanda no lightbox —
+  depois do Approve na nova fila de moderação do `/admin/gallery`.
+  Tabelas novas com RLS ligado sem policies (acesso só server-side),
+  `scripts/supabase-gallery.sql` atualizado em sincronia com o schema
+  Drizzle, política de privacidade menciona o cookie `ncf_anon` e
+  a11y AA nos controles novos (grupo de botões navegável por teclado,
+  estado por `aria-pressed` + glifo ★/☆, `role="img"` com rótulo na
+  média).
 - **Edição de conta de player no painel admin** (issue #57): cada linha da
   lista de players ganhou um "Edit account" (`<details>` nativo) com o novo
   `EditPlayerForm` — nome de exibição, e-mail de login e senha nova

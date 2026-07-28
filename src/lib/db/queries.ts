@@ -2,7 +2,7 @@
  * Read layer (Drizzle). Maps database rows to the domain types
  * used by lib/scoring.ts. All functions run server-side only.
  */
-import { eq, and, or, ilike, desc, type SQL } from "drizzle-orm";
+import { eq, and, or, ilike, desc, lt, sql, type SQL } from "drizzle-orm";
 import { db, schema } from "./index";
 import type {
   Fighter,
@@ -325,6 +325,101 @@ export async function listPublishedGalleryImages(limit = 200) {
 export async function listGalleryImagesAdmin() {
   return db.query.galleryImages.findMany({
     orderBy: [desc(schema.galleryImages.createdAt)],
+  });
+}
+
+/* ------------- Gallery ratings & comments (issue #52) ------------- */
+
+/** A published image (id only) — guards the public interaction endpoints. */
+export async function getPublishedGalleryImageById(imageId: string) {
+  return db.query.galleryImages.findFirst({
+    where: and(
+      eq(schema.galleryImages.id, imageId),
+      eq(schema.galleryImages.published, true),
+    ),
+    columns: { id: true },
+  });
+}
+
+/**
+ * Rating aggregates for every image, keyed by image id. Feeds the public
+ * /gallery page through ISR — a 5-minute lag on averages is acceptable;
+ * the voter sees their own action optimistically on the client.
+ */
+export async function getGalleryRatingSummaries(): Promise<
+  Map<string, { avg: number; count: number }>
+> {
+  const rows = await db
+    .select({
+      imageId: schema.galleryRatings.imageId,
+      avg: sql<number>`avg(${schema.galleryRatings.rating})::float`,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(schema.galleryRatings)
+    .groupBy(schema.galleryRatings.imageId);
+  return new Map(rows.map((r) => [r.imageId, { avg: r.avg, count: r.count }]));
+}
+
+/** Fresh aggregate for one image (returned right after a vote). */
+export async function getGalleryRatingSummary(
+  imageId: string,
+): Promise<{ avg: number | null; count: number }> {
+  const rows = await db
+    .select({
+      avg: sql<number | null>`avg(${schema.galleryRatings.rating})::float`,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(schema.galleryRatings)
+    .where(eq(schema.galleryRatings.imageId, imageId));
+  const row = rows[0];
+  return { avg: row?.avg ?? null, count: row?.count ?? 0 };
+}
+
+/** The current visitor's vote on an image, if any ("my rating"). */
+export async function getGalleryRatingByVoter(
+  imageId: string,
+  voterHash: string,
+): Promise<number | null> {
+  const row = await db.query.galleryRatings.findFirst({
+    where: and(
+      eq(schema.galleryRatings.imageId, imageId),
+      eq(schema.galleryRatings.voterHash, voterHash),
+    ),
+    columns: { rating: true },
+  });
+  return row?.rating ?? null;
+}
+
+/**
+ * Approved comments for a photo, newest first (public lightbox section).
+ * Simple keyset pagination on created_at (`before` = ISO date of the last
+ * item the client already has).
+ */
+export async function listApprovedGalleryComments(
+  imageId: string,
+  limit = 30,
+  before?: Date,
+) {
+  return db.query.galleryComments.findMany({
+    where: and(
+      eq(schema.galleryComments.imageId, imageId),
+      eq(schema.galleryComments.status, "approved"),
+      before ? lt(schema.galleryComments.createdAt, before) : undefined,
+    ),
+    columns: { id: true, authorName: true, body: true, createdAt: true },
+    orderBy: [desc(schema.galleryComments.createdAt)],
+    limit,
+  });
+}
+
+/** Pending comments (oldest first) with their photo, for the admin queue. */
+export async function listPendingGalleryComments() {
+  return db.query.galleryComments.findMany({
+    where: eq(schema.galleryComments.status, "pending"),
+    with: {
+      image: { columns: { id: true, path: true, altEn: true } },
+    },
+    orderBy: [schema.galleryComments.createdAt],
   });
 }
 

@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale } from "next-intl";
 import type { Locale } from "@/i18n/config";
-import type { GalleryItem } from "@/lib/gallery";
+import { formatRatingAvg, type GalleryItem } from "@/lib/gallery";
 import { GALLERY_CATEGORIES, type GalleryCategory } from "@/lib/validation";
 
 /**
@@ -31,7 +31,17 @@ const CATEGORY_COLORS: Record<GalleryCategory, string> = {
 
 const STRINGS: Record<
 	Locale,
-	{ all: string; empty: string; offline: string; close: string; prev: string; next: string; categories: Record<GalleryCategory, string> }
+	{
+		all: string;
+		empty: string;
+		offline: string;
+		close: string;
+		prev: string;
+		next: string;
+		paintedBy: string;
+		ratingAria: string;
+		categories: Record<GalleryCategory, string>;
+	}
 > = {
 	en: {
 		all: "ALL",
@@ -40,6 +50,8 @@ const STRINGS: Record<
 		close: "Close",
 		prev: "Previous image",
 		next: "Next image",
+		paintedBy: "PAINTED BY //",
+		ratingAria: "Average rating {avg} out of 5, {count} vote(s)",
 		categories: {
 			battle: "BATTLES",
 			painting: "PAINTING",
@@ -55,6 +67,8 @@ const STRINGS: Record<
 		close: "Fechar",
 		prev: "Imagem anterior",
 		next: "Próxima imagem",
+		paintedBy: "PINTADO POR //",
+		ratingAria: "Avaliação média {avg} de 5, {count} voto(s)",
 		categories: {
 			battle: "BATALHAS",
 			painting: "PINTURA",
@@ -181,9 +195,29 @@ export default function GalleryGrid({
 								loading="lazy"
 							/>
 						</button>
-						{item.caption && (
-							<figcaption className="mt-1 font-mono text-[11px] tracking-[1px] text-[rgba(245,245,250,.5)]">
-								{item.caption}
+						{(item.caption || item.author || item.ratingCount > 0) && (
+							<figcaption className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 font-mono text-[11px] tracking-[1px] text-[rgba(245,245,250,.5)]">
+								{/* Autor em destaque (issue #52): bold + cor de acento. */}
+								{item.author && (
+									<span className="font-bold text-hazard">
+										{s.paintedBy} {item.author}
+									</span>
+								)}
+								{item.caption && <span>{item.caption}</span>}
+								{/* Média compacta (★ 4.2 · 7) — agregado chega via ISR. */}
+								{item.ratingCount > 0 && item.ratingAvg !== null && (
+									<span
+										role="img"
+										aria-label={s.ratingAria
+											.replace("{avg}", formatRatingAvg(item.ratingAvg))
+											.replace("{count}", String(item.ratingCount))}
+										className="text-[rgba(245,245,250,.68)]"
+									>
+										<span aria-hidden="true">
+											★ {formatRatingAvg(item.ratingAvg)} · {item.ratingCount}
+										</span>
+									</span>
+								)}
 							</figcaption>
 						)}
 					</figure>
