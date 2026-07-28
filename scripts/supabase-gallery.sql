@@ -66,7 +66,51 @@ on conflict (id) do update set
   file_size_limit    = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
 
--- 4) Conferência -----------------------------------------------------------
+-- 4) Autor da pintura (issue #52) ------------------------------------------
+-- Quem pintou ≠ quem subiu (uploaded_by_user_id). Texto livre, exibido em
+-- destaque no card e no lightbox quando preenchido.
+alter table public.gallery_image
+  add column if not exists author_name text not null default '';
+
+-- 5) Rating 1–5 + comentários anônimos (issue #52) -------------------------
+-- voter_hash = HMAC-SHA256(uuid do cookie httpOnly, AUTH_SECRET) — nenhum IP
+-- ou identificador cru é armazenado. RLS ligado sem policies: o app acessa
+-- via conexão direta/service role; a API REST anônima do Supabase não lê nada.
+create table if not exists public.gallery_rating (
+  id         uuid primary key default gen_random_uuid(),
+  image_id   uuid not null references public.gallery_image(id) on delete cascade,
+  rating     smallint not null constraint gallery_rating_range_ck check (rating between 1 and 5),
+  voter_hash text not null,
+  created_at timestamp not null default now(),
+  constraint gallery_rating_image_voter_uq unique (image_id, voter_hash)
+);
+
+do $$ begin
+  create type public.gallery_comment_status as enum
+    ('pending', 'approved', 'rejected');
+exception
+  when duplicate_object then null;
+end $$;
+
+create table if not exists public.gallery_comment (
+  id          uuid primary key default gen_random_uuid(),
+  image_id    uuid not null references public.gallery_image(id) on delete cascade,
+  author_name text not null,
+  body        text not null,
+  status      public.gallery_comment_status not null default 'pending',
+  voter_hash  text not null,
+  created_at  timestamp not null default now()
+);
+
+create index if not exists gallery_comment_image_idx
+  on public.gallery_comment (image_id, status, created_at);
+
+alter table public.gallery_rating enable row level security;
+alter table public.gallery_comment enable row level security;
+
+-- 6) Conferência -----------------------------------------------------------
 select 'gallery_image ready' as status, count(*) as rows_now from public.gallery_image;
+select 'gallery_rating ready' as status, count(*) as rows_now from public.gallery_rating;
+select 'gallery_comment ready' as status, count(*) as rows_now from public.gallery_comment;
 select id, public, file_size_limit, allowed_mime_types
   from storage.buckets where id in ('gallery', 'media', 'reports');

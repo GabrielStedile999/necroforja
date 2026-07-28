@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/auth/guards";
 import { rateLimit } from "@/lib/ai/rate-limit";
 import { buildGalleryObjectPath } from "@/lib/gallery";
 import {
+	galleryCommentModerationSchema,
 	galleryConfirmSchema,
 	galleryUpdateSchema,
 	galleryUploadRequestSchema,
@@ -78,6 +79,7 @@ export async function confirmGalleryUpload(input: {
 	altPt: string;
 	captionEn: string;
 	captionPt: string;
+	authorName: string;
 	tags: string[];
 	width: number;
 	height: number;
@@ -103,6 +105,7 @@ export async function confirmGalleryUpload(input: {
 		altPt: data.altPt,
 		captionEn: data.captionEn,
 		captionPt: data.captionPt,
+		authorName: data.authorName,
 		width: data.width,
 		height: data.height,
 		mime: stat.mime,
@@ -128,6 +131,7 @@ export async function updateGalleryImage(
 		altPt: String(formData.get("altPt") ?? ""),
 		captionEn: String(formData.get("captionEn") ?? ""),
 		captionPt: String(formData.get("captionPt") ?? ""),
+		authorName: String(formData.get("authorName") ?? ""),
 		tags: parseTagList(String(formData.get("tags") ?? "")),
 		published: formData.get("published") === "on",
 	});
@@ -163,4 +167,40 @@ export async function deleteGalleryImage(formData: FormData): Promise<void> {
 	await db.delete(schema.galleryImages).where(eq(schema.galleryImages.id, id));
 
 	revalidateGallery();
+}
+
+/**
+ * Fila de moderação de comentários (issue #52): aprova, rejeita ou exclui um
+ * comentário pendente. Só `approved` aparece ao público (a API de leitura
+ * filtra por status); `rejected` fica guardado como rastro de abuso.
+ * Não há revalidatePath("/gallery"): comentários são buscados client-side
+ * pela API, fora do payload ISR.
+ */
+export async function moderateGalleryComment(
+	_prev: GalleryActionState,
+	formData: FormData,
+): Promise<GalleryActionState> {
+	await requireAdmin();
+
+	const parsed = galleryCommentModerationSchema.safeParse({
+		id: String(formData.get("id") ?? ""),
+		decision: String(formData.get("decision") ?? ""),
+	});
+	if (!parsed.success) {
+		return { error: parsed.error.issues[0]?.message ?? "Invalid decision." };
+	}
+	const { id, decision } = parsed.data;
+
+	if (decision === "delete") {
+		await db.delete(schema.galleryComments).where(eq(schema.galleryComments.id, id));
+	} else {
+		await db
+			.update(schema.galleryComments)
+			.set({ status: decision === "approve" ? "approved" : "rejected" })
+			.where(eq(schema.galleryComments.id, id));
+	}
+
+	const past = { approve: "approved", reject: "rejected", delete: "deleted" } as const;
+	revalidatePath("/admin/gallery");
+	return { success: `Comment ${past[decision]}.` };
 }

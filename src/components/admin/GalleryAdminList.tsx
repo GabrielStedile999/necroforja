@@ -21,6 +21,7 @@ export type GalleryAdminItem = {
 	altPt: string;
 	captionEn: string;
 	captionPt: string;
+	authorName: string;
 	width: number;
 	height: number;
 	published: boolean;
@@ -68,6 +69,15 @@ function EditRow({ item }: { item: GalleryAdminItem }) {
 				<div>
 					<Label htmlFor={`captionPt-${item.id}`}>Caption (PT)</Label>
 					<Input id={`captionPt-${item.id}`} name="captionPt" defaultValue={item.captionPt} />
+				</div>
+				<div>
+					<Label htmlFor={`authorName-${item.id}`}>Author / painted by</Label>
+					<Input
+						id={`authorName-${item.id}`}
+						name="authorName"
+						maxLength={60}
+						defaultValue={item.authorName}
+					/>
 				</div>
 				<div>
 					<Label htmlFor={`category-${item.id}`}>Album</Label>

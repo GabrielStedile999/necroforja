@@ -6,7 +6,10 @@ import SiteNav from "@/components/landing/SiteNav";
 import SiteFooter from "@/components/landing/SiteFooter";
 import GalleryGrid from "@/components/gallery/GalleryGrid";
 import { pickGalleryText, type GalleryItem } from "@/lib/gallery";
-import { listPublishedGalleryImages } from "@/lib/db/queries";
+import {
+	getGalleryRatingSummaries,
+	listPublishedGalleryImages,
+} from "@/lib/db/queries";
 import { GALLERY_BUCKET, storagePublicUrl } from "@/lib/storage";
 import { logger } from "@/lib/logger";
 
@@ -58,13 +61,27 @@ async function loadImages(): Promise<
 	}
 }
 
+/**
+ * Agregados de rating por foto (issue #52), com fallback gracioso: sem os
+ * agregados a galeria continua funcionando, só sem as médias.
+ */
+async function loadRatings(): Promise<Map<string, { avg: number; count: number }>> {
+	try {
+		return await getGalleryRatingSummaries();
+	} catch (error) {
+		logger.error("gallery: failed to load rating summaries", { error });
+		return new Map();
+	}
+}
+
 export default async function GalleryPage() {
 	const locale = (await getLocale()) as Locale;
 	const t = PAGE_STRINGS[locale] ?? PAGE_STRINGS.en;
-	const rows = await loadImages();
+	const [rows, ratings] = await Promise.all([loadImages(), loadRatings()]);
 
 	const items: GalleryItem[] = (rows ?? []).map((row) => {
 		const text = pickGalleryText(row, locale);
+		const rating = ratings.get(row.id);
 		return {
 			id: row.id,
 			url: storagePublicUrl(GALLERY_BUCKET, row.path),
@@ -72,6 +89,9 @@ export default async function GalleryPage() {
 			tags: row.tags,
 			alt: text.alt,
 			caption: text.caption,
+			author: row.authorName,
+			ratingAvg: rating?.avg ?? null,
+			ratingCount: rating?.count ?? 0,
 			width: row.width,
 			height: row.height,
 		};

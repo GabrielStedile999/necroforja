@@ -56,9 +56,22 @@ export type GalleryItem = {
 	tags: string[];
 	alt: string;
 	caption: string;
+	/** Who painted the minis (issue #52) — "" when not informed. */
+	author: string;
+	/** Rating aggregates via ISR (issue #52) — null avg when nobody voted. */
+	ratingAvg: number | null;
+	ratingCount: number;
 	width: number;
 	height: number;
 };
+
+/**
+ * Formats an average rating for display (issue #52): one decimal, always
+ * shown ("4.0", not "4") so the scale is obvious next to the star glyph.
+ */
+export function formatRatingAvg(avg: number): string {
+	return (Math.round(avg * 10) / 10).toFixed(1);
+}
 
 /** Picks the locale variant with graceful fallback to English. */
 export function pickGalleryText(

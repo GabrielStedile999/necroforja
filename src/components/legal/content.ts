@@ -53,7 +53,7 @@ export const PRIVACY: LegalDoc = {
 			id: "cookies",
 			title: "Cookies",
 			paragraphs: [
-				"O site usa apenas cookies essenciais: um cookie de idioma (NEXT_LOCALE, que guarda sua escolha entre inglês e português) e o cookie de sessão do login. Não há cookies de publicidade, rastreamento entre sites ou fingerprinting.",
+				"O site usa apenas cookies essenciais: um cookie de idioma (NEXT_LOCALE, que guarda sua escolha entre inglês e português), o cookie de sessão do login e, se você avaliar ou comentar uma foto da galeria, um cookie de identificação anônima (ncf_anon) que evita votos duplicados — ele contém um código aleatório, não é legível por scripts e é guardado no servidor apenas como um hash irreversível, nunca vinculado a nome, e-mail ou IP. Não há cookies de publicidade, rastreamento entre sites ou fingerprinting.",
 			],
 		},
 		{

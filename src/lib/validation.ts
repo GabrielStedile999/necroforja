@@ -292,6 +292,8 @@ export const galleryConfirmSchema = z.object({
   altPt: z.string().max(300).default(""),
   captionEn: z.string().max(500).default(""),
   captionPt: z.string().max(500).default(""),
+  /** Who painted the minis (issue #52) — optional, highlighted when present. */
+  authorName: z.string().trim().max(60, "Author name too long.").default(""),
   tags: z.array(z.string().min(1).max(40)).max(12).default([]),
   width: z.number().int().positive().max(20_000),
   height: z.number().int().positive().max(20_000),
@@ -316,6 +318,40 @@ export function parseTagList(raw: string): string[] {
     ),
   ].slice(0, 12);
 }
+
+/* ------------------ Gallery visitor interactions (issue #52) ------------------ */
+
+/** Anonymous 1–5 vote on a gallery photo (POST /api/gallery/[id]/rating). */
+export const galleryRatingSchema = z.object({
+  rating: z.coerce
+    .number()
+    .int("Whole stars only.")
+    .min(1, "Minimum rating is 1.")
+    .max(5, "Maximum rating is 5."),
+});
+
+/**
+ * Anonymous comment on a gallery photo (POST /api/gallery/[id]/comments).
+ * Plain text only — the client renders it via React's default escaping, never
+ * as HTML. The honeypot field is checked separately in the route handler so
+ * bots get a fake success instead of a validation hint.
+ */
+export const galleryCommentSchema = z.object({
+  authorName: z.string().trim().min(2, "Name too short.").max(40, "Name too long."),
+  body: z.string().trim().min(3, "Comment too short.").max(800, "Comment too long."),
+});
+
+/** Admin decision over a pending comment (moderation queue, issue #52). */
+export const galleryCommentModerationSchema = z.object({
+  id: z.string().uuid("Invalid comment id."),
+  decision: z.enum(["approve", "reject", "delete"]),
+});
+
+export type GalleryRatingInput = z.infer<typeof galleryRatingSchema>;
+export type GalleryCommentInput = z.infer<typeof galleryCommentSchema>;
+export type GalleryCommentModerationInput = z.infer<
+  typeof galleryCommentModerationSchema
+>;
 
 export type GalleryUploadRequest = z.infer<typeof galleryUploadRequestSchema>;
 export type GalleryConfirmInput = z.infer<typeof galleryConfirmSchema>;

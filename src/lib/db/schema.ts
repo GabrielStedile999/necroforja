@@ -15,9 +15,11 @@ import {
   smallint,
   primaryKey,
   index,
+  unique,
+  check,
   vector,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { GALLERY_CATEGORIES } from "@/lib/validation";
 
 /** Embedding dimensions (OpenAI text-embedding-3-small). */
@@ -70,6 +72,13 @@ export const postType = pgEnum("post_type", [
 
 /** Gallery albums (issues #6/#24) — mirrors GALLERY_CATEGORIES (validation.ts). */
 export const galleryCategory = pgEnum("gallery_category", GALLERY_CATEGORIES);
+
+/** Visitor comments are pre-moderated (issue #52): born pending, admin decides. */
+export const galleryCommentStatus = pgEnum("gallery_comment_status", [
+  "pending",
+  "approved",
+  "rejected",
+]);
 
 /* --------------------------- Tables -------------------------------- */
 export const campaigns = pgTable("campaign", {
@@ -275,6 +284,12 @@ export const galleryImages = pgTable(
     height: integer("height").notNull(),
     mime: text("mime").notNull(),
     bytes: integer("bytes").notNull(),
+    /**
+     * Who painted the miniatures on the photo (issue #52) — display-only text,
+     * distinct from uploadedByUserId (who uploaded ≠ who painted). Rendered
+     * highlighted ("PAINTED BY // NAME") on the card caption and lightbox.
+     */
+    authorName: text("author_name").notNull().default(""),
     published: boolean("published").notNull().default(true),
     uploadedByUserId: uuid("uploaded_by_user_id").references(() => users.id, {
       onDelete: "set null",
@@ -284,6 +299,53 @@ export const galleryImages = pgTable(
   (t) => [
     index("gallery_image_pub_idx").on(t.published, t.createdAt),
     index("gallery_image_category_idx").on(t.category),
+  ],
+);
+
+/**
+ * Anonymous 1–5 star ratings on gallery photos (issue #52).
+ * The voter is identified only by `voter_hash` = HMAC-SHA256 of a random
+ * UUID stored in an httpOnly cookie (see src/lib/gallery-visitor.ts) — no IP
+ * or raw identifier is ever persisted (LGPD). One vote per visitor per image
+ * (unique constraint); voting again upserts the new value.
+ */
+export const galleryRatings = pgTable(
+  "gallery_rating",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    imageId: uuid("image_id")
+      .notNull()
+      .references(() => galleryImages.id, { onDelete: "cascade" }),
+    rating: smallint("rating").notNull(),
+    voterHash: text("voter_hash").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    unique("gallery_rating_image_voter_uq").on(t.imageId, t.voterHash),
+    check("gallery_rating_range_ck", sql`${t.rating} between 1 and 5`),
+  ],
+);
+
+/**
+ * Anonymous, pre-moderated comments on gallery photos (issue #52).
+ * Born `pending`; only `approved` rows are ever served to the public API.
+ * `voter_hash` mirrors gallery_rating (abuse tracing, never displayed).
+ */
+export const galleryComments = pgTable(
+  "gallery_comment",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    imageId: uuid("image_id")
+      .notNull()
+      .references(() => galleryImages.id, { onDelete: "cascade" }),
+    authorName: text("author_name").notNull(),
+    body: text("body").notNull(),
+    status: galleryCommentStatus("status").notNull().default("pending"),
+    voterHash: text("voter_hash").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("gallery_comment_image_idx").on(t.imageId, t.status, t.createdAt),
   ],
 );
 
@@ -368,4 +430,23 @@ export const postsRelations = relations(posts, ({ one }) => ({
 
 export const campaignsRelations = relations(campaigns, ({ many }) => ({
   gangs: many(gangs),
+}));
+
+export const galleryImagesRelations = relations(galleryImages, ({ many }) => ({
+  ratings: many(galleryRatings),
+  comments: many(galleryComments),
+}));
+
+export const galleryRatingsRelations = relations(galleryRatings, ({ one }) => ({
+  image: one(galleryImages, {
+    fields: [galleryRatings.imageId],
+    references: [galleryImages.id],
+  }),
+}));
+
+export const galleryCommentsRelations = relations(galleryComments, ({ one }) => ({
+  image: one(galleryImages, {
+    fields: [galleryComments.imageId],
+    references: [galleryImages.id],
+  }),
 }));

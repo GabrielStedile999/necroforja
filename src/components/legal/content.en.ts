@@ -39,7 +39,7 @@ export const PRIVACY: LegalDoc = {
 			id: "cookies",
 			title: "Cookies",
 			paragraphs: [
-				"The site uses essential cookies only: a language cookie (NEXT_LOCALE, storing your choice between English and Portuguese) and the sign-in session cookie. There are no advertising cookies, cross-site tracking or fingerprinting.",
+				"The site uses essential cookies only: a language cookie (NEXT_LOCALE, storing your choice between English and Portuguese), the sign-in session cookie and, if you rate or comment on a gallery photo, an anonymous identifier cookie (ncf_anon) that prevents duplicate votes — it contains a random code, is not readable by scripts and is stored server-side only as an irreversible hash, never linked to your name, e-mail or IP. There are no advertising cookies, cross-site tracking or fingerprinting.",
 			],
 		},
 		{

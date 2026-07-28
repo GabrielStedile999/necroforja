@@ -9,8 +9,15 @@ import {
 	GalleryAdminList,
 	type GalleryAdminItem,
 } from "@/components/admin/GalleryAdminList";
+import {
+	GalleryCommentModeration,
+	type PendingCommentItem,
+} from "@/components/admin/GalleryCommentModeration";
 import { requireAdmin } from "@/lib/auth/guards";
-import { listGalleryImagesAdmin } from "@/lib/db/queries";
+import {
+	listGalleryImagesAdmin,
+	listPendingGalleryComments,
+} from "@/lib/db/queries";
 import { GALLERY_BUCKET, storagePublicUrl } from "@/lib/storage";
 import { Images } from "lucide-react";
 
@@ -25,7 +32,10 @@ export const dynamic = "force-dynamic";
 /** Gestão da galeria de fotos (issues #6/#24). */
 export default async function AdminGalleryPage() {
 	await requireAdmin();
-	const rows = await listGalleryImagesAdmin();
+	const [rows, pendingComments] = await Promise.all([
+		listGalleryImagesAdmin(),
+		listPendingGalleryComments(),
+	]);
 
 	const items: GalleryAdminItem[] = rows.map((r) => ({
 		id: r.id,
@@ -37,10 +47,22 @@ export default async function AdminGalleryPage() {
 		altPt: r.altPt,
 		captionEn: r.captionEn,
 		captionPt: r.captionPt,
+		authorName: r.authorName,
 		width: r.width,
 		height: r.height,
 		published: r.published,
 		createdAt: r.createdAt.toISOString().slice(0, 10),
+	}));
+
+	const pending: PendingCommentItem[] = pendingComments.map((c) => ({
+		id: c.id,
+		authorName: c.authorName,
+		body: c.body,
+		createdAt: c.createdAt.toISOString().slice(0, 16).replace("T", " "),
+		image: {
+			url: storagePublicUrl(GALLERY_BUCKET, c.image.path),
+			alt: c.image.altEn,
+		},
 	}));
 
 	return (
@@ -70,6 +92,18 @@ export default async function AdminGalleryPage() {
 					</CardHeader>
 					<CardContent>
 						<GalleryUploadForm />
+					</CardContent>
+				</Card>
+
+				<Card>
+					<CardHeader>
+						<CardTitle>Comment moderation ({pending.length})</CardTitle>
+						<span className="ml-auto text-xs text-muted">
+							anonymous comments are pre-moderated (issue #52)
+						</span>
+					</CardHeader>
+					<CardContent>
+						<GalleryCommentModeration items={pending} />
 					</CardContent>
 				</Card>
 
