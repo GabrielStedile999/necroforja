@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { authenticate, type LoginState } from "@/app/login/actions";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 
 export function LoginForm() {
   const t = useTranslations("Login");
@@ -27,12 +28,14 @@ export function LoginForm() {
       </div>
       <div>
         <Label htmlFor="password">{t("password")}</Label>
-        <Input
+        {/* issue #54 — toggle de visibilidade (olhinho) */}
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="current-password"
           required
+          showLabel={t("showPassword")}
+          hideLabel={t("hidePassword")}
         />
       </div>
 

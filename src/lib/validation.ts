@@ -15,6 +15,22 @@ export const createPlayerSchema = z.object({
   house: z.string().min(2).max(60),
 });
 
+/**
+ * Admin edits a player account (issue #57) — name, login e-mail and,
+ * opcionalmente, uma senha nova: vazia mantém a atual; preenchida segue a
+ * mesma regra do create (mínimo 8).
+ */
+export const updatePlayerSchema = z.object({
+  userId: z.string().uuid("Invalid user id."),
+  displayName: z.string().min(2, "Name too short.").max(60),
+  email: z.string().email("Invalid e-mail."),
+  password: z
+    .string()
+    .transform((v) => v.trim())
+    .pipe(z.union([z.literal(""), z.string().min(8, "Minimum 8 characters.")]))
+    .transform((v) => (v === "" ? undefined : v)),
+});
+
 export const fighterCategoryEnum = z.enum([
   "leader",
   "champion",
@@ -307,6 +323,7 @@ export type GalleryUpdateInput = z.infer<typeof galleryUpdateSchema>;
 
 export type AssignSympathiserInput = z.infer<typeof assignSympathiserSchema>;
 export type CreatePlayerInput = z.infer<typeof createPlayerSchema>;
+export type UpdatePlayerInput = z.infer<typeof updatePlayerSchema>;
 export type FighterInput = z.infer<typeof fighterSchema>;
 export type AddEquipmentInput = z.infer<typeof addEquipmentSchema>;
 export type RemoveEquipmentInput = z.infer<typeof removeEquipmentSchema>;

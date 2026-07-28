@@ -203,6 +203,8 @@
 		"subtitle": "As contas são criadas pelo Árbitro. Entre com suas credenciais.",
 		"email": "E-mail",
 		"password": "Senha",
+		"showPassword": "Mostrar senha",
+		"hidePassword": "Ocultar senha",
 		"signIn": "Entrar",
 		"signingIn": "Entrando...",
 		"backToDashboard": "← Voltar ao dashboard público",

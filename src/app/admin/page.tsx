@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CreatePlayerForm } from "@/components/admin/CreatePlayerForm";
+import { EditPlayerForm } from "@/components/admin/EditPlayerForm";
 import { listPlayers } from "@/lib/db/queries";
 import { togglePlayerActive } from "./actions";
 import { ShieldAlert, FileDown } from "lucide-react";
@@ -67,48 +68,62 @@ export default async function AdminPage() {
             ) : (
               <ul className="divide-y divide-rivet/50">
                 {players.map((p) => (
-                  <li
-                    key={p.id}
-                    className="flex items-center justify-between gap-3 px-5 py-3"
-                  >
-                    <div>
-                      <div className="font-display text-base font-semibold uppercase text-ink">
-                        {p.gangs[0]?.name ?? "— no gang —"}
+                  <li key={p.id} className="px-5 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="font-display text-base font-semibold uppercase text-ink">
+                          {p.gangs[0]?.name ?? "— no gang —"}
+                        </div>
+                        <div className="text-xs text-muted">
+                          {p.displayName} · {p.email}
+                          {p.gangs[0] ? ` · ${p.gangs[0].house}` : ""}
+                        </div>
                       </div>
-                      <div className="text-xs text-muted">
-                        {p.displayName} · {p.email}
-                        {p.gangs[0] ? ` · ${p.gangs[0].house}` : ""}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge variant={p.isActive ? "toxic" : "muted"}>
-                        {p.isActive ? "active" : "inactive"}
-                      </Badge>
-                      {p.gangs[0] && (
-                        <a
-                          href={`/admin/gangs/${p.gangs[0].id}/export`}
-                          target="_blank"
-                          rel="noreferrer"
-                          title="Export gang sheet as PDF"
-                        >
-                          <Button variant="ghost" type="button" className="gap-1 text-xs">
-                            <FileDown className="h-4 w-4" aria-hidden />
-                            PDF
+                      <div className="flex items-center gap-3">
+                        <Badge variant={p.isActive ? "toxic" : "muted"}>
+                          {p.isActive ? "active" : "inactive"}
+                        </Badge>
+                        {p.gangs[0] && (
+                          <a
+                            href={`/admin/gangs/${p.gangs[0].id}/export`}
+                            target="_blank"
+                            rel="noreferrer"
+                            title="Export gang sheet as PDF"
+                          >
+                            <Button variant="ghost" type="button" className="gap-1 text-xs">
+                              <FileDown className="h-4 w-4" aria-hidden />
+                              PDF
+                            </Button>
+                          </a>
+                        )}
+                        <form action={togglePlayerActive}>
+                          <input type="hidden" name="userId" value={p.id} />
+                          <input
+                            type="hidden"
+                            name="isActive"
+                            value={String(p.isActive)}
+                          />
+                          <Button variant="outline" type="submit">
+                            {p.isActive ? "Deactivate" : "Activate"}
                           </Button>
-                        </a>
-                      )}
-                      <form action={togglePlayerActive}>
-                        <input type="hidden" name="userId" value={p.id} />
-                        <input
-                          type="hidden"
-                          name="isActive"
-                          value={String(p.isActive)}
-                        />
-                        <Button variant="outline" type="submit">
-                          {p.isActive ? "Deactivate" : "Activate"}
-                        </Button>
-                      </form>
+                        </form>
+                      </div>
                     </div>
+                    {/* issue #57 — edição da conta (nome, login, senha) */}
+                    <details className="mt-2">
+                      <summary className="cursor-pointer py-1 font-mono text-xs uppercase tracking-wider text-muted transition-colors hover:text-hazard">
+                        Edit account
+                      </summary>
+                      <div className="mt-3 border-t border-rivet/50 pt-4">
+                        <EditPlayerForm
+                          player={{
+                            id: p.id,
+                            displayName: p.displayName,
+                            email: p.email,
+                          }}
+                        />
+                      </div>
+                    </details>
                   </li>
                 ))}
               </ul>

@@ -203,6 +203,8 @@
 		"subtitle": "Accounts are created by the Arbitrator. Sign in with your credentials.",
 		"email": "E-mail",
 		"password": "Password",
+		"showPassword": "Show password",
+		"hidePassword": "Hide password",
 		"signIn": "Sign in",
 		"signingIn": "Signing in...",
 		"backToDashboard": "← Back to public dashboard",
