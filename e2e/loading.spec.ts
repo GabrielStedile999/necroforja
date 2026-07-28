@@ -65,7 +65,10 @@ test("route navigation shows the global progress bar", async ({ page }) => {
 
 	await page.getByRole("link", { name: /lore/i }).first().click();
 
-	await expect(page.locator("#nprogress")).toBeVisible();
+	// Asserta na .bar (position:fixed, com caixa própria) — o container
+	// #nprogress em si não tem dimensões, e o Playwright trata elemento sem
+	// bounding box como "hidden" mesmo com filhos visíveis (visto no CI).
+	await expect(page.locator("#nprogress .bar")).toBeVisible();
 
 	// A navegação conclui e a barra é removida do DOM.
 	await expect(page.locator("#nprogress")).toHaveCount(0, { timeout: 15_000 });
