@@ -123,7 +123,7 @@ export function ContactForm() {
 			)}
 
 			<div className="flex flex-wrap items-center gap-4">
-				<Button type="submit" disabled={pending} className="px-8">
+				<Button type="submit" pending={pending} className="px-8">
 					{pending ? CONTACT_FORM.submitting : CONTACT_FORM.submit}
 				</Button>
 				<p className="m-0 max-w-[420px] text-[12px] leading-[1.6] text-[rgba(245,245,250,.45)]">

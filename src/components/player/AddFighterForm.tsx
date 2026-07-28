@@ -73,7 +73,7 @@ export function AddFighterForm() {
       )}
 
       <div>
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" pending={pending}>
           {pending ? "Recruiting..." : "Recruit fighter"}
         </Button>
       </div>

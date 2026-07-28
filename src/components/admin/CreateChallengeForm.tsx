@@ -80,7 +80,7 @@ export function CreateChallengeForm({
       )}
 
       <div>
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" pending={pending}>
           {pending ? "Registering..." : "Register challenge"}
         </Button>
       </div>

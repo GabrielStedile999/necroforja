@@ -41,7 +41,7 @@ export function StashCreditsForm({
           required
         />
       </div>
-      <Button type="submit" disabled={pending} variant="outline">
+      <Button type="submit" pending={pending} variant="outline">
         {pending ? "Saving..." : "Save"}
       </Button>
 

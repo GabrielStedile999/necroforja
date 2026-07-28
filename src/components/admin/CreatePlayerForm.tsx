@@ -62,7 +62,7 @@ export function CreatePlayerForm() {
       )}
 
       <div>
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" pending={pending}>
           {pending ? "Creating..." : "Create account + gang"}
         </Button>
       </div>

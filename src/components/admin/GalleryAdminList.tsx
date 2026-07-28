@@ -109,7 +109,7 @@ function EditRow({ item }: { item: GalleryAdminItem }) {
 				)}
 
 				<div className="flex items-center gap-2 sm:col-span-2">
-					<Button type="submit" variant="outline" disabled={pending}>
+					<Button type="submit" variant="outline" pending={pending}>
 						{pending ? "Saving…" : "Save"}
 					</Button>
 					<Button

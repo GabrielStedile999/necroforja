@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import type { Locale } from "@/i18n/config";
 import { splitByMatch } from "@/lib/search/highlight";
+import { Spinner } from "@/components/ui/spinner";
 import type { SearchResponse, SearchResultItem } from "@/app/api/search/route";
 
 export type SiteSearchHandle = { open: () => void };
@@ -263,7 +264,9 @@ export const SiteSearch = forwardRef<SiteSearchHandle>(function SiteSearch(
 					)}
 
 					{trimmedQuery.length >= 2 && loading && displayResults.length === 0 && (
-						<p className="px-4 py-6 text-center font-mono text-[12px] tracking-[1px] text-muted">
+						<p className="flex items-center justify-center gap-2 px-4 py-6 text-center font-mono text-[12px] tracking-[1px] text-muted">
+							{/* issue #60 — spinner decorativo; o texto "searching…" já anuncia. */}
+							<Spinner size="sm" className="shrink-0" />
 							{t("searching")}
 						</p>
 					)}

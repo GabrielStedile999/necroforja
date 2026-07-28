@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
 import type { Locale } from "@/i18n/config";
 import { formatRatingAvg } from "@/lib/gallery";
+import { Spinner } from "@/components/ui/spinner";
 import type { GalleryRatingResponse } from "@/app/api/gallery/[id]/rating/route";
 
 const STRINGS: Record<
@@ -15,6 +16,7 @@ const STRINGS: Record<
 		noVotes: string;
 		yourVote: string;
 		error: string;
+		sendingVote: string;
 	}
 > = {
 	en: {
@@ -24,6 +26,7 @@ const STRINGS: Record<
 		noVotes: "NO VOTES YET",
 		yourVote: "YOUR VOTE: {n}★",
 		error: "Could not save your vote. Try again in a moment.",
+		sendingVote: "Sending your vote…",
 	},
 	"pt-BR": {
 		group: "Avalie esta foto de 1 a 5 estrelas",
@@ -32,6 +35,7 @@ const STRINGS: Record<
 		noVotes: "SEM VOTOS AINDA",
 		yourVote: "SEU VOTO: {n}★",
 		error: "Não foi possível salvar seu voto. Tente de novo em instantes.",
+		sendingVote: "Enviando seu voto…",
 	},
 };
 
@@ -150,6 +154,10 @@ export default function GalleryRating({
 					</button>
 				))}
 			</div>
+			{/* issue #60 — feedback visual do voto em trânsito. O delay
+			    anti-flicker do Spinner evita piscar no caminho feliz (o update
+			    otimista costuma resolver em bem menos de ~180ms). */}
+			{pending && <Spinner size="sm" label={s.sendingVote} />}
 			<span
 				role="img"
 				aria-label={

@@ -45,7 +45,7 @@ export function LoginForm() {
         </p>
       )}
 
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" pending={pending}>
         {pending ? t("signingIn") : t("signIn")}
       </Button>
     </form>

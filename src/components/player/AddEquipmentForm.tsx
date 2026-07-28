@@ -77,7 +77,7 @@ export function AddEquipmentForm({ fighterId }: { fighterId: string }) {
       )}
 
       <div>
-        <Button type="submit" disabled={pending} variant="outline">
+        <Button type="submit" pending={pending} variant="outline">
           {pending ? "Adding..." : "Add equipment"}
         </Button>
       </div>

@@ -4,6 +4,7 @@ import { useChat } from "@ai-sdk/react";
 import { Bot, BookOpen, Send, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 
 /** Shape of each entry in the `sources` annotation appended by the route. */
 interface SourceEntry {
@@ -120,8 +121,10 @@ export function RulesChat() {
           })
         )}
         {isLoading && (
-          <div className="flex gap-3 text-sm text-muted">
+          <div className="flex items-center gap-3 text-sm text-muted">
             <Bot className="h-5 w-5 text-hazard" aria-hidden />
+            {/* issue #60 — spinner decorativo; o texto ao lado já anuncia. */}
+            <Spinner size="sm" className="shrink-0" />
             <span className="animate-pulse">consulting the rules...</span>
           </div>
         )}
