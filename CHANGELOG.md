@@ -7,6 +7,33 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Added
+- **Edição de conta de player no painel admin** (issue #57): cada linha da
+  lista de players ganhou um "Edit account" (`<details>` nativo) com o novo
+  `EditPlayerForm` — nome de exibição, e-mail de login e senha nova
+  opcional (vazia mantém a atual) —, action `updatePlayer` com
+  `requireAdmin` + zod (`updatePlayerSchema`), hash argon2 só quando a
+  senha muda, unicidade de e-mail excluindo o próprio player e recusa a
+  contas não-player (a conta admin não é editável pela UI). Permite migrar
+  logins antigos `@campaign.local` pelo painel, sem SQL manual. Sessões JWT
+  já emitidas não são derrubadas (expiram em até 7 dias).
+- **Mostrar/ocultar senha no login** (issue #54): novo componente
+  reutilizável `PasswordInput` (`ui/password-input.tsx`) com ícones
+  `Eye`/`EyeOff` do lucide-react, usado no formulário de `/login`;
+  acessível (`aria-label` dinâmico traduzido en/pt-BR,
+  `aria-pressed` refletindo o estado, alvo de clique de 40px) e
+  puramente visual — `autoComplete`/`name` do campo intocados. Fora de
+  escopo (por design): o campo "Initial password" do painel admin, que já
+  é texto visível.
+
+### Changed
+- **Domínio-padrão de login `@player.necroforja`** (issue #55): o seed
+  gera jogadores como `<nome>@player.necroforja` (antes
+  `@campaign.local`) e a documentação esclarece que o "email" é só
+  identificador de login (nunca envia e-mail) com a parte antes do `@`
+  livre, escolhida pelo admin caso a caso. Contas existentes em produção
+  não mudam.
+
+### Added
 - **Área de usuário logado no topo** (issue #40): novo componente único
   `UserMenu` (avatar por iniciais com cor determinística derivada do nome
   — paleta das seis Grandes Casas, helpers puros em `lib/avatar.ts` —,

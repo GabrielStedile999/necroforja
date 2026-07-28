@@ -278,7 +278,10 @@ tests/                       # scoring, campaign-rules, chunk, fase1 (validation
   `OPENAI_API_KEY`, `EMBEDDING_MODEL` (= `text-embedding-3-small`), and the
   seed credentials `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `PLAYER_PASSWORD`.
 - Seed credentials: defined in `.env` (with generic fallbacks in `seed.ts`);
-  players are `<name>@campaign.local`. Change after the first login.
+  seeded players are `<name>@player.necroforja` (issue #55). The "email" is
+  a login identifier only — never used to send mail; the part before the `@`
+  is free-form and chosen by the admin case by case when creating accounts
+  in the panel (no enforced pattern). Change passwords after the first login.
 
 ## 10. Current state
 

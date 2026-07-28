@@ -83,7 +83,7 @@ async function seed() {
     const [user] = await db
       .insert(schema.users)
       .values({
-        email: `${g.ownerName.toLowerCase()}@campaign.local`,
+        email: `${g.ownerName.toLowerCase()}@player.necroforja`,
         role: "player",
         displayName: g.ownerName,
         passwordHash: await hashPassword(PLAYER_PASSWORD),
@@ -158,7 +158,7 @@ async function seed() {
 
   console.log("\n✔ Seed complete. Access credentials:");
   console.log(`   Admin:   ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
-  console.log(`   Players: <name>@campaign.local / ${PLAYER_PASSWORD}`);
+  console.log(`   Players: <name>@player.necroforja / ${PLAYER_PASSWORD}`);
   console.log("   (set ADMIN_EMAIL/ADMIN_PASSWORD/PLAYER_PASSWORD in .env)");
   process.exit(0);
 }
