@@ -87,7 +87,7 @@ export function AddStashItemForm() {
       )}
 
       <div>
-        <Button type="submit" disabled={pending} variant="outline">
+        <Button type="submit" pending={pending} variant="outline">
           {pending ? "Adding..." : "Add to Stash"}
         </Button>
       </div>

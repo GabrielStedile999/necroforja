@@ -316,3 +316,49 @@ body {
 .animate-rise-2    { animation: ncf-rise 11s  linear .8s  infinite; }
 .animate-rise-3    { animation: ncf-rise 8s   linear 1.6s infinite; }
 .animate-rise-4    { animation: ncf-rise 12s  linear .4s  infinite; }
+
+/* ===================================================================
+   LOADING FEEDBACK (issue #60) — spinner HUD + barra de navegação
+   =================================================================== */
+
+/* Anti-flicker: o indicador só aparece se a espera passar de ~180ms —
+   ações rápidas terminam antes de ele piscar na tela. */
+@keyframes ncf-appear {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.ncf-spinner-delay { opacity: 0; animation: ncf-appear .15s ease-out .18s forwards; }
+
+/* Giro do anel — reusa o keyframe ncf-sweep já existente, mais rápido. */
+.ncf-spinner      { animation: ncf-sweep 1s linear infinite; }
+.ncf-spinner-glow { filter: drop-shadow(0 0 6px rgba(255,45,111,.55)); }
+
+@media (prefers-reduced-motion: reduce) {
+  /* Sem giro infinito: sobra o anel estático (spec da issue). O fade-in
+     único de .ncf-spinner-delay é mantido — não é movimento contínuo. */
+  .ncf-spinner { animation: none; }
+}
+
+/* ── Barra de progresso de navegação (nextjs-toploader/nprogress) ──
+   Restilizada por cima do estilo inline da lib: gradiente magenta→cyan
+   com glow e "notches" escuros (barra segmentada, estética HUD da
+   referência da issue). Mesmo truque de delay anti-flicker do spinner —
+   o elemento #nprogress é recriado a cada navegação, então a animação
+   de aparição reinicia sozinha. */
+#nprogress { opacity: 0; animation: ncf-appear .15s ease-out .18s forwards; }
+#nprogress .bar {
+  background: linear-gradient(90deg, #ff2d6f 0%, #ff2d6f 55%, #00e5ff 100%) !important;
+  box-shadow: 0 0 12px rgba(255,45,111,.75), 0 0 4px rgba(0,229,255,.6) !important;
+}
+#nprogress .bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(90deg, transparent 0 12px, rgba(11,10,13,.6) 12px 15px);
+}
+#nprogress .peg {
+  box-shadow: 0 0 10px #00e5ff, 0 0 5px #00e5ff !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  #nprogress .bar { transition: none !important; }
+}

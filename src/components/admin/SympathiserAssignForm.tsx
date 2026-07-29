@@ -43,7 +43,7 @@ export function SympathiserAssignForm({
       <Button
         type="submit"
         variant="outline"
-        disabled={pending}
+        pending={pending}
         className="h-8 shrink-0 px-2 text-xs"
       >
         {pending ? "..." : "Assign"}

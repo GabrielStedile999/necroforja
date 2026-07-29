@@ -45,7 +45,7 @@ export function UploadImageForm() {
 			)}
 
 			<div>
-				<Button type="submit" variant="outline" disabled={pending}>
+				<Button type="submit" variant="outline" pending={pending}>
 					{pending ? "Uploading..." : "Upload to Storage"}
 				</Button>
 			</div>

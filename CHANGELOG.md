@@ -7,6 +7,24 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Added
+- **Loading estilizado (cyberpunk) para interações do usuário** (issue #60):
+  novo `Spinner` compartilhado em `ui/spinner.tsx` — anel de ticks cyan com
+  arco magenta varrendo por cima e glow, estética HUD das referências da
+  issue — em dois tamanhos (`sm` inline em botões, `md` para painéis), com
+  anti-flicker (só aparece se a espera passar de ~180ms), fallback estático
+  sob `prefers-reduced-motion` e contrato de a11y (`role="status"` +
+  `sr-only` quando rotulado; decorativo quando o texto visível ao lado já
+  anuncia). Barra de progresso global de navegação entre rotas
+  (`nextjs-toploader`, rota (b) do plano da issue) renderizada uma vez no
+  layout raiz e restilizada via CSS: gradiente magenta→cyan segmentado com
+  glow, `fixed` no topo (zero CLS) e o mesmo delay anti-flicker. O `Button`
+  ganhou a prop `pending` (spinner inline + `aria-busy`, mantendo o
+  `disabled` anti-duplo-submit) e todas as interações mapeadas na issue
+  foram conectadas: ContactForm, LoginForm, GalleryRating (com anúncio
+  sr-only do voto em trânsito), GalleryComments, GalleryUploadForm (spinner
+  por arquivo), SiteSearch, RulesChat, os 9 forms do admin e os 7 do
+  player. Testes de convenção (vitest) + e2e Playwright cobrindo o ciclo do
+  spinner num form e a barra numa navegação.
 - **Autor da pintura, rating 1–5 e comentários anônimos na galeria**
   (issue #52): nova coluna `author_name` em `gallery_image` (campo no
   upload e na edição do admin), exibida em destaque —

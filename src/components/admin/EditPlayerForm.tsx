@@ -69,7 +69,7 @@ export function EditPlayerForm({
       )}
 
       <div>
-        <Button variant="outline" type="submit" disabled={pending}>
+        <Button variant="outline" type="submit" pending={pending}>
           {pending ? "Saving..." : "Save changes"}
         </Button>
       </div>

@@ -160,7 +160,7 @@ export function PostForm({ post }: { post?: PostFormValues }) {
 			)}
 
 			<div>
-				<Button type="submit" disabled={pending}>
+				<Button type="submit" pending={pending}>
 					{pending ? "Saving..." : post ? "Save changes" : "Create post"}
 				</Button>
 			</div>

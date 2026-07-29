@@ -7,6 +7,7 @@ import {
 } from "@/app/admin/gallery/actions";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import {
 	GALLERY_CATEGORIES,
 	GALLERY_IMAGE_MAX_BYTES,
@@ -219,7 +220,14 @@ export function GalleryUploadForm() {
 											: "text-muted"
 								}
 							>
-								{it.state === "done" ? "✓" : it.state === "error" ? "✕" : "…"}
+								{/* issue #60 — spinner por arquivo em trânsito (no lugar do "…") */}
+								{it.state === "done" ? (
+									"✓"
+								) : it.state === "error" ? (
+									"✕"
+								) : (
+									<Spinner size="sm" />
+								)}
 							</span>
 							<span className="truncate">{it.name}</span>
 							{it.detail && <span className="text-xs text-blood">{it.detail}</span>}
@@ -229,7 +237,7 @@ export function GalleryUploadForm() {
 			)}
 
 			<div>
-				<Button type="submit" variant="outline" disabled={pending}>
+				<Button type="submit" variant="outline" pending={pending}>
 					{pending ? "Uploading…" : "Upload to gallery"}
 				</Button>
 			</div>

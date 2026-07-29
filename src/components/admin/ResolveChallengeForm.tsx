@@ -31,7 +31,7 @@ export function ResolveChallengeForm({
         <option value="declined">Declined</option>
         <option value="draw">Draw</option>
       </Select>
-      <Button type="submit" variant="outline" disabled={pending} className="h-9">
+      <Button type="submit" variant="outline" pending={pending} className="h-9">
         {pending ? "..." : "Resolve"}
       </Button>
       {state.error && <span className="text-xs text-blood">{state.error}</span>}

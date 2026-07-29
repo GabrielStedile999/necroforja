@@ -3,6 +3,7 @@ import { Chakra_Petch, Share_Tech_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
+import NextTopLoader from "nextjs-toploader";
 import { PwaRegister } from "@/components/PwaRegister";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { Analytics } from "@vercel/analytics/next";
@@ -135,6 +136,18 @@ export default async function RootLayout({
 		<html lang={locale}>
 			<body className={`${chakra.variable} ${shareMono.variable} antialiased`}>
 				<NextIntlClientProvider locale={locale} messages={messages}>
+					{/* Barra de progresso de navegação (issue #60) — fixed no topo,
+					    nunca empurra conteúdo (sem CLS). Gradiente/glow/segmentos e o
+					    delay anti-flicker vêm do override em globals.css; o spinner
+					    nativo da lib fica desligado (o do site é o ui/Spinner). */}
+					<NextTopLoader
+						color="#ff2d6f"
+						height={3}
+						showSpinner={false}
+						shadow={false}
+						easing="ease"
+						speed={250}
+					/>
 					{/* PWA: offline banner renders at top of viewport when network is lost */}
 					<OfflineBanner />
 					{children}

@@ -50,7 +50,7 @@ export function AwardTriumphForm({ gangs }: { gangs: GangOption[] }) {
       )}
 
       <div>
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" pending={pending}>
           {pending ? "Awarding…" : "Award Triumph"}
         </Button>
       </div>

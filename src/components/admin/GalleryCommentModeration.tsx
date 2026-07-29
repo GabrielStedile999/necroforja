@@ -7,6 +7,7 @@ import {
 	type GalleryActionState,
 } from "@/app/admin/gallery/actions";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 
 export type PendingCommentItem = {
 	id: string;
@@ -73,6 +74,10 @@ function ModerationRow({ item }: { item: PendingCommentItem }) {
 					>
 						Delete
 					</Button>
+					{/* issue #60 — um único spinner para a fileira (os três botões
+					    compartilham o mesmo pending; spinner dentro de cada um
+					    triplicaria o indicador). */}
+					{pending && <Spinner size="sm" label="Processing…" />}
 				</form>
 			</div>
 		</div>

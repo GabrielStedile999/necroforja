@@ -48,7 +48,7 @@ export function EquipFromStashForm({
             ))}
           </Select>
         </div>
-        <Button type="submit" disabled={pending} variant="outline">
+        <Button type="submit" pending={pending} variant="outline">
           {pending ? "Equipping..." : "Equip"}
         </Button>
       </div>

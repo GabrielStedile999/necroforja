@@ -83,7 +83,7 @@ export function UpdateFighterStatusForm({
           </div>
         )}
 
-        <Button type="submit" disabled={pending} variant="outline">
+        <Button type="submit" pending={pending} variant="outline">
           {pending ? "Saving..." : "Update"}
         </Button>
       </div>

@@ -7,6 +7,7 @@ import type {
 	GalleryCommentItem,
 	GalleryCommentsResponse,
 } from "@/app/api/gallery/[id]/comments/route";
+import { Spinner } from "@/components/ui/spinner";
 
 const STRINGS: Record<
 	Locale,
@@ -241,8 +242,11 @@ export default function GalleryComments({ imageId }: { imageId: string }) {
 					<button
 						type="submit"
 						disabled={sending}
-						className="cursor-pointer appearance-none border border-hazard/70 bg-transparent px-4 py-1.5 font-mono text-[12px] tracking-[2px] text-hazard hover:bg-hazard/10 disabled:cursor-wait disabled:opacity-60"
+						aria-busy={sending || undefined}
+						className="inline-flex cursor-pointer appearance-none items-center gap-2 border border-hazard/70 bg-transparent px-4 py-1.5 font-mono text-[12px] tracking-[2px] text-hazard hover:bg-hazard/10 disabled:cursor-wait disabled:opacity-60"
 					>
+						{/* issue #60 — spinner decorativo; o texto "SENDING…" já anuncia. */}
+						{sending && <Spinner size="sm" className="shrink-0" />}
 						{sending ? s.sending : s.send}
 					</button>
 					{feedback === "sent" && (
