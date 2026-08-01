@@ -13,7 +13,7 @@ const EQUIPMENT_CATEGORIES = [
   "upgrade",
 ] as const;
 
-export function AddStashItemForm() {
+export function AddStashItemForm({ gangId }: { gangId: string }) {
   const [state, formAction, pending] = useActionState<PlayerState, FormData>(
     addStashItem,
     {},
@@ -26,6 +26,7 @@ export function AddStashItemForm() {
 
   return (
     <form ref={formRef} action={formAction} className="flex flex-col gap-3">
+      <input type="hidden" name="gangId" value={gangId} />
       <div className="grid gap-3 sm:grid-cols-4">
         <div className="sm:col-span-2">
           <Label htmlFor="stash-item-name">Name</Label>

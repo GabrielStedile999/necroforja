@@ -6,6 +6,14 @@ import type { CampaignPhase } from "@/types";
 
 export const TOTAL_CYCLES = 7;
 
+/**
+ * "Equipping a Fighter" (Core Rulebook 2023, p.83): a fighter on foot can
+ * be equipped with a maximum of three weapons. (Asterisked weapons counting
+ * double and the Mounted two-weapon cap are not modelled — equipment is
+ * free text today; revisit with the equipment catalogue, issue #67.)
+ */
+export const MAX_WEAPONS_PER_FIGHTER = 3;
+
 export type ChallengeOutcome =
   | "challenger_win"
   | "challenged_win"

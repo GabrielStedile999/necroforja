@@ -66,10 +66,12 @@ export function toDomainGang(g: GangWithRelations): Gang {
     baseCost: f.baseCost,
     status: f.status as FighterStatus,
     xp: f.xp,
+    avatarPath: f.avatarPath ?? null,
+    // null preserved: "never set" renders as an empty field (issue #63)
     profile: {
-      m: f.m ?? 0, ws: f.ws ?? 0, bs: f.bs ?? 0, s: f.s ?? 0,
-      t: f.t ?? 0, w: f.w ?? 0, i: f.i ?? 0, a: f.a ?? 0,
-      ld: f.ld ?? 0, cl: f.cl ?? 0, wil: f.wil ?? 0, int: f.int ?? 0,
+      m: f.m, ws: f.ws, bs: f.bs, s: f.s,
+      t: f.t, w: f.w, i: f.i, a: f.a,
+      ld: f.ld, cl: f.cl, wil: f.wil, int: f.int,
     },
     equipment: f.equipment.map((fe) => ({
       id: fe.equipment.id,
@@ -113,6 +115,22 @@ export async function getGangById(
 ): Promise<Gang | null> {
   const row = await findGangWithRelations(eq(schema.gangs.id, gangId), dbc);
   return row ? toDomainGang(row) : null;
+}
+
+/**
+ * Number of weapons currently equipped on a fighter (issue #63 follow-up —
+ * enforces the three-weapon cap of "Equipping a Fighter", Core Rulebook
+ * 2023, p.83).
+ */
+export async function countFighterWeapons(
+  fighterId: string,
+  dbc: DbOrTx = db,
+): Promise<number> {
+  const rows = await dbc.query.fighterEquipment.findMany({
+    where: eq(schema.fighterEquipment.fighterId, fighterId),
+    with: { equipment: { columns: { category: true } } },
+  });
+  return rows.filter((r) => r.equipment?.category === "weapon").length;
 }
 
 /** Checks whether a fighter belongs to a gang (authorisation in mutations). */

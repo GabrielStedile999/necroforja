@@ -154,6 +154,12 @@ export const fighters = pgTable("fighter", {
   xp: integer("xp").notNull().default(0),
   status: fighterStatus("status").notNull().default("active"),
   capturedByGangId: uuid("captured_by_gang_id"),
+  /**
+   * Object path of the fighter's portrait inside the public gallery bucket
+   * ("fighter/<id>-<rand>.webp", issue #63). Null = no portrait; the UI
+   * falls back to the site crest. See scripts/fighter-avatar.sql.
+   */
+  avatarPath: text("avatar_path"),
 });
 
 export const fighterEquipment = pgTable(

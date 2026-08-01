@@ -13,7 +13,13 @@ const EQUIPMENT_CATEGORIES = [
   "upgrade",
 ] as const;
 
-export function AddEquipmentForm({ fighterId }: { fighterId: string }) {
+export function AddEquipmentForm({
+  fighterId,
+  gangId,
+}: {
+  fighterId: string;
+  gangId: string;
+}) {
   const [state, formAction, pending] = useActionState<PlayerState, FormData>(
     addEquipment,
     {},
@@ -27,6 +33,7 @@ export function AddEquipmentForm({ fighterId }: { fighterId: string }) {
   return (
     <form ref={formRef} action={formAction} className="flex flex-col gap-3">
       <input type="hidden" name="fighterId" value={fighterId} />
+      <input type="hidden" name="gangId" value={gangId} />
 
       <div className="grid gap-3 sm:grid-cols-3">
         <div>

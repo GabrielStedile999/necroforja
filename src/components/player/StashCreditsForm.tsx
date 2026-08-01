@@ -7,8 +7,10 @@ import { Input, Label } from "@/components/ui/input";
 
 export function StashCreditsForm({
   currentCredits,
+  gangId,
 }: {
   currentCredits: number;
+  gangId: string;
 }) {
   const [state, formAction, pending] = useActionState<PlayerState, FormData>(
     setStashCredits,
@@ -30,6 +32,7 @@ export function StashCreditsForm({
 
   return (
     <form ref={formRef} action={formAction} className="flex items-end gap-3">
+      <input type="hidden" name="gangId" value={gangId} />
       <div className="flex-1">
         <Label htmlFor="stash-credits">Credits in Stash</Label>
         <Input

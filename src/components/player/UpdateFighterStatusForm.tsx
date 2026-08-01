@@ -23,10 +23,12 @@ export function UpdateFighterStatusForm({
   fighterId,
   currentStatus,
   otherGangs,
+  gangId,
 }: {
   fighterId: string;
   currentStatus: FighterStatus;
   otherGangs: GangOption[];
+  gangId: string;
 }) {
   const [state, formAction, pending] = useActionState<PlayerState, FormData>(
     updateFighterStatus,
@@ -49,6 +51,7 @@ export function UpdateFighterStatusForm({
   return (
     <form action={formAction} className="flex flex-col gap-2">
       <input type="hidden" name="fighterId" value={fighterId} />
+      <input type="hidden" name="gangId" value={gangId} />
 
       <div className="flex flex-wrap items-end gap-2">
         <div>

@@ -58,25 +58,111 @@ export const equipmentCategoryEnum = z.enum([
   "upgrade",
 ]);
 
+/**
+ * Optional characteristic field (Fighter Card, Core Rulebook p.78).
+ * An empty form input means "not set" (issue #63): it is normalised to
+ * `undefined` instead of being coerced to 0, so an untouched field on the
+ * edit form leaves the stored value unchanged (drizzle skips undefined
+ * columns in `.set()`).
+ */
+const statField = (max: number) =>
+  z.preprocess(
+    (v) => (v === "" || v === null ? undefined : v),
+    z.coerce.number().int().min(0).max(max).optional(),
+  );
+
+/**
+ * Target-roll stat (WS/BS/I and the mental stats): a D6 roll, so the value
+ * is strictly 1–6. Empty means "not set"; no "-"/"+" characters accepted.
+ */
+const rollStatField = () =>
+  z.preprocess(
+    (v) => (v === "" || v === null ? undefined : v),
+    z.coerce
+      .number()
+      .int()
+      .min(1, "Roll stats range from 1 to 6.")
+      .max(6, "Roll stats range from 1 to 6.")
+      .optional(),
+  );
+
 /** Add/edit a fighter in the gang. */
 export const fighterSchema = z.object({
   name: z.string().min(1, "Please enter a name.").max(60),
   type: z.string().min(1).max(80),
   category: fighterCategoryEnum,
   baseCost: z.coerce.number().int().min(0).max(2000),
-  m: z.coerce.number().int().min(0).max(20).optional(),
-  ws: z.coerce.number().int().min(0).max(12).optional(),
-  bs: z.coerce.number().int().min(0).max(12).optional(),
-  s: z.coerce.number().int().min(0).max(20).optional(),
-  t: z.coerce.number().int().min(0).max(20).optional(),
-  w: z.coerce.number().int().min(0).max(20).optional(),
-  i: z.coerce.number().int().min(0).max(12).optional(),
-  a: z.coerce.number().int().min(0).max(20).optional(),
-  ld: z.coerce.number().int().min(0).max(12).optional(),
-  cl: z.coerce.number().int().min(0).max(12).optional(),
-  wil: z.coerce.number().int().min(0).max(12).optional(),
-  int: z.coerce.number().int().min(0).max(12).optional(),
+  m: statField(20),
+  ws: rollStatField(),
+  bs: rollStatField(),
+  s: statField(20),
+  t: statField(20),
+  w: statField(20),
+  i: rollStatField(),
+  a: statField(20),
+  ld: rollStatField(),
+  cl: rollStatField(),
+  wil: rollStatField(),
+  int: rollStatField(),
 });
+
+/** Full update of an existing fighter (issue #63) — same fields + target id. */
+export const updateFighterSchema = fighterSchema.extend({
+  fighterId: z.string().uuid("Invalid fighter ID."),
+});
+
+export type UpdateFighterInput = z.infer<typeof updateFighterSchema>;
+
+/* ---------------------- Fighter portrait (issue #63) ---------------------- */
+
+/**
+ * Portrait rules: a LIGHT identification image (face / upper body of the
+ * mini). Rationale for the bounds:
+ * - 2 MB max — it renders at ~48–96px; anything heavier is wasted transfer
+ *   at the table (the gallery keeps 10 MB for full photos).
+ * - JPEG/PNG/WebP only — no GIF/SVG (animation is noise at avatar size and
+ *   SVG is an XSS surface on user uploads).
+ * - Client additionally enforces 100–2048px per side before uploading:
+ *   below 100px the mini is unrecognisable, above 2048px the file is a
+ *   full photo, not an avatar (see FighterAvatarForm).
+ */
+export const FIGHTER_AVATAR_MAX_BYTES = 2 * 1024 * 1024; // 2 MB
+export const FIGHTER_AVATAR_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
+export const FIGHTER_AVATAR_MIN_DIMENSION = 100; // px, client-side check
+export const FIGHTER_AVATAR_MAX_DIMENSION = 2048; // px, client-side check
+
+/** Step 1 — ask for a signed upload URL for a fighter portrait. */
+export const fighterAvatarRequestSchema = z.object({
+  fighterId: z.string().uuid("Invalid fighter ID."),
+  mime: z.enum(FIGHTER_AVATAR_MIME_TYPES),
+  bytes: z
+    .number()
+    .int()
+    .positive()
+    .max(FIGHTER_AVATAR_MAX_BYTES, "File too large (max 2 MB)."),
+});
+
+/** Step 2 — after the direct upload, persist the path on the fighter row. */
+export const fighterAvatarConfirmSchema = z.object({
+  fighterId: z.string().uuid("Invalid fighter ID."),
+  path: z
+    .string()
+    .min(1)
+    .max(300)
+    .regex(
+      /^fighter\/[a-z0-9-]+\.(jpg|jpeg|png|webp)$/,
+      "Unexpected portrait path format.",
+    ),
+});
+
+export type FighterAvatarRequest = z.infer<typeof fighterAvatarRequestSchema>;
+export type FighterAvatarConfirmInput = z.infer<
+  typeof fighterAvatarConfirmSchema
+>;
 
 /** Add an equipment item to a fighter. */
 export const addEquipmentSchema = z.object({
