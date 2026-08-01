@@ -3,14 +3,19 @@
 import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db, schema } from "@/lib/db";
-import { requireUser } from "@/lib/auth/guards";
 import {
-  getGangByOwnerId,
+  resolveGangForWrite,
+  gangIdFromForm,
+} from "@/lib/auth/gang-access";
+import {
   fighterBelongsToGang,
   stashItemBelongsToGang,
+  countFighterWeapons,
 } from "@/lib/db/queries";
+import { MAX_WEAPONS_PER_FIGHTER } from "@/lib/campaign-rules";
 import {
   fighterSchema,
+  updateFighterSchema,
   addEquipmentSchema,
   removeEquipmentSchema,
   setStashCreditsSchema,
@@ -19,8 +24,20 @@ import {
   equipFromStashSchema,
   updateFighterStatusSchema,
   addFighterXpSchema,
+  fighterAvatarRequestSchema,
+  fighterAvatarConfirmSchema,
+  FIGHTER_AVATAR_MAX_BYTES,
 } from "@/lib/validation";
 import { recalcGangScores } from "@/lib/db/mutations";
+import {
+  GALLERY_BUCKET,
+  createSignedUploadUrl,
+  statPublicObject,
+  deleteFromBucket,
+} from "@/lib/storage";
+import { logger } from "@/lib/logger";
+import { rateLimit } from "@/lib/ai/rate-limit";
+import { randomUUID } from "node:crypto";
 
 export type PlayerState = { error?: string; success?: string };
 
@@ -29,9 +46,9 @@ export async function addFighter(
   _prev: PlayerState,
   formData: FormData,
 ): Promise<PlayerState> {
-  const user = await requireUser();
-  const gang = await getGangByOwnerId(user.id);
-  if (!gang) return { error: "You don't have a gang yet." };
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return { error: resolved.error };
+  const gang = resolved.gang;
 
   const parsed = fighterSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -55,14 +72,62 @@ export async function addFighter(
   });
 
   revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
   return { success: `${d.name} recruited.` };
+}
+
+/**
+ * Full edit of an existing fighter in the player's own gang (issue #63).
+ * XP, status and equipment are managed by their dedicated actions and are
+ * not touched here. Characteristic fields left empty on the form arrive as
+ * `undefined` and keep their stored value (drizzle skips undefined columns).
+ */
+export async function updateFighter(
+  _prev: PlayerState,
+  formData: FormData,
+): Promise<PlayerState> {
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return { error: resolved.error };
+  const gang = resolved.gang;
+
+  const parsed = updateFighterSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+  const { fighterId, ...d } = parsed.data;
+
+  if (!(await fighterBelongsToGang(fighterId, gang.id))) {
+    return { error: "Invalid fighter." };
+  }
+
+  // Atomic (issue #62 pattern): update + score recalc commit together
+  // (baseCost changes Rating/Wealth).
+  await db.transaction(async (tx) => {
+    await tx
+      .update(schema.fighters)
+      .set({
+        name: d.name,
+        type: d.type,
+        category: d.category,
+        baseCost: d.baseCost,
+        m: d.m, ws: d.ws, bs: d.bs, s: d.s, t: d.t, w: d.w,
+        i: d.i, a: d.a, ld: d.ld, cl: d.cl, wil: d.wil, int: d.int,
+      })
+      .where(eq(schema.fighters.id, fighterId));
+
+    await recalcGangScores(gang.id, tx);
+  });
+
+  revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
+  return { success: `${d.name} updated.` };
 }
 
 /** Removes a fighter (from the player's own gang only). */
 export async function removeFighter(formData: FormData) {
-  const user = await requireUser();
-  const gang = await getGangByOwnerId(user.id);
-  if (!gang) return;
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return;
+  const gang = resolved.gang;
 
   const fighterId = String(formData.get("fighterId"));
   if (!(await fighterBelongsToGang(fighterId, gang.id))) return;
@@ -73,6 +138,7 @@ export async function removeFighter(formData: FormData) {
     await recalcGangScores(gang.id, tx);
   });
   revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
 }
 
 /** Equips an item on a fighter belonging to the player's own gang. */
@@ -80,9 +146,9 @@ export async function addEquipment(
   _prev: PlayerState,
   formData: FormData,
 ): Promise<PlayerState> {
-  const user = await requireUser();
-  const gang = await getGangByOwnerId(user.id);
-  if (!gang) return { error: "You don't have a gang yet." };
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return { error: resolved.error };
+  const gang = resolved.gang;
 
   const parsed = addEquipmentSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -92,6 +158,16 @@ export async function addEquipment(
 
   if (!(await fighterBelongsToGang(d.fighterId, gang.id))) {
     return { error: "Invalid fighter." };
+  }
+
+  // Weapon cap — "Equipping a Fighter", Core Rulebook 2023, p.83.
+  if (
+    d.category === "weapon" &&
+    (await countFighterWeapons(d.fighterId)) >= MAX_WEAPONS_PER_FIGHTER
+  ) {
+    return {
+      error: `A fighter can carry a maximum of ${MAX_WEAPONS_PER_FIGHTER} weapons (Core Rulebook, p.83).`,
+    };
   }
 
   // Atomic (issue #62): a failure after the equipment insert can no longer
@@ -113,14 +189,15 @@ export async function addEquipment(
   });
 
   revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
   return { success: `${d.name} added.` };
 }
 
 /** Removes an equipped item from a fighter in the player's own gang. */
 export async function removeEquipment(formData: FormData) {
-  const user = await requireUser();
-  const gang = await getGangByOwnerId(user.id);
-  if (!gang) return;
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return;
+  const gang = resolved.gang;
 
   const parsed = removeEquipmentSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return;
@@ -150,6 +227,7 @@ export async function removeEquipment(formData: FormData) {
     await recalcGangScores(gang.id, tx);
   });
   revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
 }
 
 /* ------------------------------------------------------------------ */
@@ -161,9 +239,9 @@ export async function setStashCredits(
   _prev: PlayerState,
   formData: FormData,
 ): Promise<PlayerState> {
-  const user = await requireUser();
-  const gang = await getGangByOwnerId(user.id);
-  if (!gang) return { error: "You don't have a gang yet." };
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return { error: resolved.error };
+  const gang = resolved.gang;
 
   const parsed = setStashCreditsSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -180,6 +258,7 @@ export async function setStashCredits(
     await recalcGangScores(gang.id, tx);
   });
   revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
   return { success: "Stash credits updated." };
 }
 
@@ -188,9 +267,9 @@ export async function addStashItem(
   _prev: PlayerState,
   formData: FormData,
 ): Promise<PlayerState> {
-  const user = await requireUser();
-  const gang = await getGangByOwnerId(user.id);
-  if (!gang) return { error: "You don't have a gang yet." };
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return { error: resolved.error };
+  const gang = resolved.gang;
 
   const parsed = addStashItemSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -217,14 +296,15 @@ export async function addStashItem(
   });
 
   revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
   return { success: `${d.name} added to Stash.` };
 }
 
 /** Removes an item from the Stash (and the associated equipment). */
 export async function removeStashItem(formData: FormData) {
-  const user = await requireUser();
-  const gang = await getGangByOwnerId(user.id);
-  if (!gang) return;
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return;
+  const gang = resolved.gang;
 
   const parsed = removeStashItemSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return;
@@ -251,6 +331,7 @@ export async function removeStashItem(formData: FormData) {
     await recalcGangScores(gang.id, tx);
   });
   revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
 }
 
 /**
@@ -266,9 +347,9 @@ export async function equipFromStash(
   _prev: PlayerState,
   formData: FormData,
 ): Promise<PlayerState> {
-  const user = await requireUser();
-  const gang = await getGangByOwnerId(user.id);
-  if (!gang) return { error: "You don't have a gang yet." };
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return { error: resolved.error };
+  const gang = resolved.gang;
 
   const parsed = equipFromStashSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -289,6 +370,16 @@ export async function equipFromStash(
   });
   if (!stashRow || !stashRow.equipment) {
     return { error: "Item not found." };
+  }
+
+  // Weapon cap also applies when equipping FROM the Stash (CRB 2023, p.83).
+  if (
+    stashRow.equipment.category === "weapon" &&
+    (await countFighterWeapons(fighterId)) >= MAX_WEAPONS_PER_FIGHTER
+  ) {
+    return {
+      error: `A fighter can carry a maximum of ${MAX_WEAPONS_PER_FIGHTER} weapons (Core Rulebook, p.83).`,
+    };
   }
 
   const itemName = stashRow.equipment.name;
@@ -336,6 +427,7 @@ export async function equipFromStash(
   });
 
   revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
   return { success: `${itemName} equipped to fighter.` };
 }
 
@@ -352,9 +444,9 @@ export async function updateFighterStatus(
   _prev: PlayerState,
   formData: FormData,
 ): Promise<PlayerState> {
-  const user = await requireUser();
-  const gang = await getGangByOwnerId(user.id);
-  if (!gang) return { error: "You don't have a gang yet." };
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return { error: resolved.error };
+  const gang = resolved.gang;
 
   const parsed = updateFighterStatusSchema.safeParse(
     Object.fromEntries(formData),
@@ -384,6 +476,7 @@ export async function updateFighterStatus(
     await recalcGangScores(gang.id, tx);
   });
   revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
   return { success: "Status updated." };
 }
 
@@ -392,9 +485,9 @@ export async function addFighterXp(
   _prev: PlayerState,
   formData: FormData,
 ): Promise<PlayerState> {
-  const user = await requireUser();
-  const gang = await getGangByOwnerId(user.id);
-  if (!gang) return { error: "You don't have a gang yet." };
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return { error: resolved.error };
+  const gang = resolved.gang;
 
   const parsed = addFighterXpSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -414,5 +507,166 @@ export async function addFighterXp(
     .where(eq(schema.fighters.id, fighterId));
 
   revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
   return { success: `+${xpDelta} XP added.` };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Fighter portrait (issue #63)                                        */
+/* ------------------------------------------------------------------ */
+
+export type AvatarUploadResult =
+  | { ok: true; path: string; signedUrl: string; token: string }
+  | { ok: false; error: string };
+
+/**
+ * Step 1 of the portrait upload: authorises (owner or Arbitrator mode),
+ * validates the file claim (JPEG/PNG/WebP, ≤2 MB) and returns a signed URL
+ * so the browser PUTs the image straight to the public gallery bucket
+ * under the `fighter/` prefix — the file never flows through the action.
+ */
+export async function requestFighterAvatarUpload(input: {
+  gangId?: string;
+  fighterId: string;
+  mime: string;
+  bytes: number;
+}): Promise<AvatarUploadResult> {
+  const resolved = await resolveGangForWrite(input.gangId || undefined);
+  if ("error" in resolved) return { ok: false, error: resolved.error };
+  const gang = resolved.gang;
+
+  // 10 portraits/min per gang is generous for real table use.
+  if (!(await rateLimit(`avatar:upload:${gang.id}`, 10, 60))) {
+    return { ok: false, error: "Too many uploads — wait a minute and retry." };
+  }
+
+  const parsed = fighterAvatarRequestSchema.safeParse({
+    fighterId: input.fighterId,
+    mime: input.mime,
+    bytes: input.bytes,
+  });
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Invalid file.",
+    };
+  }
+
+  if (!(await fighterBelongsToGang(parsed.data.fighterId, gang.id))) {
+    return { ok: false, error: "Invalid fighter." };
+  }
+
+  const ext = parsed.data.mime === "image/png"
+    ? "png"
+    : parsed.data.mime === "image/webp"
+      ? "webp"
+      : "jpg";
+  // Unique per upload (signed URLs cannot upsert); the previous object is
+  // deleted on confirm, so no orphan accumulates on replacement.
+  const path = `fighter/${parsed.data.fighterId}-${randomUUID().slice(0, 8)}.${ext}`;
+
+  try {
+    const { signedUrl, token } = await createSignedUploadUrl(
+      GALLERY_BUCKET,
+      path,
+    );
+    return { ok: true, path, signedUrl, token };
+  } catch (error) {
+    logger.error("avatar: signed upload URL failed", { path, error });
+    return {
+      ok: false,
+      error: "Could not start the upload. Check the Supabase env vars.",
+    };
+  }
+}
+
+/**
+ * Step 2: confirms the object really exists with the promised size/type
+ * (HEAD on the public URL — never trusts the client), stores the path on
+ * the fighter row and removes the previous portrait object, if any.
+ */
+export async function confirmFighterAvatar(input: {
+  gangId?: string;
+  fighterId: string;
+  path: string;
+}): Promise<PlayerState> {
+  const resolved = await resolveGangForWrite(input.gangId || undefined);
+  if ("error" in resolved) return { error: resolved.error };
+  const gang = resolved.gang;
+
+  const parsed = fighterAvatarConfirmSchema.safeParse({
+    fighterId: input.fighterId,
+    path: input.path,
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+  const { fighterId, path } = parsed.data;
+
+  if (!(await fighterBelongsToGang(fighterId, gang.id))) {
+    return { error: "Invalid fighter." };
+  }
+  // The path must belong to THIS fighter (prefix carries the id).
+  if (!path.startsWith(`fighter/${fighterId}-`)) {
+    return { error: "Portrait path does not match the fighter." };
+  }
+
+  const stat = await statPublicObject(GALLERY_BUCKET, path);
+  if (!stat) return { error: "Upload not found in storage." };
+  if (stat.bytes > FIGHTER_AVATAR_MAX_BYTES) {
+    await deleteFromBucket(GALLERY_BUCKET, path).catch(() => {});
+    return { error: "File too large (max 2 MB)." };
+  }
+
+  const current = await db.query.fighters.findFirst({
+    where: eq(schema.fighters.id, fighterId),
+    columns: { avatarPath: true },
+  });
+
+  await db
+    .update(schema.fighters)
+    .set({ avatarPath: path })
+    .where(eq(schema.fighters.id, fighterId));
+
+  // Best-effort cleanup of the replaced object (DB row is the source of truth).
+  if (current?.avatarPath && current.avatarPath !== path) {
+    await deleteFromBucket(GALLERY_BUCKET, current.avatarPath).catch(() => {});
+  }
+
+  revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
+  return { success: "Portrait updated." };
+}
+
+/** Removes a fighter's portrait (falls back to the site crest in the UI). */
+export async function removeFighterAvatar(
+  _prev: PlayerState,
+  formData: FormData,
+): Promise<PlayerState> {
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return { error: resolved.error };
+  const gang = resolved.gang;
+
+  const fighterId = String(formData.get("fighterId"));
+  if (!(await fighterBelongsToGang(fighterId, gang.id))) {
+    return { error: "Invalid fighter." };
+  }
+
+  const current = await db.query.fighters.findFirst({
+    where: eq(schema.fighters.id, fighterId),
+    columns: { avatarPath: true },
+  });
+
+  await db
+    .update(schema.fighters)
+    .set({ avatarPath: null })
+    .where(eq(schema.fighters.id, fighterId));
+
+  if (current?.avatarPath) {
+    await deleteFromBucket(GALLERY_BUCKET, current.avatarPath).catch(() => {});
+  }
+
+  revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
+  return { success: "Portrait removed." };
 }

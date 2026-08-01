@@ -7,8 +7,10 @@ import { Input, Label } from "@/components/ui/input";
 
 export function FighterXpForm({
   fighterId,
+  gangId,
 }: {
   fighterId: string;
+  gangId: string;
 }) {
   const [state, formAction, pending] = useActionState<PlayerState, FormData>(
     addFighterXp,
@@ -23,6 +25,7 @@ export function FighterXpForm({
   return (
     <form ref={formRef} action={formAction} className="flex flex-col gap-2">
       <input type="hidden" name="fighterId" value={fighterId} />
+      <input type="hidden" name="gangId" value={gangId} />
 
       <div className="flex items-end gap-2">
         <div>

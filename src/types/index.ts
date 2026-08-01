@@ -32,20 +32,24 @@ export type EquipmentCategory =
   | "armour"
   | "upgrade";
 
-/** Fighter characteristic profile (Fighter Card, p.78 of the Core Rulebook). */
+/**
+ * Fighter characteristic profile (Fighter Card, p.78 of the Core Rulebook).
+ * `null` = never set. Target-roll stats (WS/BS/I/Ld/Cl/Wil/Int) are D6
+ * rolls, strictly 1–6 (issue #63).
+ */
 export interface FighterProfile {
-  /** Movement */ m: number;
-  /** Weapon Skill */ ws: number;
-  /** Ballistic Skill */ bs: number;
-  /** Strength */ s: number;
-  /** Toughness */ t: number;
-  /** Wounds */ w: number;
-  /** Initiative */ i: number;
-  /** Attacks */ a: number;
-  /** Leadership (psychological) */ ld: number;
-  /** Cool (psychological) */ cl: number;
-  /** Willpower (psychological) */ wil: number;
-  /** Intelligence (psychological) */ int: number;
+  /** Movement */ m: number | null;
+  /** Weapon Skill */ ws: number | null;
+  /** Ballistic Skill */ bs: number | null;
+  /** Strength */ s: number | null;
+  /** Toughness */ t: number | null;
+  /** Wounds */ w: number | null;
+  /** Initiative */ i: number | null;
+  /** Attacks */ a: number | null;
+  /** Leadership (psychological) */ ld: number | null;
+  /** Cool (psychological) */ cl: number | null;
+  /** Willpower (psychological) */ wil: number | null;
+  /** Intelligence (psychological) */ int: number | null;
 }
 
 export interface EquipmentItem {
@@ -66,6 +70,8 @@ export interface Fighter {
   equipment: EquipmentItem[];
   xp: number;
   status: FighterStatus;
+  /** Portrait object path in the gallery bucket (issue #63); null = crest fallback. */
+  avatarPath?: string | null;
 }
 
 export interface StashItem {

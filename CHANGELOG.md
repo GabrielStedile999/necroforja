@@ -6,6 +6,57 @@ All notable changes to this project. Format based on
 
 ## [Unreleased]
 
+### Added
+- **Edição completa de fighter** (issue #63): cada fighter no `/player` ganhou
+  um painel "Edit fighter" (mesmo padrão `<details>` da edição de conta no
+  admin) que permite ao dono corrigir nome, type, categoria, custo base e o
+  perfil de 12 características (M/WS/BS/S/T/W/I/A/Ld/Cl/Wil/Int, limites do
+  Fighter Card) sem perder XP, status ou equipamento — antes só dava pra
+  remover e recriar. Os campos foram extraídos pro componente compartilhado
+  `FighterFields`, e o formulário de recrutamento agora também oferece o
+  perfil opcional. Característica deixada em branco significa "não definida"
+  no recrutamento e "inalterada" na edição (normalização no zod:
+  `statField` transforma `""` em `undefined`; o update ignora colunas
+  undefined). O grid do perfil segue a ordem de leitura do card oficial de
+  fighter — 4 colunas × 3 linhas (M T W I / BS WS S A / Ld Cl Wil INT) — e
+  cada input indica a natureza do dado com sufixo: `″` (polegadas) no M e
+  `+` (rolagem-alvo) em BS/WS/I e nos atributos mentais; S/T/W/A são valores
+  puros. Rolagens-alvo são valores de D6: aceitam estritamente 1–6 (dígito
+  único no input, com filtro ativo de digitação/colagem; zod valida no
+  servidor); `null` no banco significa "nunca preenchido" (exibido vazio).
+  Cada atributo tem tooltip nativo (~1s de hover) com o nome completo e a
+  natureza do dado (ex.: M → "Movement — distance in inches").
+- **Limite de 3 armas por fighter** ("Equipping a Fighter", Core Rulebook
+  2023, p.83): tentar equipar uma 4ª arma — tanto adicionando equipamento
+  novo quanto movendo uma arma do Stash — retorna erro junto ao botão com a
+  referência da regra. Só a categoria `weapon` conta pro teto
+  (`MAX_WEAPONS_PER_FIGHTER` em `lib/campaign-rules.ts`;
+  `countFighterWeapons` em `lib/db/queries.ts`); armas com asterisco
+  contando em dobro e o teto de 2 pra Mounted ficam pro catálogo de
+  equipamento (issue #67), já que hoje equipamento é texto livre.
+- **Retrato do fighter** (issue #63): cada fighter pode ter uma imagem de
+  identificação (rosto/torso da mini) exibida no roster (48px) com fallback
+  no brasão do site (`/brand/logo-light.png`). Regras de upload: JPEG/PNG/
+  WebP, máx. 2 MB, 100–2048px por lado (leve de propósito — renderiza
+  pequena). Fluxo signed-upload igual ao da galeria (request → PUT direto no
+  bucket `gallery` sob o prefixo `fighter/` → confirm com HEAD no servidor),
+  autorizado via `resolveGangForWrite` (dono ou modo Árbitro) + rate limit
+  por gang; trocar/remover apaga o objeto anterior (banco é a fonte de
+  verdade). **Migração aditiva**: `fighter.avatar_path text`
+  (`scripts/fighter-avatar.sql` ou `npm run db:push`). Action `updateFighter` segue o padrão da #62: ownership check +
+  update + recálculo de Rating/Wealth numa única transação.
+- **Modo Árbitro — admin gerencia qualquer roster** (issue #65): o painel de
+  gerenciamento inteiro do `/player` (roster, stash, recrutamento, edição,
+  status, XP) foi extraído pro componente compartilhado `GangManager` e agora
+  também é servido em `/admin/gangs/[gangId]` (link "Manage" em cada player
+  do dashboard admin, badge "Arbitrator mode"). A autorização foi
+  centralizada no helper `resolveGangForWrite`
+  (`src/lib/auth/gang-access.ts`): admin resolve qualquer gang endereçada
+  pelo `gangId` oculto dos forms; player resolve sempre a própria gang — um
+  `gangId` adulterado no client nunca escreve em gang alheia (testado). As
+  actions revalidam `/player` e `/admin/gangs/[gangId]`. Zero mudança de
+  comportamento pro player. 18 testes novos nas duas features (total: 388).
+
 ### Changed
 - **Hardening transacional das server actions multi-passo** (issue #62):
   toda mutação com 2+ escritas dependentes agora roda dentro de um único

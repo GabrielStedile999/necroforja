@@ -7,7 +7,7 @@ import { CreatePlayerForm } from "@/components/admin/CreatePlayerForm";
 import { EditPlayerForm } from "@/components/admin/EditPlayerForm";
 import { listPlayers } from "@/lib/db/queries";
 import { togglePlayerActive } from "./actions";
-import { ShieldAlert, FileDown } from "lucide-react";
+import { ShieldAlert, FileDown, Swords } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -84,17 +84,32 @@ export default async function AdminPage() {
                           {p.isActive ? "active" : "inactive"}
                         </Badge>
                         {p.gangs[0] && (
-                          <a
-                            href={`/admin/gangs/${p.gangs[0].id}/export`}
-                            target="_blank"
-                            rel="noreferrer"
-                            title="Export gang sheet as PDF"
-                          >
-                            <Button variant="ghost" type="button" className="gap-1 text-xs">
-                              <FileDown className="h-4 w-4" aria-hidden />
-                              PDF
-                            </Button>
-                          </a>
+                          <>
+                            <Link
+                              href={`/admin/gangs/${p.gangs[0].id}`}
+                              title="Manage roster, stash and fighters (Arbitrator mode)"
+                            >
+                              <Button
+                                variant="outline"
+                                type="button"
+                                className="gap-1 text-xs"
+                              >
+                                <Swords className="h-4 w-4" aria-hidden />
+                                Manage
+                              </Button>
+                            </Link>
+                            <a
+                              href={`/admin/gangs/${p.gangs[0].id}/export`}
+                              target="_blank"
+                              rel="noreferrer"
+                              title="Export gang sheet as PDF"
+                            >
+                              <Button variant="ghost" type="button" className="gap-1 text-xs">
+                                <FileDown className="h-4 w-4" aria-hidden />
+                                PDF
+                              </Button>
+                            </a>
+                          </>
                         )}
                         <form action={togglePlayerActive}>
                           <input type="hidden" name="userId" value={p.id} />

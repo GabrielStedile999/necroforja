@@ -13,9 +13,11 @@ interface FighterOption {
 export function EquipFromStashForm({
   stashItemId,
   fighters,
+  gangId,
 }: {
   stashItemId: string;
   fighters: FighterOption[];
+  gangId: string;
 }) {
   const [state, formAction, pending] = useActionState<PlayerState, FormData>(
     equipFromStash,
@@ -33,6 +35,7 @@ export function EquipFromStashForm({
   return (
     <form action={formAction} className="flex flex-col gap-2">
       <input type="hidden" name="stashItemId" value={stashItemId} />
+      <input type="hidden" name="gangId" value={gangId} />
 
       <div className="flex items-end gap-2">
         <div className="flex-1">
