@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db, schema } from "@/lib/db";
 import { requireUser } from "@/lib/auth/guards";
@@ -39,17 +39,21 @@ export async function addFighter(
   }
   const d = parsed.data;
 
-  await db.insert(schema.fighters).values({
-    gangId: gang.id,
-    name: d.name,
-    type: d.type,
-    category: d.category,
-    baseCost: d.baseCost,
-    m: d.m, ws: d.ws, bs: d.bs, s: d.s, t: d.t, w: d.w,
-    i: d.i, a: d.a, ld: d.ld, cl: d.cl, wil: d.wil, int: d.int,
+  // Atomic (issue #62): insert + score recalc commit together.
+  await db.transaction(async (tx) => {
+    await tx.insert(schema.fighters).values({
+      gangId: gang.id,
+      name: d.name,
+      type: d.type,
+      category: d.category,
+      baseCost: d.baseCost,
+      m: d.m, ws: d.ws, bs: d.bs, s: d.s, t: d.t, w: d.w,
+      i: d.i, a: d.a, ld: d.ld, cl: d.cl, wil: d.wil, int: d.int,
+    });
+
+    await recalcGangScores(gang.id, tx);
   });
 
-  await recalcGangScores(gang.id);
   revalidatePath("/player");
   return { success: `${d.name} recruited.` };
 }
@@ -63,8 +67,11 @@ export async function removeFighter(formData: FormData) {
   const fighterId = String(formData.get("fighterId"));
   if (!(await fighterBelongsToGang(fighterId, gang.id))) return;
 
-  await db.delete(schema.fighters).where(eq(schema.fighters.id, fighterId));
-  await recalcGangScores(gang.id);
+  // Atomic (issue #62): delete + score recalc commit together.
+  await db.transaction(async (tx) => {
+    await tx.delete(schema.fighters).where(eq(schema.fighters.id, fighterId));
+    await recalcGangScores(gang.id, tx);
+  });
   revalidatePath("/player");
 }
 
@@ -87,19 +94,24 @@ export async function addEquipment(
     return { error: "Invalid fighter." };
   }
 
-  const [created] = await db
-    .insert(schema.equipment)
-    .values({ name: d.name, category: d.category, cost: d.cost })
-    .returning();
-  if (created) {
-    await db.insert(schema.fighterEquipment).values({
-      fighterId: d.fighterId,
-      equipmentId: created.id,
-      qty: 1,
-    });
-  }
+  // Atomic (issue #62): a failure after the equipment insert can no longer
+  // leave an orphan row without its fighter link (or stale cached scores).
+  await db.transaction(async (tx) => {
+    const [created] = await tx
+      .insert(schema.equipment)
+      .values({ name: d.name, category: d.category, cost: d.cost })
+      .returning();
+    if (created) {
+      await tx.insert(schema.fighterEquipment).values({
+        fighterId: d.fighterId,
+        equipmentId: created.id,
+        qty: 1,
+      });
+    }
 
-  await recalcGangScores(gang.id);
+    await recalcGangScores(gang.id, tx);
+  });
+
   revalidatePath("/player");
   return { success: `${d.name} added.` };
 }
@@ -117,22 +129,26 @@ export async function removeEquipment(formData: FormData) {
   // Authorisation: the fighter must belong to the user's gang
   if (!(await fighterBelongsToGang(fighterId, gang.id))) return;
 
-  // Remove the fighter ↔ equipment link
-  await db
-    .delete(schema.fighterEquipment)
-    .where(
-      and(
-        eq(schema.fighterEquipment.fighterId, fighterId),
-        eq(schema.fighterEquipment.equipmentId, equipmentId),
-      ),
-    );
+  // Atomic (issue #62): unlink + delete + recalc commit together — a failure
+  // in between can no longer leave an unlinked equipment row behind.
+  await db.transaction(async (tx) => {
+    // Remove the fighter ↔ equipment link
+    await tx
+      .delete(schema.fighterEquipment)
+      .where(
+        and(
+          eq(schema.fighterEquipment.fighterId, fighterId),
+          eq(schema.fighterEquipment.equipmentId, equipmentId),
+        ),
+      );
 
-  // Remove the item itself (each row is exclusive to one fighter in the current model)
-  await db
-    .delete(schema.equipment)
-    .where(eq(schema.equipment.id, equipmentId));
+    // Remove the item itself (each row is exclusive to one fighter in the current model)
+    await tx
+      .delete(schema.equipment)
+      .where(eq(schema.equipment.id, equipmentId));
 
-  await recalcGangScores(gang.id);
+    await recalcGangScores(gang.id, tx);
+  });
   revalidatePath("/player");
 }
 
@@ -154,12 +170,15 @@ export async function setStashCredits(
     return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
   }
 
-  await db
-    .update(schema.gangs)
-    .set({ stashCredits: parsed.data.credits })
-    .where(eq(schema.gangs.id, gang.id));
+  // Atomic (issue #62): credits update + Wealth recalc commit together.
+  await db.transaction(async (tx) => {
+    await tx
+      .update(schema.gangs)
+      .set({ stashCredits: parsed.data.credits })
+      .where(eq(schema.gangs.id, gang.id));
 
-  await recalcGangScores(gang.id);
+    await recalcGangScores(gang.id, tx);
+  });
   revalidatePath("/player");
   return { success: "Stash credits updated." };
 }
@@ -179,20 +198,24 @@ export async function addStashItem(
   }
   const d = parsed.data;
 
-  const [equip] = await db
-    .insert(schema.equipment)
-    .values({ name: d.name, category: d.category, cost: d.cost })
-    .returning();
+  // Atomic (issue #62): equipment + stash link + recalc commit together.
+  await db.transaction(async (tx) => {
+    const [equip] = await tx
+      .insert(schema.equipment)
+      .values({ name: d.name, category: d.category, cost: d.cost })
+      .returning();
 
-  if (equip) {
-    await db.insert(schema.stashItems).values({
-      gangId: gang.id,
-      equipmentId: equip.id,
-      qty: d.qty,
-    });
-  }
+    if (equip) {
+      await tx.insert(schema.stashItems).values({
+        gangId: gang.id,
+        equipmentId: equip.id,
+        qty: d.qty,
+      });
+    }
 
-  await recalcGangScores(gang.id);
+    await recalcGangScores(gang.id, tx);
+  });
+
   revalidatePath("/player");
   return { success: `${d.name} added to Stash.` };
 }
@@ -215,14 +238,18 @@ export async function removeStashItem(formData: FormData) {
   });
   if (!stashRow) return;
 
-  await db
-    .delete(schema.stashItems)
-    .where(eq(schema.stashItems.id, stashItemId));
-  await db
-    .delete(schema.equipment)
-    .where(eq(schema.equipment.id, stashRow.equipmentId));
+  // Atomic (issue #62): both deletes + recalc commit together — no orphan
+  // equipment row if the process dies between the two.
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(schema.stashItems)
+      .where(eq(schema.stashItems.id, stashItemId));
+    await tx
+      .delete(schema.equipment)
+      .where(eq(schema.equipment.id, stashRow.equipmentId));
 
-  await recalcGangScores(gang.id);
+    await recalcGangScores(gang.id, tx);
+  });
   revalidatePath("/player");
 }
 
@@ -302,9 +329,12 @@ export async function equipFromStash(
         qty: 1,
       });
     }
+
+    // Recalc joins the same transaction (issue #62) so cached scores can
+    // never go stale between the move and the recalculation.
+    await recalcGangScores(gang.id, tx);
   });
 
-  await recalcGangScores(gang.id);
   revalidatePath("/player");
   return { success: `${itemName} equipped to fighter.` };
 }
@@ -338,18 +368,21 @@ export async function updateFighterStatus(
     return { error: "Invalid fighter." };
   }
 
-  await db
-    .update(schema.fighters)
-    .set({
-      status,
-      // Clear the field if no longer "captured"
-      capturedByGangId:
-        status === "captured" ? (capturedByGangId ?? null) : null,
-    })
-    .where(eq(schema.fighters.id, fighterId));
+  // Atomic (issue #62): status change + Rating recalc commit together.
+  await db.transaction(async (tx) => {
+    await tx
+      .update(schema.fighters)
+      .set({
+        status,
+        // Clear the field if no longer "captured"
+        capturedByGangId:
+          status === "captured" ? (capturedByGangId ?? null) : null,
+      })
+      .where(eq(schema.fighters.id, fighterId));
 
-  // Dead fighters leave the Rating — recalculate
-  await recalcGangScores(gang.id);
+    // Dead fighters leave the Rating — recalculate
+    await recalcGangScores(gang.id, tx);
+  });
   revalidatePath("/player");
   return { success: "Status updated." };
 }
@@ -373,16 +406,11 @@ export async function addFighterXp(
     return { error: "Invalid fighter." };
   }
 
-  // Safe increment: fetch the current value and add to it
-  const current = await db.query.fighters.findFirst({
-    where: eq(schema.fighters.id, fighterId),
-    columns: { xp: true },
-  });
-  const newXp = (current?.xp ?? 0) + xpDelta;
-
+  // Atomic increment (issue #62): the delta is applied in SQL, so two
+  // concurrent submissions both land — no read-then-write race losing XP.
   await db
     .update(schema.fighters)
-    .set({ xp: newXp })
+    .set({ xp: sql`${schema.fighters.xp} + ${xpDelta}` })
     .where(eq(schema.fighters.id, fighterId));
 
   revalidatePath("/player");
