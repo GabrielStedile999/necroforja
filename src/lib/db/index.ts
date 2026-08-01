@@ -24,3 +24,14 @@ if (process.env.NODE_ENV !== "production") globalForDb.client = client;
 
 export const db = drizzle(client, { schema });
 export { schema };
+
+/**
+ * Either the root Drizzle client or a transaction handle (issue #62).
+ * Helpers that write in multiple steps accept a `dbc` so callers can run
+ * them inside an enclosing `db.transaction` and keep the whole mutation
+ * atomic; when omitted, helpers fall back to `db` (or open their own
+ * transaction where atomicity is required).
+ */
+export type DbOrTx =
+  | typeof db
+  | Parameters<Parameters<typeof db.transaction>[0]>[0];

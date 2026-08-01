@@ -91,18 +91,25 @@ export async function resolveChallenge(
     challenge.challengerGangId,
     challenge.challengedGangId ?? null,
   );
-  if (winner && challenge.sympathiserId) {
-    await setSympathiserController(
-      challenge.sympathiserId,
-      winner,
-      campaign.currentCycle,
-    );
-  }
 
-  await db
-    .update(schema.challenges)
-    .set({ outcome, resolved: true, playedAt: new Date() })
-    .where(eq(schema.challenges.id, challengeId));
+  // Atomic (issue #62): the Sympathiser transfer and the challenge update
+  // commit together — a challenge can no longer be marked resolved while the
+  // control transfer was lost (or vice versa).
+  await db.transaction(async (tx) => {
+    if (winner && challenge.sympathiserId) {
+      await setSympathiserController(
+        challenge.sympathiserId,
+        winner,
+        campaign.currentCycle,
+        tx,
+      );
+    }
+
+    await tx
+      .update(schema.challenges)
+      .set({ outcome, resolved: true, playedAt: new Date() })
+      .where(eq(schema.challenges.id, challengeId));
+  });
 
   revalidatePath("/admin/campaign");
   revalidatePath("/");
@@ -239,12 +246,17 @@ export async function advanceCycle() {
   if (!campaign) return;
 
   const { cycle: newCycle } = nextCycleState(campaign.currentCycle);
-  await advanceCampaignCycle(campaign.id);
 
-  // Cycle 4 = Downtime: reset fighters in_recovery and captured
-  if (newCycle === 4) {
-    await applyDowntimeEffects(campaign.id);
-  }
+  // Atomic (issue #62): the cycle advance and the Downtime side effects
+  // commit together — entering cycle 4 can no longer half-apply.
+  await db.transaction(async (tx) => {
+    await advanceCampaignCycle(campaign.id, tx);
+
+    // Cycle 4 = Downtime: reset fighters in_recovery and captured
+    if (newCycle === 4) {
+      await applyDowntimeEffects(campaign.id, tx);
+    }
+  });
 
   revalidatePath("/admin/campaign");
   revalidatePath("/");

@@ -6,6 +6,28 @@ All notable changes to this project. Format based on
 
 ## [Unreleased]
 
+### Changed
+- **Hardening transacional das server actions multi-passo** (issue #62):
+  toda mutação com 2+ escritas dependentes agora roda dentro de um único
+  `db.transaction` — `addFighter`, `removeFighter`, `addEquipment`,
+  `removeEquipment`, `setStashCredits`, `addStashItem`, `removeStashItem`,
+  `updateFighterStatus` (player), `resolveChallenge` e `advanceCycle`
+  (admin). Falha no meio não deixa mais lixo parcial (equipamento órfão,
+  challenge resolvido sem transferir o Sympathiser, Downtime pela metade).
+  Os helpers de `lib/db/mutations.ts` (`recalcGangScores`,
+  `setSympathiserController`, `applyDowntimeEffects`,
+  `advanceCampaignCycle`) e `getGangById` aceitam um handle `DbOrTx`
+  opcional para compor a transação do chamador — `setSympathiserController`
+  abre a própria transação quando chamado sozinho (o par close+insert do
+  histórico de controle nunca mais se separa) — e o recálculo de
+  Rating/Wealth passou a commitar junto com a mutação que o originou.
+  `addFighterXp` trocou o read-then-write por um incremento atômico em SQL
+  (`xp = xp + delta`): dois submits simultâneos não perdem mais XP. Sem
+  mudança de comportamento no caminho feliz; 12 testes novos
+  (`tests/transactional-hardening.test.ts`, `tests/mutations-tx.test.ts`)
+  cobrem rollback no meio da operação, composição de tx nos helpers e o
+  formato atômico do incremento de XP (total: 370).
+
 ### Added
 - **Loading estilizado (cyberpunk) para interações do usuário** (issue #60):
   novo `Spinner` compartilhado em `ui/spinner.tsx` — anel de ticks cyan com

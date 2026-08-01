@@ -3,7 +3,7 @@
  * used by lib/scoring.ts. All functions run server-side only.
  */
 import { eq, and, or, ilike, desc, lt, sql, type SQL } from "drizzle-orm";
-import { db, schema } from "./index";
+import { db, schema, type DbOrTx } from "./index";
 import type {
   Fighter,
   FighterCategory,
@@ -41,8 +41,8 @@ export async function listTriumphs(campaignId: string) {
   });
 }
 
-function findGangWithRelations(where: SQL | undefined) {
-  return db.query.gangs.findFirst({
+function findGangWithRelations(where: SQL | undefined, dbc: DbOrTx = db) {
+  return dbc.query.gangs.findFirst({
     where,
     with: {
       owner: true,
@@ -107,8 +107,11 @@ export async function getGangByOwnerId(userId: string): Promise<Gang | null> {
   return row ? toDomainGang(row) : null;
 }
 
-export async function getGangById(gangId: string): Promise<Gang | null> {
-  const row = await findGangWithRelations(eq(schema.gangs.id, gangId));
+export async function getGangById(
+  gangId: string,
+  dbc: DbOrTx = db,
+): Promise<Gang | null> {
+  const row = await findGangWithRelations(eq(schema.gangs.id, gangId), dbc);
   return row ? toDomainGang(row) : null;
 }
 
