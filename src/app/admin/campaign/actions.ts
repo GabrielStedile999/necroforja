@@ -10,6 +10,9 @@ import {
   resolveChallengeSchema,
   assignSympathiserSchema,
   awardTriumphSchema,
+  createCampaignSchema,
+  updateCampaignSchema,
+  setCampaignCycleSchema,
 } from "@/lib/validation";
 import {
   setSympathiserController,
@@ -18,9 +21,159 @@ import {
   applyDowntimeEffects,
 } from "@/lib/db/mutations";
 import { SYMPATHISERS } from "@/lib/data/sympathisers";
-import { controlWinner, rollScenario, nextCycleState } from "@/lib/campaign-rules";
+import {
+  controlWinner,
+  rollScenario,
+  nextCycleState,
+  phaseForCycle,
+} from "@/lib/campaign-rules";
 
 export type CampaignState = { error?: string; success?: string };
+
+/* ------------------------------------------------------------------ */
+/*  Campaign lifecycle (issue #66)                                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Starts a new campaign from the UI (issue #66) — until now a campaign
+ * could only be born via `db:seed`. One active campaign at a time is a
+ * product decision: the public landing, challenges and rankings all assume
+ * a single active campaign.
+ */
+export async function createCampaign(
+  _prev: CampaignState,
+  formData: FormData,
+): Promise<CampaignState> {
+  await requireAdmin();
+
+  const active = await getActiveCampaign();
+  if (active) {
+    return {
+      error: `"${active.name}" is still active — finish it before starting a new campaign.`,
+    };
+  }
+
+  const parsed = createCampaignSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+  const d = parsed.data;
+
+  await db.insert(schema.campaigns).values({
+    name: d.name,
+    phase: phaseForCycle(1, d.totalCycles),
+    currentCycle: 1,
+    totalCycles: d.totalCycles,
+    startDate: d.startDate ?? null,
+    endDate: d.endDate ?? null,
+    status: "active",
+  });
+
+  revalidatePath("/admin/campaign");
+  revalidatePath("/");
+  revalidatePath("/campaign");
+  return { success: `Campaign "${d.name}" started (cycle 1 of ${d.totalCycles}).` };
+}
+
+/**
+ * Jumps the campaign to a specific cycle — forwards or BACKWARDS (regret
+ * button for a mis-clicked "Advance cycle"). The phase is re-derived for
+ * the target cycle. Downtime side effects (recovery/captured resets) are
+ * NOT un-applied when rewinding — they are lossy; jumping forward into the
+ * Downtime cycle applies them again (harmless: they only clear statuses).
+ */
+export async function setCampaignCycle(
+  _prev: CampaignState,
+  formData: FormData,
+): Promise<CampaignState> {
+  await requireAdmin();
+
+  const parsed = setCampaignCycleSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+  const { campaignId, cycle } = parsed.data;
+
+  const campaign = await db.query.campaigns.findFirst({
+    where: eq(schema.campaigns.id, campaignId),
+  });
+  if (!campaign) return { error: "Campaign not found." };
+  if (campaign.status !== "active") {
+    return { error: "The campaign is closed." };
+  }
+  if (cycle > campaign.totalCycles) {
+    return {
+      error: `Cycle cannot exceed the campaign length (${campaign.totalCycles}).`,
+    };
+  }
+
+  const newPhase = phaseForCycle(cycle, campaign.totalCycles);
+
+  // Atomic (issue #62 pattern): cycle jump + Downtime effects together when
+  // landing ON the Downtime cycle from outside it.
+  await db.transaction(async (tx) => {
+    await tx
+      .update(schema.campaigns)
+      .set({ currentCycle: cycle, phase: newPhase })
+      .where(eq(schema.campaigns.id, campaignId));
+
+    if (newPhase === "downtime" && campaign.phase !== "downtime") {
+      await applyDowntimeEffects(campaignId, tx);
+    }
+  });
+
+  revalidatePath("/admin/campaign");
+  revalidatePath("/");
+  revalidatePath("/campaign");
+  return { success: `Campaign moved to cycle ${cycle} (${newPhase.replace(/_/g, " ")}).` };
+}
+
+/**
+ * Edits the active campaign's name, dates and length. Shrinking below the
+ * current cycle is rejected — the campaign cannot "un-live" cycles already
+ * played.
+ */
+export async function updateCampaign(
+  _prev: CampaignState,
+  formData: FormData,
+): Promise<CampaignState> {
+  await requireAdmin();
+
+  const parsed = updateCampaignSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+  const d = parsed.data;
+
+  const campaign = await db.query.campaigns.findFirst({
+    where: eq(schema.campaigns.id, d.campaignId),
+  });
+  if (!campaign) return { error: "Campaign not found." };
+
+  if (d.totalCycles < campaign.currentCycle) {
+    return {
+      error: `Total cycles cannot be below the current cycle (${campaign.currentCycle}).`,
+    };
+  }
+
+  // The length change can move the Downtime cycle — re-derive the phase for
+  // the CURRENT cycle so the public state stays coherent.
+  await db
+    .update(schema.campaigns)
+    .set({
+      name: d.name,
+      totalCycles: d.totalCycles,
+      startDate: d.startDate ?? null,
+      endDate: d.endDate ?? null,
+      phase: phaseForCycle(campaign.currentCycle, d.totalCycles),
+    })
+    .where(eq(schema.campaigns.id, d.campaignId));
+
+  revalidatePath("/admin/campaign");
+  revalidatePath("/");
+  revalidatePath("/campaign");
+  return { success: `Campaign "${d.name}" updated.` };
+}
 
 /** Registers a challenge for a Sympathiser in the current cycle. */
 export async function createChallenge(
@@ -245,15 +398,20 @@ export async function advanceCycle() {
   const campaign = await getActiveCampaign();
   if (!campaign) return;
 
-  const { cycle: newCycle } = nextCycleState(campaign.currentCycle);
+  const { phase: newPhase } = nextCycleState(
+    campaign.currentCycle,
+    campaign.totalCycles,
+  );
 
   // Atomic (issue #62): the cycle advance and the Downtime side effects
-  // commit together — entering cycle 4 can no longer half-apply.
+  // commit together — entering the Downtime cycle can no longer half-apply.
   await db.transaction(async (tx) => {
     await advanceCampaignCycle(campaign.id, tx);
 
-    // Cycle 4 = Downtime: reset fighters in_recovery and captured
-    if (newCycle === 4) {
+    // Entering Downtime: reset fighters in_recovery and captured (issue #66
+    // generalised the campaign length, so the trigger is the PHASE, not a
+    // hardcoded cycle number).
+    if (newPhase === "downtime" && campaign.phase !== "downtime") {
       await applyDowntimeEffects(campaign.id, tx);
     }
   });

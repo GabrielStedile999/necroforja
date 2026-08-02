@@ -11,6 +11,7 @@ import {
   transferGangSchema,
   createGangForUserSchema,
   deleteGangSchema,
+  toggleGangActiveSchema,
 } from "@/lib/validation";
 
 export type GangAdminState = { error?: string; success?: string };
@@ -187,4 +188,27 @@ export async function deleteGang(
   return {
     success: `${gang.name} deleted. Any Sympathisers it controlled are now uncontrolled.`,
   };
+}
+
+/**
+ * Activates/deactivates a gang's participation in the campaign (issue #66
+ * follow-up): registered players can sit a campaign out. Inactive gangs
+ * leave the public ranking and the challenge/Sympathiser options, but keep
+ * all their data and can return at any time.
+ */
+export async function toggleGangActive(formData: FormData) {
+  await requireAdmin();
+
+  const parsed = toggleGangActiveSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return;
+  const { gangId, isActive } = parsed.data;
+
+  await db
+    .update(schema.gangs)
+    .set({ isActive: isActive !== "true" })
+    .where(eq(schema.gangs.id, gangId));
+
+  revalidateGangViews(gangId);
+  revalidatePath("/admin/campaign");
+  revalidatePath("/campaign");
 }

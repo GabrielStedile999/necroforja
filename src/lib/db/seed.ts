@@ -38,6 +38,32 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "change-me-admin";
 const PLAYER_PASSWORD = process.env.PLAYER_PASSWORD ?? "change-me-player";
 
 async function seed() {
+  // Guard (issue #66): this seed is a BOOTSTRAP tool — plain INSERTs with
+  // no transaction, safe only on an empty database. Running it twice
+  // duplicates the campaign and crashes midway on unique constraints,
+  // leaving partial garbage. Refuse when data exists, unless --force.
+  const dbHost = (() => {
+    try {
+      return new URL(process.env.DATABASE_URL ?? "").host || "(unknown host)";
+    } catch {
+      return "(unparseable DATABASE_URL)";
+    }
+  })();
+  console.log(`→ Target database: ${dbHost}`);
+
+  const existing = await db.query.campaigns.findFirst({
+    columns: { id: true, name: true },
+  });
+  if (existing && !process.argv.includes("--force")) {
+    console.error(
+      `✗ Aborted: the database already contains a campaign ("${existing.name}").\n` +
+        "  This seed only supports an EMPTY database. If you really want to\n" +
+        "  run it anyway, pass --force:  npm run db:seed -- --force\n" +
+        "  (campaigns are normally created from /admin/campaign now — issue #66)",
+    );
+    process.exit(1);
+  }
+
   console.log("→ Seeding Cinderak Burning campaign...");
 
   // 1. Campaign

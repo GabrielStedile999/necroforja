@@ -20,24 +20,41 @@ export type ChallengeOutcome =
   | "declined"
   | "draw";
 
-/** Phase corresponding to a cycle. */
-export function phaseForCycle(cycle: number): CampaignPhase {
-  if (cycle <= 3) return "great_darkness";
-  if (cycle === 4) return "downtime";
+/**
+ * The single Downtime cycle sits in the middle of the campaign, preserving
+ * the official 3/1/3 shape for 7 cycles (issue #66 generalises the length:
+ * e.g. 5 cycles → 2 GD / 1 DT / 2 Spark; 3 → 1/1/1). Minimum meaningful
+ * campaign is 3 cycles (enforced by createCampaignSchema).
+ */
+export function downtimeCycle(totalCycles: number = TOTAL_CYCLES): number {
+  return Math.ceil(totalCycles / 2);
+}
+
+/** Phase corresponding to a cycle (defaults to the 7-cycle Cinderak shape). */
+export function phaseForCycle(
+  cycle: number,
+  totalCycles: number = TOTAL_CYCLES,
+): CampaignPhase {
+  const dt = downtimeCycle(totalCycles);
+  if (cycle < dt) return "great_darkness";
+  if (cycle === dt) return "downtime";
   return "spark_of_rebellion";
 }
 
 /** Next cycle/phase state (capped at the end of the campaign). */
-export function nextCycleState(cycle: number): {
+export function nextCycleState(
+  cycle: number,
+  totalCycles: number = TOTAL_CYCLES,
+): {
   cycle: number;
   phase: CampaignPhase;
   finished: boolean;
 } {
-  const next = Math.min(cycle + 1, TOTAL_CYCLES);
+  const next = Math.min(cycle + 1, totalCycles);
   return {
     cycle: next,
-    phase: phaseForCycle(next),
-    finished: cycle >= TOTAL_CYCLES,
+    phase: phaseForCycle(next, totalCycles),
+    finished: cycle >= totalCycles,
   };
 }
 

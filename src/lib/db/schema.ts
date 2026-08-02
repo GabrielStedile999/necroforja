@@ -119,6 +119,13 @@ export const gangs = pgTable("gang", {
   // derived values, recalculated on write (see lib/scoring.ts)
   ratingCached: integer("rating_cached").notNull().default(0),
   wealthCached: integer("wealth_cached").notNull().default(0),
+  /**
+   * Whether the gang currently takes part in the campaign (issue #66
+   * follow-up): registered players can sit out — inactive gangs leave the
+   * public ranking, challenge and Sympathiser options, but keep their data.
+   * See scripts/campaign-players.sql.
+   */
+  isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
