@@ -96,6 +96,7 @@ export function GangManager({
         <div className="flex gap-6 font-mono">
           <Metric label="Rating" value={gangRating(gang)} />
           <Metric label="Wealth" value={gangWealth(gang)} />
+          <Metric label="Rep" value={gang.reputation} />
           <Metric label="Stash" value={`${gang.stashCredits}c`} accent />
         </div>
       </div>

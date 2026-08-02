@@ -5,7 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CreatePlayerForm } from "@/components/admin/CreatePlayerForm";
 import { EditPlayerForm } from "@/components/admin/EditPlayerForm";
-import { listPlayers } from "@/lib/db/queries";
+import { GangAdminPanel } from "@/components/admin/GangAdminPanel";
+import { CreateGangForm } from "@/components/admin/CreateGangForm";
+import { listPlayers, listUnassignedGangs } from "@/lib/db/queries";
 import { togglePlayerActive } from "./actions";
 import { ShieldAlert, FileDown, Swords } from "lucide-react";
 import type { Metadata } from "next";
@@ -19,7 +21,15 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
-  const players = await listPlayers();
+  const [players, unassignedGangs] = await Promise.all([
+    listPlayers(),
+    listUnassignedGangs(),
+  ]);
+
+  // Accounts able to RECEIVE a gang on transfer (one gang per player).
+  const transferCandidates = players
+    .filter((p) => p.gangs.length === 0 && p.isActive)
+    .map((p) => ({ id: p.id, displayName: p.displayName }));
 
   return (
     <>
@@ -139,12 +149,72 @@ export default async function AdminPage() {
                         />
                       </div>
                     </details>
+                    {/* issue #64 — gang identity, transfer, delete / create */}
+                    <details className="mt-2">
+                      <summary className="cursor-pointer py-1 font-mono text-xs uppercase tracking-wider text-muted transition-colors hover:text-hazard">
+                        {p.gangs[0] ? "Edit gang" : "Create gang"}
+                      </summary>
+                      <div className="mt-3 border-t border-rivet/50 pt-4">
+                        {p.gangs[0] ? (
+                          <GangAdminPanel
+                            gang={{
+                              id: p.gangs[0].id,
+                              name: p.gangs[0].name,
+                              house: p.gangs[0].house,
+                              reputation: p.gangs[0].reputation,
+                            }}
+                            candidates={transferCandidates}
+                          />
+                        ) : (
+                          <CreateGangForm
+                            userId={p.id}
+                            userName={p.displayName}
+                          />
+                        )}
+                      </div>
+                    </details>
                   </li>
                 ))}
               </ul>
             )}
           </CardContent>
         </Card>
+
+        {/* issue #64 — gangs released from their owner keep being manageable */}
+        {unassignedGangs.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Unassigned gangs ({unassignedGangs.length})</CardTitle>
+              <span className="ml-auto text-xs text-muted">
+                no owner — transfer or delete
+              </span>
+            </CardHeader>
+            <CardContent className="px-0 py-0">
+              <ul className="divide-y divide-rivet/50">
+                {unassignedGangs.map((g) => (
+                  <li key={g.id} className="px-5 py-3">
+                    <div className="mb-2 flex items-center gap-3">
+                      <span className="font-display text-base font-semibold uppercase text-ink">
+                        {g.name}
+                      </span>
+                      <span className="text-xs text-muted">
+                        {g.house} · Rep {g.reputation}
+                      </span>
+                    </div>
+                    <details>
+                      <summary className="cursor-pointer py-1 font-mono text-xs uppercase tracking-wider text-muted transition-colors hover:text-hazard">
+                        Manage gang
+                      </summary>
+                      <div className="mt-3 border-t border-rivet/50 pt-4">
+                        <GangAdminPanel gang={g} candidates={transferCandidates} />
+                      </div>
+                    </details>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
       </main>
     </>
   );

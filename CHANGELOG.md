@@ -7,6 +7,20 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Added
+- **CRUD de gang + gestão de Reputation** (issue #64): o Árbitro agora
+  controla o ciclo de vida completo das gangs pelo dashboard admin — painel
+  "Edit gang" por player com edição de nome/house/**Reputation** (1–20,
+  atributo separado do Rating que começa em 1 e limita Hangers-on/Brutes;
+  ajuste manual até os eventos de batalha automatizarem, issue #69),
+  **transferência de dono** (só pra contas de player sem gang — regra 1:1 —
+  ou "release" pra deixar sem dono), **exclusão com type-to-confirm**
+  (digitar o nome exato da gang; cascade apaga fighters/equipamento/stash/
+  challenges/histórico de controle) e **criação de gang pra conta existente**
+  sem gang (antes, conta sem gang era um beco sem saída). Gangs sem dono
+  aparecem numa seção própria ("Unassigned gangs") e continuam gerenciáveis.
+  Reputation agora é exibida como métrica no painel da gang (`/player` e
+  `/admin/gangs/[gangId]`). Actions em `src/app/admin/gangs/actions.ts`
+  (todas `requireAdmin`), 14 testes novos (total: 411).
 - **Edição completa de fighter** (issue #63): cada fighter no `/player` ganhou
   um painel "Edit fighter" (mesmo padrão `<details>` da edição de conta no
   admin) que permite ao dono corrigir nome, type, categoria, custo base e o

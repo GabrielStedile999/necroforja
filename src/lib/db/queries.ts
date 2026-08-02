@@ -2,7 +2,7 @@
  * Read layer (Drizzle). Maps database rows to the domain types
  * used by lib/scoring.ts. All functions run server-side only.
  */
-import { eq, and, or, ilike, desc, lt, sql, type SQL } from "drizzle-orm";
+import { eq, and, or, ilike, desc, lt, sql, isNull, type SQL } from "drizzle-orm";
 import { db, schema, type DbOrTx } from "./index";
 import type {
   Fighter,
@@ -155,6 +155,14 @@ export async function listPlayers() {
     with: { gangs: true },
   });
   return users;
+}
+
+/** Gangs without an owner (issue #64) — shown in the admin dashboard. */
+export async function listUnassignedGangs() {
+  return db.query.gangs.findMany({
+    where: isNull(schema.gangs.ownerUserId),
+    columns: { id: true, name: true, house: true, reputation: true },
+  });
 }
 
 /** All campaign gangs already mapped to domain types (public ranking). */

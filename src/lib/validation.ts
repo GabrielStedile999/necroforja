@@ -113,6 +113,53 @@ export const updateFighterSchema = fighterSchema.extend({
 
 export type UpdateFighterInput = z.infer<typeof updateFighterSchema>;
 
+/* ------------------------ Gang CRUD (issue #64) ------------------------ */
+
+/**
+ * Reputation starts at 1 and "measures the gang's prestige" (Core Rulebook
+ * — separate attribute from Rating; limits Hangers-on/Brutes). 1–20 is a
+ * pragmatic bound for campaign play; the Arbitrator adjusts it manually
+ * until battle events automate it (issue #69).
+ */
+export const updateGangSchema = z.object({
+  gangId: z.string().uuid("Invalid gang ID."),
+  name: z.string().trim().min(2, "Gang name too short.").max(60),
+  house: z.string().trim().min(2, "House too short.").max(60),
+  reputation: z.coerce
+    .number()
+    .int()
+    .min(1, "Reputation ranges from 1 to 20.")
+    .max(20, "Reputation ranges from 1 to 20."),
+});
+
+/** Transfer ownership; empty string releases the gang (no owner). */
+export const transferGangSchema = z.object({
+  gangId: z.string().uuid("Invalid gang ID."),
+  newOwnerUserId: z
+    .string()
+    .uuid()
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+});
+
+/** Creates a gang for an existing account that has none. */
+export const createGangForUserSchema = z.object({
+  userId: z.string().uuid("Invalid user ID."),
+  name: z.string().trim().min(2, "Gang name too short.").max(60),
+  house: z.string().trim().min(2, "House too short.").max(60),
+});
+
+/** Destructive: the admin must type the gang's exact name to confirm. */
+export const deleteGangSchema = z.object({
+  gangId: z.string().uuid("Invalid gang ID."),
+  confirmName: z.string().min(1, "Type the gang name to confirm."),
+});
+
+export type UpdateGangInput = z.infer<typeof updateGangSchema>;
+export type TransferGangInput = z.infer<typeof transferGangSchema>;
+export type CreateGangForUserInput = z.infer<typeof createGangForUserSchema>;
+export type DeleteGangInput = z.infer<typeof deleteGangSchema>;
+
 /* ---------------------- Fighter portrait (issue #63) ---------------------- */
 
 /**
