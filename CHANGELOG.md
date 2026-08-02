@@ -7,6 +7,31 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Added
+- **Ciclo de vida da campanha pela UI** (issue #66): campanha agora nasce e
+  é editada no `/admin/campaign` — card "Start a campaign" quando não existe
+  nenhuma (ou quando a anterior foi encerrada) e painel "Edit campaign"
+  (nome, datas, total de ciclos) na campanha ativa. Uma campanha ativa por
+  vez (decisão de produto — landing, challenges e ranking assumem uma só);
+  encurtar a campanha abaixo do ciclo atual é rejeitado. A estrutura de
+  fases foi **generalizada pelo tamanho** (`downtimeCycle` em
+  `campaign-rules.ts`): o ciclo único de Downtime fica no meio — 7 ciclos
+  mantém o 3/1/3 oficial da Cinderak Burning, 5 vira 2/1/2 etc. (mínimo 3,
+  máximo 14); o texto do painel e o gatilho dos efeitos de Downtime passaram
+  a derivar da fase, não do ciclo 4 fixo. **Guard no seed**: `db:seed` agora
+  imprime o host do banco e ABORTA se já existir campanha (a menos de
+  `--force`) — o seed vira ferramenta de bootstrap, campanha de verdade se
+  cria pela UI. Refinamentos de mesa: **"Set cycle"** pula pra qualquer
+  ciclo, inclusive pra trás (botão de arrependimento do "Advance cycle" —
+  a fase re-deriva; voltar não restaura fighters já resetados pelo
+  Downtime, e cair NO ciclo de Downtime aplica os efeitos); **participação
+  na campanha** — coluna nova `gang.is_active`
+  (`scripts/campaign-players.sql`, migração aditiva): card "Campaign
+  players" no painel lista as gangs com Activate/Deactivate — jogador
+  cadastrado pode ficar de fora sem perder dados; gangs inativas somem do
+  ranking público e das opções de challenge/assignment/captura; e o
+  **Sympathiser Assignment** virou grid de duas colunas com as opções
+  carregando gang + nome do player (só ativos). 14 testes novos
+  (total: 425).
 - **CRUD de gang + gestão de Reputation** (issue #64): o Árbitro agora
   controla o ciclo de vida completo das gangs pelo dashboard admin — painel
   "Edit gang" por player com edição de nome/house/**Reputation** (1–20,

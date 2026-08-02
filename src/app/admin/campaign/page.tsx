@@ -8,6 +8,14 @@ import { ResolveChallengeForm } from "@/components/admin/ResolveChallengeForm";
 import { SympathiserAssignForm } from "@/components/admin/SympathiserAssignForm";
 import { AwardTriumphForm } from "@/components/admin/AwardTriumphForm";
 import {
+  CreateCampaignForm,
+  EditCampaignForm,
+} from "@/components/admin/CampaignLifecycleForms";
+import { SetCycleForm } from "@/components/admin/SetCycleForm";
+import { toggleGangActive } from "@/app/admin/gangs/actions";
+import { downtimeCycle } from "@/lib/campaign-rules";
+import {
+  getActiveCampaign,
   getLatestCampaign,
   listGangsBasic,
   listChallenges,
@@ -34,19 +42,29 @@ const PHASE_LABEL: Record<CampaignPhase, string> = {
 };
 
 export default async function CampaignAdminPage() {
-  const campaign = await getLatestCampaign();
+  // Prefer the ACTIVE campaign (same rule as the public repo/landing) and
+  // only fall back to the most recent one when none is active (closed-
+  // campaign view). Using "latest" alone showed an empty panel when a
+  // stray newer campaign row existed alongside the active one.
+  const campaign = (await getActiveCampaign()) ?? (await getLatestCampaign());
 
   if (!campaign) {
+    // issue #66 — a campaign is born from the UI now, not from the seed.
     return (
       <>
         <SiteHeader />
-        <main className="mx-auto max-w-2xl px-4 py-16 text-center">
+        <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-16">
           <h1 className="stencil text-2xl font-bold text-ink">
-            No campaign found
+            No campaign yet
           </h1>
-          <p className="mt-2 text-sm text-muted">
-            Connect the database and run <code>npm run db:seed</code> to start.
-          </p>
+          <Card>
+            <CardHeader>
+              <CardTitle>Start a campaign</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CreateCampaignForm />
+            </CardContent>
+          </Card>
         </main>
       </>
     );
@@ -65,6 +83,18 @@ export default async function CampaignAdminPage() {
     ]);
 
   const gangName = new Map(gangs.map((g) => [g.id, g.name]));
+  /**
+   * Only gangs currently taking part in the campaign enter challenges and
+   * Sympathiser assignment (issue #66 follow-up); the full list (including
+   * inactive) still names historical challenges above. The option label
+   * carries the player's name for quick identification.
+   */
+  const activeGangs = gangs
+    .filter((g) => g.isActive)
+    .map((g) => ({
+      id: g.id,
+      name: g.ownerName ? `${g.name} (${g.ownerName})` : g.name,
+    }));
   const sympName = new Map(SYMPATHISERS.map((s) => [s.id, s.name]));
   const sympOrder = new Map(SYMPATHISERS.map((s, i) => [s.id, i]));
 
@@ -125,11 +155,124 @@ export default async function CampaignAdminPage() {
               </form>
             )}
           </CardHeader>
-          <CardContent className="text-sm text-muted">
-            Great Darkness (cycles 1-3) · Downtime (4) · Spark of Rebellion
-            (5-7). Advancing the cycle automatically adjusts the phase.
+          <CardContent className="flex flex-col gap-3 text-sm text-muted">
+            <p>
+              Great Darkness (cycles 1-{downtimeCycle(campaign.totalCycles) - 1})
+              · Downtime ({downtimeCycle(campaign.totalCycles)}) · Spark of
+              Rebellion ({downtimeCycle(campaign.totalCycles) + 1}-
+              {campaign.totalCycles}). Advancing the cycle automatically
+              adjusts the phase.
+            </p>
+            {/* issue #66 follow-up — jump to a specific cycle (regret button) */}
+            {!isFinished && (
+              <SetCycleForm
+                campaignId={campaign.id}
+                currentCycle={campaign.currentCycle}
+                totalCycles={campaign.totalCycles}
+              />
+            )}
+            {/* issue #66 — edit name/dates/length of the campaign */}
+            {!isFinished && (
+              <details>
+                <summary className="cursor-pointer py-1 font-mono text-xs uppercase tracking-wider text-muted transition-colors hover:text-hazard">
+                  Edit campaign
+                </summary>
+                <div className="mt-3 border-t border-rivet/50 pt-4">
+                  <EditCampaignForm
+                    campaign={{
+                      id: campaign.id,
+                      name: campaign.name,
+                      totalCycles: campaign.totalCycles,
+                      startDate: campaign.startDate,
+                      endDate: campaign.endDate,
+                    }}
+                  />
+                </div>
+              </details>
+            )}
           </CardContent>
         </Card>
+
+        {/* issue #66 follow-up — who takes part in the campaign */}
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Campaign players (
+              {gangs.filter((g) => g.isActive).length}/{gangs.length} active)
+            </CardTitle>
+            <Link href="/admin" className="ml-auto">
+              <Button variant="ghost" className="text-xs">
+                Add players (accounts) →
+              </Button>
+            </Link>
+          </CardHeader>
+          <CardContent className="px-0 py-0">
+            {gangs.length === 0 ? (
+              <p className="px-5 py-6 text-sm text-muted">
+                No gangs in this campaign yet — create accounts and gangs in
+                the Accounts panel.
+              </p>
+            ) : (
+              <>
+                <ul className="divide-y divide-rivet/50">
+                  {gangs.map((g) => (
+                    <li
+                      key={g.id}
+                      className="flex flex-wrap items-center justify-between gap-3 px-5 py-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <div className="flex items-center gap-2 font-medium text-ink">
+                            {g.name}
+                            {!g.isActive && (
+                              <Badge variant="muted">sitting out</Badge>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted">
+                            {g.ownerName ?? "no owner"} · Rating {g.ratingCached}
+                          </div>
+                        </div>
+                      </div>
+                      {!isFinished && (
+                        <form action={toggleGangActive}>
+                          <input type="hidden" name="gangId" value={g.id} />
+                          <input
+                            type="hidden"
+                            name="isActive"
+                            value={String(g.isActive)}
+                          />
+                          <Button variant="outline" type="submit">
+                            {g.isActive ? "Deactivate" : "Activate"}
+                          </Button>
+                        </form>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                <p className="px-5 py-3 text-xs text-muted">
+                  Inactive gangs keep their data but leave the public ranking
+                  and the challenge/Sympathiser options. Add new players in
+                  the Accounts panel (account + gang).
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* issue #66 — the previous campaign is finished: a new one can start */}
+        {isFinished && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Start a new campaign</CardTitle>
+              <span className="ml-auto text-xs text-muted">
+                gangs stay linked to the finished campaign
+              </span>
+            </CardHeader>
+            <CardContent>
+              <CreateCampaignForm />
+            </CardContent>
+          </Card>
+        )}
 
         {/* ── Campaign Closure (shown when on last cycle or already finished) ── */}
         {(isLastCycle || isFinished) && (
@@ -250,7 +393,8 @@ export default async function CampaignAdminPage() {
               correction after a match. Changes are reflected on the public map
               immediately.
             </p>
-            <div className="flex flex-col divide-y divide-rivet/50">
+            {/* issue #66 follow-up — two columns; options = active gangs */}
+            <div className="grid gap-x-8 sm:grid-cols-2">
               {sympsOrdered.map((s) => {
                 const ctrlGangId = controllerMap[s.id] ?? null;
                 const ctrlName = ctrlGangId
@@ -259,21 +403,21 @@ export default async function CampaignAdminPage() {
                 return (
                   <div
                     key={s.id}
-                    className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2"
+                    className="border-b border-rivet/40 py-2"
                   >
-                    <span className="w-44 shrink-0 text-sm text-ink">
-                      {s.name.replace(" Sympathisers", "")}
-                    </span>
-                    <span className="w-28 shrink-0 text-xs text-muted">
-                      {ctrlName ?? "free"}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <SympathiserAssignForm
-                        sympathiserId={s.id}
-                        currentGangId={ctrlGangId}
-                        gangs={gangs}
-                      />
+                    <div className="mb-1 flex items-baseline justify-between gap-2">
+                      <span className="text-sm text-ink">
+                        {s.name.replace(" Sympathisers", "")}
+                      </span>
+                      <span className="text-xs text-muted">
+                        {ctrlName ?? "free"}
+                      </span>
                     </div>
+                    <SympathiserAssignForm
+                      sympathiserId={s.id}
+                      currentGangId={ctrlGangId}
+                      gangs={activeGangs}
+                    />
                   </div>
                 );
               })}
@@ -304,7 +448,7 @@ export default async function CampaignAdminPage() {
                   At least two gangs are required.
                 </p>
               ) : (
-                <CreateChallengeForm gangs={gangs} sympathisers={sympOptions} />
+                <CreateChallengeForm gangs={activeGangs} sympathisers={sympOptions} />
               )}
             </CardContent>
           </Card>

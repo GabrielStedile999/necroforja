@@ -168,6 +168,8 @@ export async function listUnassignedGangs() {
 /** All campaign gangs already mapped to domain types (public ranking). */
 export async function getAllGangs(): Promise<Gang[]> {
   const rows = await db.query.gangs.findMany({
+    // inactive gangs sit out of the campaign (issue #66 follow-up)
+    where: eq(schema.gangs.isActive, true),
     with: {
       owner: true,
       fighters: { with: { equipment: { with: { equipment: true } } } },
@@ -235,7 +237,10 @@ export async function getOtherGangsInCampaign(
   if (!ownGang) return [];
 
   const all = await db.query.gangs.findMany({
-    where: eq(schema.gangs.campaignId, ownGang.campaignId),
+    where: and(
+      eq(schema.gangs.campaignId, ownGang.campaignId),
+      eq(schema.gangs.isActive, true),
+    ),
     columns: { id: true, name: true },
   });
   return all.filter((g) => g.id !== gangId);
@@ -333,10 +338,19 @@ export async function getPostById(postId: string) {
 
 /** Gangs (id + name) for admin selects. */
 export async function listGangsBasic(campaignId: string) {
-  return db.query.gangs.findMany({
+  const rows = await db.query.gangs.findMany({
     where: eq(schema.gangs.campaignId, campaignId),
-    columns: { id: true, name: true, ratingCached: true },
+    columns: { id: true, name: true, ratingCached: true, isActive: true },
+    with: { owner: { columns: { displayName: true, isActive: true } } },
   });
+  return rows.map((g) => ({
+    id: g.id,
+    name: g.name,
+    ratingCached: g.ratingCached,
+    isActive: g.isActive,
+    ownerName: g.owner?.displayName ?? null,
+    ownerActive: g.owner?.isActive ?? false,
+  }));
 }
 
 /* ------------------------- Gallery (issues #6/#24) ------------------------- */

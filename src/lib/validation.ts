@@ -113,6 +113,65 @@ export const updateFighterSchema = fighterSchema.extend({
 
 export type UpdateFighterInput = z.infer<typeof updateFighterSchema>;
 
+/* ---------------------- Campaign CRUD (issue #66) ---------------------- */
+
+/** Optional YYYY-MM-DD date field; empty input means "not set". */
+const optionalDateField = z
+  .string()
+  .trim()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Use the YYYY-MM-DD format.")
+  .optional()
+  .or(z.literal("").transform(() => undefined));
+
+/**
+ * Creates a campaign (issue #66). Minimum 3 cycles so the generalised
+ * GD → Downtime → Spark shape holds (see lib/campaign-rules.ts
+ * downtimeCycle); 14 is a pragmatic upper bound (~2 official campaigns).
+ */
+export const createCampaignSchema = z.object({
+  name: z.string().trim().min(2, "Campaign name too short.").max(80),
+  startDate: optionalDateField,
+  endDate: optionalDateField,
+  totalCycles: z.coerce
+    .number()
+    .int()
+    .min(3, "Campaigns run from 3 to 14 cycles.")
+    .max(14, "Campaigns run from 3 to 14 cycles.")
+    .default(7),
+});
+
+/** Edits the campaign's name/dates/length (totalCycles >= currentCycle is
+ *  enforced in the action, which knows the current cycle). */
+export const updateCampaignSchema = createCampaignSchema.extend({
+  campaignId: z.string().uuid("Invalid campaign ID."),
+});
+
+export type CreateCampaignInput = z.infer<typeof createCampaignSchema>;
+export type UpdateCampaignInput = z.infer<typeof updateCampaignSchema>;
+
+/**
+ * Jumps the campaign to a specific cycle (issue #66 follow-up) — forwards
+ * or BACKWARDS (regret button for a mis-clicked "Advance cycle"). Bounds
+ * against totalCycles are enforced in the action.
+ */
+export const setCampaignCycleSchema = z.object({
+  campaignId: z.string().uuid("Invalid campaign ID."),
+  cycle: z.coerce
+    .number()
+    .int()
+    .min(1, "Cycle must be at least 1.")
+    .max(14, "Cycle cannot exceed 14."),
+});
+
+export type SetCampaignCycleInput = z.infer<typeof setCampaignCycleSchema>;
+
+/** Activates/deactivates a gang's participation in the campaign. */
+export const toggleGangActiveSchema = z.object({
+  gangId: z.string().uuid("Invalid gang ID."),
+  /** Current state, flipped by the action. */
+  isActive: z.enum(["true", "false"]),
+});
+
 /* ------------------------ Gang CRUD (issue #64) ------------------------ */
 
 /**

@@ -142,7 +142,10 @@ export async function advanceCampaignCycle(
   });
   if (!campaign) return;
 
-  const { cycle, phase } = nextCycleState(campaign.currentCycle);
+  const { cycle, phase } = nextCycleState(
+    campaign.currentCycle,
+    campaign.totalCycles,
+  );
   await dbc
     .update(schema.campaigns)
     .set({ currentCycle: cycle, phase })
