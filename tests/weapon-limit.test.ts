@@ -14,24 +14,28 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 /* ---- Auth guard ---- */
 vi.mock("@/lib/auth/guards", () => ({
-  requireUser: vi.fn().mockResolvedValue({ id: "user-1" }),
+  // Admin persona (issue #68): the zero-cost addEquipment is the Arbitrator's
+  // grant now — the weapon cap must hold on the grant path too.
+  requireUser: vi.fn().mockResolvedValue({ id: "admin-1", role: "admin" }),
 }));
 
 /* ---- Query helpers ---- */
 const {
   mockGetGangByOwnerId,
+  mockGetGangById,
   mockFighterBelongsToGang,
   mockStashItemBelongsToGang,
   mockCountFighterWeapons,
 } = vi.hoisted(() => ({
   mockGetGangByOwnerId: vi.fn(),
+  mockGetGangById: vi.fn(),
   mockFighterBelongsToGang: vi.fn(),
   mockStashItemBelongsToGang: vi.fn(),
   mockCountFighterWeapons: vi.fn(),
 }));
 vi.mock("@/lib/db/queries", () => ({
   getGangByOwnerId: mockGetGangByOwnerId,
-  getGangById: vi.fn(),
+  getGangById: mockGetGangById,
   fighterBelongsToGang: mockFighterBelongsToGang,
   stashItemBelongsToGang: mockStashItemBelongsToGang,
   countFighterWeapons: mockCountFighterWeapons,
@@ -93,6 +97,8 @@ const UUID_S = "987fcdeb-51a2-43d7-b012-0987654321ab";
 
 function form(data: Record<string, string>): FormData {
   const fd = new FormData();
+  // admin persona addresses the gang explicitly (Arbitrator mode)
+  fd.set("gangId", GANG.id);
   for (const [k, v] of Object.entries(data)) fd.set(k, v);
   return fd;
 }
@@ -100,6 +106,7 @@ function form(data: Record<string, string>): FormData {
 beforeEach(() => {
   vi.clearAllMocks();
   mockGetGangByOwnerId.mockResolvedValue(GANG);
+  mockGetGangById.mockResolvedValue(GANG);
   mockFighterBelongsToGang.mockResolvedValue(true);
   mockStashItemBelongsToGang.mockResolvedValue(true);
   txMock.returning.mockResolvedValue([{ id: "row-1" }]);

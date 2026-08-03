@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { AddFighterForm } from "@/components/player/AddFighterForm";
 import { AddEquipmentForm } from "@/components/player/AddEquipmentForm";
 import { AddStashItemForm } from "@/components/player/AddStashItemForm";
+import { PurchaseEquipmentForm } from "@/components/player/PurchaseEquipmentForm";
 import type { CatalogOption } from "@/components/player/CatalogPicker";
 import type { KeywordRuleMap } from "@/components/rules/KeywordChips";
 import { StashCreditsForm } from "@/components/player/StashCreditsForm";
@@ -245,18 +246,36 @@ export function GangManager({
                     </div>
                   </div>
 
-                  {/* Add equipment form */}
+                  {/* Buy equipment (issue #68) — debits the Stash */}
                   <div className="border-t border-rivet/30 bg-void/40 px-5 py-3">
                     <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
-                      Equip
+                      Buy equipment (Trading Post)
                     </p>
-                    <AddEquipmentForm
-                      fighterId={f.id}
+                    <PurchaseEquipmentForm
                       gangId={gangId}
+                      destination={f.id}
                       catalog={catalog}
                       keywordRules={keywordRules}
+                      stashCredits={gang.stashCredits}
                     />
                   </div>
+
+                  {/* Free grant — Arbitrator only (issue #68) */}
+                  {arbitratorMode && (
+                    <details className="border-t border-rivet/30 bg-void/40 px-5 py-3">
+                      <summary className="cursor-pointer py-1 font-mono text-xs uppercase tracking-wider text-muted transition-colors hover:text-hazard">
+                        Grant equipment (free — Arbitrator)
+                      </summary>
+                      <div className="mt-3 border-t border-rivet/50 pt-4">
+                        <AddEquipmentForm
+                          fighterId={f.id}
+                          gangId={gangId}
+                          catalog={catalog}
+                          keywordRules={keywordRules}
+                        />
+                      </div>
+                    </details>
+                  )}
 
                   {/* Edit fighter (issue #63) */}
                   <details className="border-t border-rivet/30 bg-void/40 px-5 py-3">
@@ -291,11 +310,22 @@ export function GangManager({
           </span>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
-          {/* Credits */}
-          <StashCreditsForm
-            currentCredits={gang.stashCredits}
-            gangId={gangId}
-          />
+          {/* Credits — hand-editing is Arbitrator-only now (issue #68);
+              players see the balance and spend it through purchases. */}
+          {arbitratorMode ? (
+            <StashCreditsForm
+              currentCredits={gang.stashCredits}
+              gangId={gangId}
+            />
+          ) : (
+            <p className="text-sm text-muted">
+              Credits:{" "}
+              <span className="font-mono text-hazard">
+                {gang.stashCredits}c
+              </span>{" "}
+              — earned in battles, spent on the Trading Post.
+            </p>
+          )}
 
           {/* Stored items */}
           {gang.stash.length > 0 ? (
@@ -354,26 +384,47 @@ export function GangManager({
             <p className="text-sm text-muted">Stash empty.</p>
           )}
 
-          {/* Add item to Stash */}
+          {/* Buy to Stash (issue #68) — debits credits atomically */}
           <div>
             <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
-              Add item
+              Buy item (Trading Post)
             </p>
-            <AddStashItemForm
+            <PurchaseEquipmentForm
               gangId={gangId}
+              destination="stash"
               catalog={catalog}
               keywordRules={keywordRules}
+              stashCredits={gang.stashCredits}
             />
           </div>
+
+          {/* Free grant — Arbitrator only (issue #68) */}
+          {arbitratorMode && (
+            <details>
+              <summary className="cursor-pointer py-1 font-mono text-xs uppercase tracking-wider text-muted transition-colors hover:text-hazard">
+                Grant item (free — Arbitrator)
+              </summary>
+              <div className="mt-3 border-t border-rivet/50 pt-4">
+                <AddStashItemForm
+                  gangId={gangId}
+                  catalog={catalog}
+                  keywordRules={keywordRules}
+                />
+              </div>
+            </details>
+          )}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
           <CardTitle>Recruit fighter</CardTitle>
+          <span className="ml-auto font-mono text-xs text-muted">
+            Stash: {gang.stashCredits}c
+          </span>
         </CardHeader>
         <CardContent>
-          <AddFighterForm gangId={gangId} />
+          <AddFighterForm gangId={gangId} arbitratorMode={arbitratorMode} />
         </CardContent>
       </Card>
     </main>

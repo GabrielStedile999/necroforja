@@ -441,7 +441,8 @@ describe("addEquipment with a catalogue pick", () => {
   const gang = { id: "123e4567-e89b-12d3-a456-426614174009", name: "Sump Rats" };
 
   beforeEach(() => {
-    mockResolveGangForWrite.mockResolvedValue({ gang });
+    // grant path (addEquipment) is Arbitrator-only since issue #68
+    mockResolveGangForWrite.mockResolvedValue({ gang, isAdmin: true });
   });
 
   it("uses the CATALOGUE row's values, ignoring whatever the client typed", async () => {

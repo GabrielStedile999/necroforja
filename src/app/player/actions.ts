@@ -28,8 +28,9 @@ import {
   fighterAvatarRequestSchema,
   fighterAvatarConfirmSchema,
   FIGHTER_AVATAR_MAX_BYTES,
+  purchaseEquipmentSchema,
 } from "@/lib/validation";
-import { recalcGangScores } from "@/lib/db/mutations";
+import { recalcGangScores, debitStashCredits } from "@/lib/db/mutations";
 import {
   GALLERY_BUCKET,
   createSignedUploadUrl,
@@ -42,13 +43,174 @@ import { randomUUID } from "node:crypto";
 
 export type PlayerState = { error?: string; success?: string };
 
-/** Adds a fighter to the authenticated player's gang. */
+/**
+ * Trading Post purchase (issue #68): buying a catalogue item DEBITS the
+ * gang's Stash credits in the same transaction that creates the item.
+ * The debit is a conditional UPDATE (`stash_credits >= total`) — two
+ * concurrent purchases can never overdraw; the loser fails cleanly with
+ * the amounts. Values are the catalogue row's snapshot (issue #67), so
+ * the price paid is always the official one, never the client's.
+ *
+ * Wealth stays constant on both paths (credits become an item of equal
+ * value); Rating rises only when buying onto a fighter — recalc runs
+ * in-transaction. The old zero-cost add remains as the Arbitrator's grant.
+ */
+export async function purchaseEquipment(
+  _prev: PlayerState,
+  formData: FormData,
+): Promise<PlayerState> {
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return { error: resolved.error };
+  const gang = resolved.gang;
+
+  const parsed = purchaseEquipmentSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+  const { catalogItemId, destination, qty } = parsed.data;
+  const toStash = destination === "stash";
+
+  const item = await getCatalogItemById(catalogItemId);
+  if (!item || !item.enabled) {
+    return { error: "Catalogue item not found (or disabled)." };
+  }
+  const total = item.cost * qty;
+
+  if (!toStash) {
+    if (!(await fighterBelongsToGang(destination, gang.id))) {
+      return { error: "Invalid fighter." };
+    }
+    // Weapon cap — "Equipping a Fighter", Core Rulebook 2023, p.83.
+    if (
+      item.category === "weapon" &&
+      (await countFighterWeapons(destination)) >= MAX_WEAPONS_PER_FIGHTER
+    ) {
+      return {
+        error: `A fighter can carry a maximum of ${MAX_WEAPONS_PER_FIGHTER} weapons (Core Rulebook, p.83).`,
+      };
+    }
+  }
+
+  let result: PlayerState = { error: "Purchase failed." };
+  await db.transaction(async (tx) => {
+    // Conditional debit FIRST: 0 rows updated = insufficient credits, and
+    // nothing else in this transaction has happened yet.
+    const paid = await debitStashCredits(gang.id, total, tx);
+    if (!paid) {
+      const row = await tx.query.gangs.findFirst({
+        where: eq(schema.gangs.id, gang.id),
+        columns: { stashCredits: true },
+      });
+      result = {
+        error: `Insufficient credits: you need ${total}c but the Stash has ${row?.stashCredits ?? 0}c.`,
+      };
+      return;
+    }
+
+    const [created] = await tx
+      .insert(schema.equipment)
+      .values({
+        name: item.name,
+        category: item.category,
+        cost: item.cost,
+        catalogId: item.id,
+      })
+      .returning();
+    if (!created) throw new Error("Failed to create the purchased item.");
+
+    if (toStash) {
+      await tx.insert(schema.stashItems).values({
+        gangId: gang.id,
+        equipmentId: created.id,
+        qty,
+      });
+    } else {
+      await tx.insert(schema.fighterEquipment).values({
+        fighterId: destination,
+        equipmentId: created.id,
+        qty: 1,
+      });
+    }
+
+    await recalcGangScores(gang.id, tx);
+    result = {
+      success: `${item.name}${qty > 1 ? ` ×${qty}` : ""} purchased for ${total}c.`,
+    };
+  });
+
+  revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
+  return result;
+}
+
+/**
+ * Recruits a fighter PAYING their base cost from the Stash (issue #68) —
+ * same conditional debit as purchaseEquipment, in one transaction with the
+ * fighter insert: a failure rolls back both. The free add (addFighter)
+ * remains as the Arbitrator's grant.
+ */
+export async function recruitFighter(
+  _prev: PlayerState,
+  formData: FormData,
+): Promise<PlayerState> {
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return { error: resolved.error };
+  const gang = resolved.gang;
+
+  const parsed = fighterSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+  const d = parsed.data;
+
+  let result: PlayerState = { error: "Recruitment failed." };
+  await db.transaction(async (tx) => {
+    const paid = await debitStashCredits(gang.id, d.baseCost, tx);
+    if (!paid) {
+      const row = await tx.query.gangs.findFirst({
+        where: eq(schema.gangs.id, gang.id),
+        columns: { stashCredits: true },
+      });
+      result = {
+        error: `Insufficient credits: recruiting ${d.name} costs ${d.baseCost}c but the Stash has ${row?.stashCredits ?? 0}c.`,
+      };
+      return;
+    }
+
+    await tx.insert(schema.fighters).values({
+      gangId: gang.id,
+      name: d.name,
+      type: d.type,
+      category: d.category,
+      baseCost: d.baseCost,
+      m: d.m, ws: d.ws, bs: d.bs, s: d.s, t: d.t, w: d.w,
+      i: d.i, a: d.a, ld: d.ld, cl: d.cl, wil: d.wil, int: d.int,
+    });
+
+    await recalcGangScores(gang.id, tx);
+    result = { success: `${d.name} recruited for ${d.baseCost}c.` };
+  });
+
+  revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
+  return result;
+}
+
+/**
+ * Adds a fighter WITHOUT payment — the Arbitrator's grant (issue #68).
+ * Players recruit through recruitFighter, which debits the Stash.
+ */
 export async function addFighter(
   _prev: PlayerState,
   formData: FormData,
 ): Promise<PlayerState> {
   const resolved = await resolveGangForWrite(gangIdFromForm(formData));
   if ("error" in resolved) return { error: resolved.error };
+  if (!resolved.isAdmin) {
+    return {
+      error: "Free recruiting is Arbitrator-only — players recruit paying from the Stash.",
+    };
+  }
   const gang = resolved.gang;
 
   const parsed = fighterSchema.safeParse(Object.fromEntries(formData));
@@ -186,6 +348,11 @@ export async function addEquipment(
 ): Promise<PlayerState> {
   const resolved = await resolveGangForWrite(gangIdFromForm(formData));
   if ("error" in resolved) return { error: resolved.error };
+  // Zero-cost adds bypass the economy (issue #68) — Arbitrator grant only;
+  // players buy through purchaseEquipment (atomic Stash debit).
+  if (!resolved.isAdmin) {
+    return { error: "Free adds are Arbitrator-only — use the purchase flow." };
+  }
   const gang = resolved.gang;
 
   const parsed = addEquipmentSchema.safeParse(Object.fromEntries(formData));
@@ -283,6 +450,11 @@ export async function setStashCredits(
 ): Promise<PlayerState> {
   const resolved = await resolveGangForWrite(gangIdFromForm(formData));
   if ("error" in resolved) return { error: resolved.error };
+  // Hand-editing credits reopens the economy (issue #68) — Arbitrator only
+  // (battle rewards will credit the Stash in issue #69).
+  if (!resolved.isAdmin) {
+    return { error: "Setting credits directly is Arbitrator-only." };
+  }
   const gang = resolved.gang;
 
   const parsed = setStashCreditsSchema.safeParse(Object.fromEntries(formData));
@@ -311,6 +483,10 @@ export async function addStashItem(
 ): Promise<PlayerState> {
   const resolved = await resolveGangForWrite(gangIdFromForm(formData));
   if ("error" in resolved) return { error: resolved.error };
+  // Zero-cost adds bypass the economy (issue #68) — Arbitrator grant only.
+  if (!resolved.isAdmin) {
+    return { error: "Free adds are Arbitrator-only — use the purchase flow." };
+  }
   const gang = resolved.gang;
 
   const parsed = addStashItemSchema.safeParse(Object.fromEntries(formData));
