@@ -7,7 +7,10 @@ import {
   getGangById,
   getSympathiserControlMap,
   getOtherGangsInCampaign,
+  listEnabledCatalogItems,
+  listKeywordRules,
 } from "@/lib/db/queries";
+import { keywordRuleMap } from "@/lib/keywords";
 import { getSympathiser } from "@/lib/data/sympathisers";
 import type { Metadata } from "next";
 
@@ -33,9 +36,11 @@ export default async function AdminGangPage({
   const gang = await getGangById(gangId);
   if (!gang) notFound();
 
-  const [controlMap, otherGangs] = await Promise.all([
+  const [controlMap, otherGangs, catalog, keywordRules] = await Promise.all([
     getSympathiserControlMap(),
     getOtherGangsInCampaign(gang.id),
+    listEnabledCatalogItems(),
+    listKeywordRules(),
   ]);
   const symps = (controlMap[gang.id] ?? [])
     .map((id) => getSympathiser(id)?.name)
@@ -58,6 +63,8 @@ export default async function AdminGangPage({
         sympathiserNames={symps}
         exportHref={`/admin/gangs/${gang.id}/export`}
         arbitratorMode
+        catalog={catalog}
+        keywordRules={keywordRuleMap(keywordRules)}
       />
     </>
   );

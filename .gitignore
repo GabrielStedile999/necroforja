@@ -52,3 +52,8 @@ yarn-error.log*
 
 # texto integral dos livros (IP — não redistribuir). Uso local/privado.
 /content/books
+
+# Private rule content & tooling (issue #67) — never commit rule data or the
+# extraction script; content lives only in the database (import via
+# /admin/catalog). Covers *.private.json, *.draft.private.json, *.private.mjs.
+*.private.*

@@ -49,6 +49,7 @@ vi.mock("@/lib/db/queries", () => ({
   fighterBelongsToGang: mockFighterBelongsToGang,
   stashItemBelongsToGang: mockStashItemBelongsToGang,
   countFighterWeapons: vi.fn().mockResolvedValue(0),
+  getCatalogItemById: vi.fn().mockResolvedValue(null),
   getActiveCampaign: mockGetActiveCampaign,
   getLatestCampaign: mockGetLatestCampaign,
   getGangById: vi.fn(),

@@ -129,11 +129,80 @@ export const gangs = pgTable("gang", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+/**
+ * Official equipment catalogue (issue #67) — the Arbitrator's master list of
+ * Trading Post items (seeded from src/lib/data/equipment-catalog.ts, editable
+ * at /admin/catalog). Owned items (`equipment` rows) SNAPSHOT name/cost at
+ * acquisition time: editing the catalogue never rewrites gear a fighter
+ * already carries. Weapon profile columns are text because the book mixes
+ * numbers with symbols ("-", "S", "S+1", "+1", "4+", "E", "T″").
+ * See scripts/equipment-catalog.sql.
+ */
+export const equipmentCatalog = pgTable(
+  "equipment_catalog",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull().unique(),
+    category: equipmentCategory("category").notNull(),
+    /** Weapon grouping ("basic" | "pistol" | "special" | "heavy" | "close_combat" | "grenade"); null for non-weapons. */
+    subcategory: text("subcategory"),
+    cost: integer("cost").notNull().default(0),
+    // weapon profile (Rng S/L, Acc S/L, Str, AP, D, Am) — null for non-weapons
+    rangeShort: text("range_short"),
+    rangeLong: text("range_long"),
+    accShort: text("acc_short"),
+    accLong: text("acc_long"),
+    strength: text("strength"),
+    ap: text("ap"),
+    damage: text("damage"),
+    ammo: text("ammo"),
+    /** Comma-separated trait names (e.g. "Rapid Fire (1), Plentiful"). */
+    traits: text("traits").notNull().default(""),
+    /** Terse functional summary / alternate profile note (no book prose). */
+    effect: text("effect").notNull().default(""),
+    /** Disabled items stay for history but leave the pick lists. */
+    enabled: boolean("enabled").notNull().default(true),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("equipment_catalog_cat_idx").on(t.category, t.name)],
+);
+
+/**
+ * Rule keywords (issue #67 follow-up) — clickable trait/keyword glossary
+ * shown in a modal on the catalogue and equipment forms.
+ *
+ * IP strategy (repository is PUBLIC): the summaries are (1) REWRITTEN in our
+ * own concise wording, preserving only the game function, never the book's
+ * prose, and (2) stored ONLY in the private database — the repo carries no
+ * rule content. Population happens via /admin/catalog (paste-import or
+ * manual CRUD) from a private gitignored JSON. The same two-part strategy
+ * applies to every rule the app stores from the books.
+ */
+export const keywordRules = pgTable("keyword_rule", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  /** Base keyword without parameters ("Rapid Fire", not "Rapid Fire (1)"). */
+  keyword: text("keyword").notNull().unique(),
+  /** Concise functional summary, rewritten — never book prose. */
+  summary: text("summary").notNull(),
+  /** Source reference for manual verification (optional). */
+  book: text("book"),
+  page: integer("page"),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 export const equipment = pgTable("equipment", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
   category: equipmentCategory("category").notNull(),
   cost: integer("cost").notNull().default(0),
+  /**
+   * Catalogue item this gear was acquired from (issue #67). Nullable:
+   * legacy/custom gear has no catalogue link, and deleting a catalogue
+   * entry keeps the owned item (set null).
+   */
+  catalogId: uuid("catalog_id").references(() => equipmentCatalog.id, {
+    onDelete: "set null",
+  }),
 });
 
 export const fighters = pgTable("fighter", {
@@ -420,6 +489,13 @@ export const fighterEquipmentRelations = relations(
     }),
   }),
 );
+
+export const equipmentRelations = relations(equipment, ({ one }) => ({
+  catalogItem: one(equipmentCatalog, {
+    fields: [equipment.catalogId],
+    references: [equipmentCatalog.id],
+  }),
+}));
 
 export const stashItemsRelations = relations(stashItems, ({ one }) => ({
   gang: one(gangs, { fields: [stashItems.gangId], references: [gangs.id] }),

@@ -11,6 +11,7 @@ import {
   fighterBelongsToGang,
   stashItemBelongsToGang,
   countFighterWeapons,
+  getCatalogItemById,
 } from "@/lib/db/queries";
 import { MAX_WEAPONS_PER_FIGHTER } from "@/lib/campaign-rules";
 import {
@@ -142,6 +143,43 @@ export async function removeFighter(formData: FormData) {
 }
 
 /** Equips an item on a fighter belonging to the player's own gang. */
+/**
+ * Resolves what an acquisition writes to the `equipment` table (issue #67).
+ * A catalogue pick is SERVER-AUTHORITATIVE: name/category/cost come from the
+ * catalogue row (never from the client), and the owned item keeps a link to
+ * it (`catalogId`). The values are copied — a snapshot — so later catalogue
+ * rebalancing never rewrites gear already acquired. Free-text entries
+ * (custom gear) pass through unchanged with no link.
+ */
+async function resolveEquipmentValues(d: {
+  catalogId?: string;
+  name: string;
+  category: "weapon" | "wargear" | "skill" | "armour" | "upgrade";
+  cost: number;
+}): Promise<
+  | { error: string }
+  | {
+      name: string;
+      category: "weapon" | "wargear" | "skill" | "armour" | "upgrade";
+      cost: number;
+      catalogId: string | null;
+    }
+> {
+  if (!d.catalogId) {
+    return { name: d.name, category: d.category, cost: d.cost, catalogId: null };
+  }
+  const item = await getCatalogItemById(d.catalogId);
+  if (!item || !item.enabled) {
+    return { error: "Catalogue item not found (or disabled)." };
+  }
+  return {
+    name: item.name,
+    category: item.category,
+    cost: item.cost,
+    catalogId: item.id,
+  };
+}
+
 export async function addEquipment(
   _prev: PlayerState,
   formData: FormData,
@@ -160,9 +198,13 @@ export async function addEquipment(
     return { error: "Invalid fighter." };
   }
 
+  // Catalogue pick → server-authoritative snapshot (issue #67).
+  const values = await resolveEquipmentValues(d);
+  if ("error" in values) return { error: values.error };
+
   // Weapon cap — "Equipping a Fighter", Core Rulebook 2023, p.83.
   if (
-    d.category === "weapon" &&
+    values.category === "weapon" &&
     (await countFighterWeapons(d.fighterId)) >= MAX_WEAPONS_PER_FIGHTER
   ) {
     return {
@@ -175,7 +217,7 @@ export async function addEquipment(
   await db.transaction(async (tx) => {
     const [created] = await tx
       .insert(schema.equipment)
-      .values({ name: d.name, category: d.category, cost: d.cost })
+      .values(values)
       .returning();
     if (created) {
       await tx.insert(schema.fighterEquipment).values({
@@ -190,7 +232,7 @@ export async function addEquipment(
 
   revalidatePath("/player");
   revalidatePath(`/admin/gangs/${gang.id}`);
-  return { success: `${d.name} added.` };
+  return { success: `${values.name} added.` };
 }
 
 /** Removes an equipped item from a fighter in the player's own gang. */
@@ -277,11 +319,15 @@ export async function addStashItem(
   }
   const d = parsed.data;
 
+  // Catalogue pick → server-authoritative snapshot (issue #67).
+  const values = await resolveEquipmentValues(d);
+  if ("error" in values) return { error: values.error };
+
   // Atomic (issue #62): equipment + stash link + recalc commit together.
   await db.transaction(async (tx) => {
     const [equip] = await tx
       .insert(schema.equipment)
-      .values({ name: d.name, category: d.category, cost: d.cost })
+      .values(values)
       .returning();
 
     if (equip) {
@@ -297,7 +343,7 @@ export async function addStashItem(
 
   revalidatePath("/player");
   revalidatePath(`/admin/gangs/${gang.id}`);
-  return { success: `${d.name} added to Stash.` };
+  return { success: `${values.name} added to Stash.` };
 }
 
 /** Removes an item from the Stash (and the associated equipment). */
