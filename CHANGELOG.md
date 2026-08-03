@@ -7,6 +7,25 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Added
+- **Trading Post — a economia se fecha sozinha** (issue #68): comprar um
+  item do catálogo ou recrutar um fighter agora **debita os créditos do
+  Stash na mesma transação** que cria o item/fighter. O débito é um
+  `UPDATE` condicional (`stash_credits >= total`) — duas compras
+  simultâneas nunca gastam os mesmos créditos: a segunda falha limpa,
+  informando o necessário e o disponível, sem saldo negativo e sem locks
+  (`debitStashCredits` em `lib/db/mutations.ts`). Nova action
+  `purchaseEquipment` (destino: fighter ou Stash, qty só pro Stash, preço
+  sempre o snapshot oficial do catálogo — issue #67) e `recruitFighter`
+  (debita o `baseCost`; falha desfaz débito e fighter juntos). Os adds de
+  custo zero (`addFighter`/`addEquipment`/`addStashItem`) e a edição
+  manual de créditos (`setStashCredits`) viram **grants exclusivos do
+  Árbitro, garantidos no servidor** — jogador compra, Árbitro concede. UI:
+  form "Buy (Trading Post)" nos cards de fighter e no Stash (preço,
+  keywords, indicador de saldo e botão "Buy for Nc" com aviso de quanto
+  falta); no modo Árbitro, grants em dropdowns "free — Arbitrator" e
+  select de pagamento no recrutamento. Invariantes testadas: Wealth
+  constante nas duas vias de compra e no recrutamento; Rating sobe só
+  quando o item vai pro fighter. Sem migração.
 - **Catálogo oficial de equipamento + glossário de keywords** (issue #67):
   nova tabela `equipment_catalog` — a lista-mestra do Trading Post (Core
   Rulebook 2023), editável em `/admin/catalog`: cada item é um dropdown com

@@ -26,7 +26,8 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 /* ---- Auth guards ---- */
 vi.mock("@/lib/auth/guards", () => ({
-  requireUser: vi.fn().mockResolvedValue({ id: "user-1" }),
+  // Admin persona (issue #68): addEquipment is the Arbitrator's grant now.
+  requireUser: vi.fn().mockResolvedValue({ id: "admin-1", role: "admin" }),
   requireAdmin: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -46,13 +47,13 @@ const {
 }));
 vi.mock("@/lib/db/queries", () => ({
   getGangByOwnerId: mockGetGangByOwnerId,
+  getGangById: mockGetGangByOwnerId, // admin path resolves by explicit gangId
   fighterBelongsToGang: mockFighterBelongsToGang,
   stashItemBelongsToGang: mockStashItemBelongsToGang,
   countFighterWeapons: vi.fn().mockResolvedValue(0),
   getCatalogItemById: vi.fn().mockResolvedValue(null),
   getActiveCampaign: mockGetActiveCampaign,
   getLatestCampaign: mockGetLatestCampaign,
-  getGangById: vi.fn(),
 }));
 
 /* ---- recalcGangScores / setSympathiserController (mutation helpers) ---- */
@@ -139,6 +140,8 @@ const UUID_E = "987fcdeb-51a2-43d7-b012-0987654321ab";
 
 function form(data: Record<string, string>): FormData {
   const fd = new FormData();
+  // admin persona addresses the gang explicitly (Arbitrator mode)
+  fd.set("gangId", GANG.id);
   for (const [k, v] of Object.entries(data)) fd.set(k, v);
   return fd;
 }

@@ -1,16 +1,43 @@
 "use client";
 
-import { useActionState, useRef, useEffect } from "react";
-import { addFighter, type PlayerState } from "@/app/player/actions";
+import { useActionState, useRef, useEffect, useState } from "react";
+import {
+  addFighter,
+  recruitFighter,
+  type PlayerState,
+} from "@/app/player/actions";
 import { Button } from "@/components/ui/button";
+import { Label, Select } from "@/components/ui/input";
 import { FighterFields } from "./FighterFields";
 
-export function AddFighterForm({ gangId }: { gangId: string }) {
-  const [state, formAction, pending] = useActionState<PlayerState, FormData>(
-    addFighter,
-    {},
-  );
+/**
+ * Recruiting (issue #68): players PAY the fighter's base cost from the
+ * Stash (recruitFighter — atomic conditional debit). In Arbitrator mode a
+ * payment select also exposes the free grant (addFighter, admin-only on
+ * the server), used for narrative rewards or fixing mistakes.
+ */
+export function AddFighterForm({
+  gangId,
+  arbitratorMode = false,
+}: {
+  gangId: string;
+  arbitratorMode?: boolean;
+}) {
+  const [buyState, buyAction, buyPending] = useActionState<
+    PlayerState,
+    FormData
+  >(recruitFighter, {});
+  const [grantState, grantAction, grantPending] = useActionState<
+    PlayerState,
+    FormData
+  >(addFighter, {});
+  const [payment, setPayment] = useState<"debit" | "grant">("debit");
   const formRef = useRef<HTMLFormElement>(null);
+
+  const isGrant = arbitratorMode && payment === "grant";
+  const state = isGrant ? grantState : buyState;
+  const formAction = isGrant ? grantAction : buyAction;
+  const pending = isGrant ? grantPending : buyPending;
 
   useEffect(() => {
     if (state.success) formRef.current?.reset();
@@ -19,6 +46,21 @@ export function AddFighterForm({ gangId }: { gangId: string }) {
   return (
     <form ref={formRef} action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="gangId" value={gangId} />
+
+      {arbitratorMode && (
+        <div className="sm:max-w-xs">
+          <Label htmlFor="add-fighter-payment">Payment</Label>
+          <Select
+            id="add-fighter-payment"
+            value={payment}
+            onChange={(e) => setPayment(e.target.value as "debit" | "grant")}
+          >
+            <option value="debit">Debit Stash (purchase)</option>
+            <option value="grant">Free (Arbitrator grant)</option>
+          </Select>
+        </div>
+      )}
+
       <FighterFields idPrefix="add-" />
 
       {state.error && (
@@ -34,7 +76,11 @@ export function AddFighterForm({ gangId }: { gangId: string }) {
 
       <div>
         <Button type="submit" pending={pending}>
-          {pending ? "Recruiting..." : "Recruit fighter"}
+          {pending
+            ? "Recruiting..."
+            : isGrant
+              ? "Add fighter (free grant)"
+              : "Recruit (pay base cost)"}
         </Button>
       </div>
     </form>

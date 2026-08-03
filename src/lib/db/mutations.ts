@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, gte, inArray, sql } from "drizzle-orm";
 import { db, schema, type DbOrTx } from "./index";
 import { getGangById } from "./queries";
 import { gangRating, gangWealth } from "@/lib/scoring";
@@ -30,6 +30,34 @@ export async function recalcGangScores(gangId: string, dbc: DbOrTx = db) {
     .update(schema.gangs)
     .set({ ratingCached: gangRating(gang), wealthCached: gangWealth(gang) })
     .where(eq(schema.gangs.id, gangId));
+}
+
+/**
+ * Conditionally debits a gang's Stash credits (issue #68) — the correctness
+ * core of the Trading Post. The WHERE clause makes the debit atomic at the
+ * database level: `stash_credits >= amount` means two concurrent purchases
+ * can never spend the same credits — the second UPDATE matches 0 rows and
+ * the purchase fails cleanly, no locks needed. Returns `true` when the
+ * debit happened. Always call inside the purchase's transaction so a later
+ * failure rolls the debit back.
+ */
+export async function debitStashCredits(
+  gangId: string,
+  amount: number,
+  dbc: DbOrTx = db,
+): Promise<boolean> {
+  if (amount < 0) return false;
+  if (amount === 0) return true;
+  const rows = await dbc
+    .update(schema.gangs)
+    .set({
+      stashCredits: sql`${schema.gangs.stashCredits} - ${amount}`,
+    })
+    .where(
+      and(eq(schema.gangs.id, gangId), gte(schema.gangs.stashCredits, amount)),
+    )
+    .returning({ id: schema.gangs.id });
+  return rows.length > 0;
 }
 
 /**

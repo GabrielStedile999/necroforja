@@ -83,7 +83,7 @@ describe("resolveGangForWrite", () => {
 
     const r = await resolveGangForWrite("gang-other");
 
-    expect(r).toEqual({ gang: OTHER_GANG });
+    expect(r).toEqual({ gang: OTHER_GANG, isAdmin: true });
     expect(mockGetGangById).toHaveBeenCalledWith("gang-other");
     expect(mockGetGangByOwnerId).not.toHaveBeenCalled();
   });
@@ -112,7 +112,7 @@ describe("resolveGangForWrite", () => {
 
     const r = await resolveGangForWrite(undefined);
 
-    expect(r).toEqual({ gang: OWN_GANG });
+    expect(r).toEqual({ gang: OWN_GANG, isAdmin: false });
     expect(mockGetGangById).not.toHaveBeenCalled();
   });
 
@@ -122,7 +122,7 @@ describe("resolveGangForWrite", () => {
 
     const r = await resolveGangForWrite("gang-own");
 
-    expect(r).toEqual({ gang: OWN_GANG });
+    expect(r).toEqual({ gang: OWN_GANG, isAdmin: false });
   });
 
   it("player sending ANOTHER gang's id is rejected", async () => {

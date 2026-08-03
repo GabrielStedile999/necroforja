@@ -288,6 +288,28 @@ export const addEquipmentSchema = z.object({
     .or(z.literal("").transform(() => undefined)),
 });
 
+/* ----------------------- Trading Post (issue #68) ----------------------- */
+
+/**
+ * Purchase of a catalogue item with an atomic Stash-credits debit.
+ * `destination` is either the literal "stash" or the target fighter's id.
+ * Qty above 1 only makes sense for the Stash (a fighter equips one copy —
+ * the three-weapon cap reasons about individual items).
+ */
+export const purchaseEquipmentSchema = z
+  .object({
+    catalogItemId: z.string().uuid("Invalid catalogue item ID."),
+    destination: z.union([
+      z.literal("stash"),
+      z.string().uuid("Invalid destination."),
+    ]),
+    qty: z.coerce.number().int().min(1, "Minimum qty: 1.").max(9).default(1),
+  })
+  .refine((d) => d.destination === "stash" || d.qty === 1, {
+    message: "Buying onto a fighter is one item at a time.",
+    path: ["qty"],
+  });
+
 /* -------------------- Equipment catalogue (issue #67) -------------------- */
 
 /**

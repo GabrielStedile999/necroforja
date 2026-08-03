@@ -2,7 +2,9 @@ import { requireUser } from "./guards";
 import { getGangById, getGangByOwnerId } from "@/lib/db/queries";
 import type { Gang } from "@/types";
 
-export type GangResolution = { gang: Gang } | { error: string };
+export type GangResolution =
+  | { gang: Gang; isAdmin: boolean }
+  | { error: string };
 
 /**
  * Single authorisation choke point for roster writes (issue #65 —
@@ -26,13 +28,13 @@ export async function resolveGangForWrite(
   if (user.role === "admin") {
     if (!gangId) return { error: "Select a gang first (Arbitrator mode)." };
     const gang = await getGangById(gangId);
-    return gang ? { gang } : { error: "Gang not found." };
+    return gang ? { gang, isAdmin: true } : { error: "Gang not found." };
   }
 
   const gang = await getGangByOwnerId(user.id);
   if (!gang) return { error: "You don't have a gang yet." };
   if (gangId && gangId !== gang.id) return { error: "Invalid gang." };
-  return { gang };
+  return { gang, isAdmin: false };
 }
 
 /** Reads the optional `gangId` hidden field from a form payload. */

@@ -18,10 +18,17 @@ const { txMock, dbMock, mockTransaction } = vi.hoisted(() => {
   const build = () => {
     const insertValues = vi.fn().mockResolvedValue(undefined);
     const insert = vi.fn(() => ({ values: insertValues }));
-    const updateWhere = vi.fn().mockResolvedValue(undefined);
+    // where() must be awaitable (existing helpers) AND chain .returning()
+    // (debitStashCredits, issue #68) — a thenable with a returning fn.
+    const updateReturning = vi.fn().mockResolvedValue([]);
+    const updateWhere = vi.fn(() => {
+      const chain: any = { returning: updateReturning };
+      chain.then = (resolve: (v: unknown) => void) => resolve(undefined);
+      return chain;
+    });
     const updateSet = vi.fn(() => ({ where: updateWhere }));
     const update = vi.fn(() => ({ set: updateSet }));
-    return { insert, insertValues, update, updateSet, updateWhere };
+    return { insert, insertValues, update, updateSet, updateWhere, updateReturning };
   };
   const txMock: any = {
     ...build(),
@@ -42,7 +49,7 @@ const { txMock, dbMock, mockTransaction } = vi.hoisted(() => {
 vi.mock("@/lib/db", () => ({
   db: dbMock,
   schema: {
-    gangs: { id: "gangs.id", campaignId: "gangs.campaign_id" },
+    gangs: { id: "gangs.id", campaignId: "gangs.campaign_id", stashCredits: "gangs.stash_credits" },
     fighters: { gangId: "fighters.gang_id", status: "fighters.status" },
     sympathiserControl: {
       sympathiserId: "sc.sympathiser_id",
@@ -56,6 +63,7 @@ import {
   recalcGangScores,
   setSympathiserController,
   applyDowntimeEffects,
+  debitStashCredits,
 } from "@/lib/db/mutations";
 
 const GANG = {
@@ -133,5 +141,33 @@ describe("applyDowntimeEffects", () => {
     await applyDowntimeEffects("camp-1");
 
     expect(txMock.update).not.toHaveBeenCalled();
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/*  debitStashCredits (issue #68)                                       */
+/* ------------------------------------------------------------------ */
+describe("debitStashCredits", () => {
+  it("returns true only when the conditional update matched a row", async () => {
+    dbMock.updateReturning.mockResolvedValueOnce([{ id: "gang-1" }]);
+    expect(await debitStashCredits("gang-1", 55)).toBe(true);
+
+    // 0 rows matched = stash_credits < amount → clean failure, no overdraft
+    dbMock.updateReturning.mockResolvedValueOnce([]);
+    expect(await debitStashCredits("gang-1", 55)).toBe(false);
+  });
+
+  it("amount 0 succeeds and negative fails, both without touching the db", async () => {
+    expect(await debitStashCredits("gang-1", 0)).toBe(true);
+    expect(await debitStashCredits("gang-1", -5)).toBe(false);
+    expect(dbMock.update).not.toHaveBeenCalled();
+  });
+
+  it("joins the caller's transaction handle (never the root client)", async () => {
+    txMock.updateReturning.mockResolvedValueOnce([{ id: "gang-1" }]);
+    const ok = await debitStashCredits("gang-1", 10, txMock);
+    expect(ok).toBe(true);
+    expect(txMock.update).toHaveBeenCalledTimes(1);
+    expect(dbMock.update).not.toHaveBeenCalled();
   });
 });
