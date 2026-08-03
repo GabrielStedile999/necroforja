@@ -37,6 +37,7 @@ vi.mock("@/lib/db/queries", () => ({
   fighterBelongsToGang: mockFighterBelongsToGang,
   stashItemBelongsToGang: vi.fn(),
   countFighterWeapons: vi.fn().mockResolvedValue(0),
+  getCatalogItemById: vi.fn().mockResolvedValue(null),
 }));
 
 /* ---- recalcGangScores ---- */

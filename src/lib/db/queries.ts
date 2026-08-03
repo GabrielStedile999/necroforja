@@ -2,7 +2,7 @@
  * Read layer (Drizzle). Maps database rows to the domain types
  * used by lib/scoring.ts. All functions run server-side only.
  */
-import { eq, and, or, ilike, desc, lt, sql, isNull, type SQL } from "drizzle-orm";
+import { eq, and, or, ilike, asc, desc, lt, sql, isNull, type SQL } from "drizzle-orm";
 import { db, schema, type DbOrTx } from "./index";
 import type {
   Fighter,
@@ -131,6 +131,50 @@ export async function countFighterWeapons(
     with: { equipment: { columns: { category: true } } },
   });
   return rows.filter((r) => r.equipment?.category === "weapon").length;
+}
+
+/* -------------------- Equipment catalogue (issue #67) -------------------- */
+
+/** Full official catalogue, disabled items included (/admin/catalog). */
+export async function listCatalogItems() {
+  return db.query.equipmentCatalog.findMany({
+    orderBy: [
+      asc(schema.equipmentCatalog.category),
+      asc(schema.equipmentCatalog.name),
+    ],
+  });
+}
+
+/** Enabled catalogue items only — feeds the equipment pick lists. */
+export async function listEnabledCatalogItems() {
+  return db.query.equipmentCatalog.findMany({
+    where: eq(schema.equipmentCatalog.enabled, true),
+    orderBy: [
+      asc(schema.equipmentCatalog.category),
+      asc(schema.equipmentCatalog.name),
+    ],
+  });
+}
+
+/**
+ * One catalogue row — the server-authoritative source of name/category/cost
+ * when a player acquires gear "from catalogue" (snapshot on write).
+ */
+export async function getCatalogItemById(catalogId: string, dbc: DbOrTx = db) {
+  const row = await dbc.query.equipmentCatalog.findFirst({
+    where: eq(schema.equipmentCatalog.id, catalogId),
+  });
+  return row ?? null;
+}
+
+/**
+ * Keyword glossary (issue #67 follow-up) — rewritten rule summaries stored
+ * only in the private database (IP strategy, see schema.ts keywordRules).
+ */
+export async function listKeywordRules() {
+  return db.query.keywordRules.findMany({
+    orderBy: [asc(schema.keywordRules.keyword)],
+  });
 }
 
 /** Checks whether a fighter belongs to a gang (authorisation in mutations). */

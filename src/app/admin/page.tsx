@@ -48,6 +48,9 @@ export default async function AdminPage() {
             <Link href="/admin/gallery">
               <Button variant="outline">Gallery →</Button>
             </Link>
+            <Link href="/admin/catalog">
+              <Button variant="outline">Catalogue →</Button>
+            </Link>
             <Link href="/admin/campaign">
               <Button variant="outline">Campaign Panel →</Button>
             </Link>

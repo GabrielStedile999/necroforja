@@ -276,7 +276,129 @@ export const addEquipmentSchema = z.object({
   name: z.string().min(1).max(80),
   category: equipmentCategoryEnum,
   cost: z.coerce.number().int().min(0).max(2000),
+  /**
+   * Catalogue pick (issue #67). When present the server uses the CATALOGUE
+   * row's name/category/cost (authoritative snapshot) and links the owned
+   * item to it; the free-text fields above act as a fallback for custom gear.
+   */
+  catalogId: z
+    .string()
+    .uuid()
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
 });
+
+/* -------------------- Equipment catalogue (issue #67) -------------------- */
+
+/**
+ * Catalogue items never use the "skill" category (skills are issue #71
+ * territory); the master list covers weapons, wargear, armour and upgrades.
+ */
+export const catalogCategoryEnum = z.enum([
+  "weapon",
+  "wargear",
+  "armour",
+  "upgrade",
+]);
+
+export const catalogSubcategoryEnum = z.enum([
+  "basic",
+  "pistol",
+  "special",
+  "heavy",
+  "close_combat",
+  "grenade",
+]);
+
+/**
+ * One cell of the printed weapon profile (Rng S/L, Acc S/L, Str, AP, D, Am).
+ * Text, not number: the book mixes numbers and symbols ("-", "S", "S+1",
+ * "+1", "4+", "E", "T″"). Empty input means "not set".
+ */
+const profileCell = z.preprocess(
+  // "" is a VALID string, so a plain .optional().or(z.literal("")) would keep
+  // it — normalise blanks to undefined up front ("not set", stored as null).
+  (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+  z.string().trim().max(12, "Profile value too long.").optional(),
+);
+
+/** Create/edit an official catalogue item (/admin/catalog). */
+export const catalogItemSchema = z.object({
+  name: z.string().trim().min(2, "Name too short.").max(80),
+  category: catalogCategoryEnum,
+  subcategory: catalogSubcategoryEnum
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  cost: z.coerce
+    .number()
+    .int()
+    .min(0, "Cost cannot be negative.")
+    .max(9999, "Cost too high."),
+  rangeShort: profileCell,
+  rangeLong: profileCell,
+  accShort: profileCell,
+  accLong: profileCell,
+  strength: profileCell,
+  ap: profileCell,
+  damage: profileCell,
+  ammo: profileCell,
+  traits: z.string().trim().max(300).optional().default(""),
+  effect: z.string().trim().max(1000).optional().default(""),
+});
+
+export const updateCatalogItemSchema = catalogItemSchema.extend({
+  catalogItemId: z.string().uuid("Invalid catalogue item ID."),
+});
+
+/** Enables/disables a catalogue item (current state, flipped by the action). */
+export const toggleCatalogItemSchema = z.object({
+  catalogItemId: z.string().uuid("Invalid catalogue item ID."),
+  enabled: z.enum(["true", "false"]),
+});
+
+/** Destructive: owned copies keep their snapshot (catalog_id → null). */
+export const deleteCatalogItemSchema = z.object({
+  catalogItemId: z.string().uuid("Invalid catalogue item ID."),
+});
+
+export type CatalogItemInput = z.infer<typeof catalogItemSchema>;
+export type UpdateCatalogItemInput = z.infer<typeof updateCatalogItemSchema>;
+
+/* ------------------- Keyword rules (issue #67 follow-up) ------------------- */
+
+/**
+ * One glossary entry: a base keyword ("Rapid Fire", no parameters) and its
+ * REWRITTEN functional summary. Content lives only in the private database
+ * (IP strategy — see schema.ts keywordRules).
+ */
+export const keywordRuleSchema = z.object({
+  keyword: z.string().trim().min(2, "Keyword too short.").max(60),
+  summary: z.string().trim().min(10, "Summary too short.").max(2000),
+  book: z.preprocess(
+    // "" is a valid string — normalise blanks to undefined ("not set").
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z.string().trim().max(80).optional(),
+  ),
+  page: z.preprocess(
+    (v) => (v === "" || v === null ? undefined : v),
+    z.coerce.number().int().min(1).max(2000).optional(),
+  ),
+});
+
+export const updateKeywordRuleSchema = keywordRuleSchema.extend({
+  keywordRuleId: z.string().uuid("Invalid keyword rule ID."),
+});
+
+export const deleteKeywordRuleSchema = z.object({
+  keywordRuleId: z.string().uuid("Invalid keyword rule ID."),
+});
+
+/** Bulk paste-import: a JSON array of keywordRuleSchema objects. */
+export const importKeywordRulesSchema = z.object({
+  payload: z.string().trim().min(2, "Paste the JSON array."),
+});
+
+export type KeywordRuleInput = z.infer<typeof keywordRuleSchema>;
 
 /** Arbitrator registers a challenge for a Sympathiser. */
 export const createChallengeSchema = z.object({
@@ -319,6 +441,12 @@ export const addStashItemSchema = z.object({
   category: equipmentCategoryEnum,
   cost: z.coerce.number().int().min(0).max(2000),
   qty: z.coerce.number().int().min(1, "Minimum qty: 1.").max(99).default(1),
+  /** Catalogue pick (issue #67) — same semantics as addEquipmentSchema. */
+  catalogId: z
+    .string()
+    .uuid()
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
 });
 
 /** Removes an item from the Stash. */

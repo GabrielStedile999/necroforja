@@ -7,6 +7,26 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Added
+- **Catálogo oficial de equipamento + glossário de keywords** (issue #67):
+  nova tabela `equipment_catalog` — a lista-mestra do Trading Post (Core
+  Rulebook 2023), editável em `/admin/catalog`: cada item é um dropdown com
+  formulário completo (nome, custo, perfil de arma Rng/Acc/Str/AP/D/Am em
+  texto — o livro mistura números e símbolos —, traits e effect), botão de
+  ativar/desativar, delete em dois cliques e criação de itens custom; botão
+  **"Seed official catalogue"** idempotente popula ~110 itens oficiais
+  (armas Basic/Pistol/Special/Heavy, granadas, corpo a corpo, armaduras e
+  wargear) a partir de `src/lib/data/equipment-catalog.ts` — só dados
+  funcionais, sem texto de regra (repo público). Nos formulários de
+  equipamento (fighter e stash), select **"From catalogue"** agrupado por
+  tipo: a escolha é validada no servidor (nome/categoria/custo vêm da linha
+  do catálogo, nunca do cliente) e fica **congelada como snapshot** via
+  `equipment.catalog_id` — rebalancear um item depois não altera
+  equipamento já adquirido. **Keywords clicáveis**: tabela `keyword_rule`
+  (resumos reescritos, armazenados apenas no banco privado) alimenta chips
+  de trait em `/admin/catalog` e nos forms — clique abre modal com a regra
+  e a referência de página; card "Keyword rules" com CRUD e paste-import
+  de JSON (upsert por keyword). Migrações aditivas:
+  `scripts/equipment-catalog.sql` e `scripts/keyword-rules.sql`.
 - **Ciclo de vida da campanha pela UI** (issue #66): campanha agora nasce e
   é editada no `/admin/campaign` — card "Start a campaign" quando não existe
   nenhuma (ou quando a anterior foi encerrada) e painel "Edit campaign"

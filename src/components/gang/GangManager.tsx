@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { AddFighterForm } from "@/components/player/AddFighterForm";
 import { AddEquipmentForm } from "@/components/player/AddEquipmentForm";
 import { AddStashItemForm } from "@/components/player/AddStashItemForm";
+import type { CatalogOption } from "@/components/player/CatalogPicker";
+import type { KeywordRuleMap } from "@/components/rules/KeywordChips";
 import { StashCreditsForm } from "@/components/player/StashCreditsForm";
 import { EquipFromStashForm } from "@/components/player/EquipFromStashForm";
 import { UpdateFighterStatusForm } from "@/components/player/UpdateFighterStatusForm";
@@ -46,6 +48,8 @@ export function GangManager({
   exportHref,
   assistantHref,
   arbitratorMode = false,
+  catalog = [],
+  keywordRules = {},
 }: {
   gang: Gang & { id: string };
   otherGangs: GangOption[];
@@ -53,6 +57,10 @@ export function GangManager({
   exportHref: string;
   assistantHref?: string;
   arbitratorMode?: boolean;
+  /** Enabled catalogue items (issue #67) — feeds the equipment pickers. */
+  catalog?: CatalogOption[];
+  /** Keyword glossary map (issue #67 follow-up) — clickable trait chips. */
+  keywordRules?: KeywordRuleMap;
 }) {
   const gangId = gang.id;
 
@@ -242,7 +250,12 @@ export function GangManager({
                     <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
                       Equip
                     </p>
-                    <AddEquipmentForm fighterId={f.id} gangId={gangId} />
+                    <AddEquipmentForm
+                      fighterId={f.id}
+                      gangId={gangId}
+                      catalog={catalog}
+                      keywordRules={keywordRules}
+                    />
                   </div>
 
                   {/* Edit fighter (issue #63) */}
@@ -346,7 +359,11 @@ export function GangManager({
             <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
               Add item
             </p>
-            <AddStashItemForm gangId={gangId} />
+            <AddStashItemForm
+              gangId={gangId}
+              catalog={catalog}
+              keywordRules={keywordRules}
+            />
           </div>
         </CardContent>
       </Card>
