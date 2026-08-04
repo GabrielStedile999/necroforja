@@ -13,12 +13,14 @@ import {
   createCampaignSchema,
   updateCampaignSchema,
   setCampaignCycleSchema,
+  battleEventSchema,
 } from "@/lib/validation";
 import {
   setSympathiserController,
   clearSympathiserController,
   advanceCampaignCycle,
   applyDowntimeEffects,
+  applyBattleEvent,
 } from "@/lib/db/mutations";
 import { SYMPATHISERS } from "@/lib/data/sympathisers";
 import {
@@ -267,6 +269,36 @@ export async function resolveChallenge(
   revalidatePath("/admin/campaign");
   revalidatePath("/");
   return { success: "Challenge resolved." };
+}
+
+/**
+ * Logs ONE battle aftermath event on a resolved challenge (issue #69).
+ * Validation is a zod discriminated union (each kind states its exact
+ * fields); cross-row rules (challenge resolved, gang is a participant,
+ * fighter belongs to the gang) and the effect itself live in
+ * `applyBattleEvent`, which runs effect + log row + score recalc in one
+ * transaction. Corrections are compensating events — never edit/delete.
+ */
+export async function recordBattleEvent(
+  _prev: CampaignState,
+  formData: FormData,
+): Promise<CampaignState> {
+  await requireAdmin();
+
+  const parsed = battleEventSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+
+  const result = await applyBattleEvent(parsed.data);
+  if (!result.ok) return { error: result.error };
+
+  // Stash/XP/status/reputation feed the admin panel, the player sheet and
+  // the public ranking (cached Rating/Wealth).
+  revalidatePath("/admin/campaign");
+  revalidatePath("/player");
+  revalidatePath("/");
+  return { success: "Battle event logged." };
 }
 
 /** Enables/disables a Sympathiser in the campaign (disappears from the public map and challenges). */

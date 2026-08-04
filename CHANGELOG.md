@@ -7,6 +7,27 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Added
+- **Battle aftermath log — o que a batalha realmente fez** (issue #69):
+  nova tabela `battle_event` (migração aditiva `scripts/battle-events.sql`)
+  — um registro **append-only** de eventos estruturados por challenge
+  resolvido: créditos ganhos, XP, ferimentos, mortes, capturas e mudanças
+  de Reputation. Cada evento é aplicado por `applyBattleEvent`
+  (`lib/db/mutations.ts`) em **uma transação**: valida challenge resolvido
+  + gang participante + fighter da gang, aplica o efeito (Stash/XP/status/
+  Reputation), grava a linha do log e recalcula Rating/Wealth — efeito e
+  registro nunca se separam. Correções são **eventos compensatórios**
+  (amount negativo), nunca edição/deleção: créditos negativos passam pelo
+  débito condicional do Stash (issue #68), XP negativo tem guard
+  `xp >= -delta`, e Reputation tem piso 1 (`greatest`). Captura registra
+  automaticamente o outro participante do challenge como gang captora;
+  ferimento põe o fighter `in_recovery` (o Downtime libera — lasting
+  injuries ficam pra issue #71). Validação com `z.discriminatedUnion` por
+  `kind`: cada tipo declara exatamente seus campos, então combinações
+  inválidas (créditos com fighter, XP sem amount, status com amount) são
+  rejeitadas. UI em `/admin/campaign`: cada challenge do History mostra o
+  trail legível ("Iron Reapers +120c — reward") e, com a campanha ativa,
+  o painel **"Aftermath — log event"** com campos dinâmicos por tipo
+  (`BattleAftermathPanel`). 27 testes novos (`tests/battle-events.test.ts`).
 - **Trading Post — a economia se fecha sozinha** (issue #68): comprar um
   item do catálogo ou recrutar um fighter agora **debita os créditos do
   Stash na mesma transação** que cria o item/fighter. O débito é um
