@@ -448,6 +448,97 @@ export const resolveChallengeSchema = z.object({
   outcome: challengeOutcomeEnum,
 });
 
+/* --------------------- Battle aftermath log (issue #69) --------------------- */
+
+/**
+ * Kinds that carry an `amount` (credits/XP/reputation deltas). Negative
+ * amounts are allowed on purpose: corrections are COMPENSATING events
+ * (append-only log — never edit/delete), and reputation changes are ±
+ * by nature. Zero is rejected everywhere (a no-op event is a mistake).
+ */
+export const battleEventKindEnum = z.enum([
+  "credits_gained",
+  "xp_gained",
+  "fighter_injured",
+  "fighter_dead",
+  "fighter_captured",
+  "reputation_change",
+]);
+
+/** Blank form input ("" / null) means "not sent". */
+const emptyToUndefined = (v: unknown) =>
+  v === "" || v === null ? undefined : v;
+
+/** Field that must NOT be present for this kind (invalid combination). */
+const forbiddenField = (message: string) =>
+  z.preprocess(emptyToUndefined, z.undefined({ message }));
+
+/** Signed, non-zero delta bounded to a sane per-event range. */
+const signedAmount = (limit: number, label: string) =>
+  z.preprocess(
+    emptyToUndefined,
+    z.coerce
+      .number({ message: `${label} amount is required.` })
+      .int()
+      .min(-limit, `${label} amount ranges from -${limit} to ${limit}.`)
+      .max(limit, `${label} amount ranges from -${limit} to ${limit}.`)
+      .refine((n) => n !== 0, `${label} amount cannot be 0.`),
+  );
+
+const battleEventBase = z.object({
+  challengeId: z.string().uuid("Invalid challenge ID."),
+  gangId: z.string().uuid("Invalid gang ID."),
+  notes: z.string().trim().max(300, "Notes too long.").optional().default(""),
+});
+
+const requiredFighterId = z
+  .string({ message: "This event kind requires a fighter." })
+  .uuid("Invalid fighter ID.");
+
+/**
+ * One battle aftermath event, discriminated by `kind` so each kind states
+ * exactly which fields it takes — invalid combinations (credits with a
+ * fighter, XP without an amount, a status kind with an amount) fail
+ * validation instead of being silently ignored.
+ */
+export const battleEventSchema = z.discriminatedUnion("kind", [
+  battleEventBase.extend({
+    kind: z.literal("credits_gained"),
+    amount: signedAmount(99_999, "Credits"),
+    fighterId: forbiddenField("Credit events apply to the gang, not a fighter."),
+  }),
+  battleEventBase.extend({
+    kind: z.literal("xp_gained"),
+    fighterId: requiredFighterId,
+    amount: signedAmount(100, "XP"),
+  }),
+  battleEventBase.extend({
+    kind: z.literal("fighter_injured"),
+    fighterId: requiredFighterId,
+    amount: forbiddenField("Injury events take no amount."),
+  }),
+  battleEventBase.extend({
+    kind: z.literal("fighter_dead"),
+    fighterId: requiredFighterId,
+    amount: forbiddenField("Death events take no amount."),
+  }),
+  battleEventBase.extend({
+    kind: z.literal("fighter_captured"),
+    fighterId: requiredFighterId,
+    amount: forbiddenField("Capture events take no amount."),
+  }),
+  battleEventBase.extend({
+    kind: z.literal("reputation_change"),
+    amount: signedAmount(20, "Reputation"),
+    fighterId: forbiddenField(
+      "Reputation events apply to the gang, not a fighter.",
+    ),
+  }),
+]);
+
+export type BattleEventInput = z.infer<typeof battleEventSchema>;
+export type BattleEventKind = z.infer<typeof battleEventKindEnum>;
+
 /** Updates the gang's Stash credits. */
 export const setStashCreditsSchema = z.object({
   credits: z.coerce

@@ -2,7 +2,7 @@
  * Read layer (Drizzle). Maps database rows to the domain types
  * used by lib/scoring.ts. All functions run server-side only.
  */
-import { eq, and, or, ilike, asc, desc, lt, sql, isNull, type SQL } from "drizzle-orm";
+import { eq, and, or, ilike, asc, desc, lt, sql, isNull, inArray, type SQL } from "drizzle-orm";
 import { db, schema, type DbOrTx } from "./index";
 import type {
   Fighter,
@@ -265,6 +265,42 @@ export async function listChallenges(campaignId: string, limit = 20) {
     orderBy: [desc(schema.challenges.cycle), desc(schema.challenges.id)],
     limit,
   });
+}
+
+/* --------------------- Battle aftermath log (issue #69) --------------------- */
+
+/**
+ * Aftermath events for a set of challenges (admin history panel), oldest
+ * first so the log reads chronologically. One query for the whole page —
+ * the caller groups by challengeId. The fighter's name rides along for the
+ * human-readable line (null when the fighter was later removed).
+ */
+export async function listBattleEventsForChallenges(challengeIds: string[]) {
+  if (challengeIds.length === 0) return [];
+  return db.query.battleEvents.findMany({
+    where: inArray(schema.battleEvents.challengeId, challengeIds),
+    with: { fighter: { columns: { name: true } } },
+    orderBy: [asc(schema.battleEvents.createdAt)],
+  });
+}
+
+/**
+ * Lightweight fighter list for every gang of a campaign (issue #69) — feeds
+ * the aftermath panel's fighter selectors without loading full gang trees.
+ */
+export async function listFightersByCampaign(campaignId: string) {
+  const rows = await db
+    .select({
+      id: schema.fighters.id,
+      name: schema.fighters.name,
+      gangId: schema.fighters.gangId,
+      status: schema.fighters.status,
+    })
+    .from(schema.fighters)
+    .innerJoin(schema.gangs, eq(schema.fighters.gangId, schema.gangs.id))
+    .where(eq(schema.gangs.campaignId, campaignId))
+    .orderBy(asc(schema.fighters.name));
+  return rows;
 }
 
 /**

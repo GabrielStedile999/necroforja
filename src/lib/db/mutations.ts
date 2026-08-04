@@ -3,6 +3,7 @@ import { db, schema, type DbOrTx } from "./index";
 import { getGangById } from "./queries";
 import { gangRating, gangWealth } from "@/lib/scoring";
 import { nextCycleState } from "@/lib/campaign-rules";
+import type { BattleEventInput } from "@/lib/validation";
 
 /**
  * Runs `fn` inside `dbc` when a transaction handle is provided, or opens a
@@ -58,6 +59,172 @@ export async function debitStashCredits(
     )
     .returning({ id: schema.gangs.id });
   return rows.length > 0;
+}
+
+/** Result of applying one battle aftermath event (issue #69). */
+export type BattleEventResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Applies ONE battle aftermath event (issue #69): validates the referenced
+ * challenge/gang/fighter, applies the kind's effect, inserts the append-only
+ * `battle_event` row and recalculates the gang's cached scores — all in a
+ * single transaction, so an event can never be recorded without its effect
+ * (or vice versa).
+ *
+ * Guard rails:
+ * - The challenge must exist and be RESOLVED (aftermath describes a battle
+ *   that happened) — and the gang must be one of its participants, which
+ *   also pins gang and challenge to the same campaign.
+ * - A referenced fighter must belong to the event's gang.
+ * - Negative credits/XP (compensating events) use conditional UPDATEs
+ *   (`>= delta`), the debitStashCredits pattern — a correction can never
+ *   overdraw the Stash or push a fighter's XP below zero, even under
+ *   concurrent submissions.
+ * - reputation_change clamps at the floor of 1 (Reputation never drops
+ *   below 1 in campaign play).
+ * - fighter_captured records the OTHER participant as the capturing gang
+ *   (null when the challenge had no defender).
+ *
+ * The caller validates the event shape with `battleEventSchema` first; this
+ * function assumes a well-formed input and enforces the cross-row rules.
+ */
+export async function applyBattleEvent(
+  event: BattleEventInput,
+  dbc?: DbOrTx,
+): Promise<BattleEventResult> {
+  return withTx(dbc, async (tx): Promise<BattleEventResult> => {
+    const challenge = await tx.query.challenges.findFirst({
+      where: eq(schema.challenges.id, event.challengeId),
+      columns: {
+        id: true,
+        resolved: true,
+        challengerGangId: true,
+        challengedGangId: true,
+      },
+    });
+    if (!challenge) return { ok: false, error: "Challenge not found." };
+    if (!challenge.resolved) {
+      return {
+        ok: false,
+        error: "Aftermath can only be logged on a resolved challenge.",
+      };
+    }
+    const participants = [
+      challenge.challengerGangId,
+      challenge.challengedGangId,
+    ].filter((id): id is string => !!id);
+    if (!participants.includes(event.gangId)) {
+      return { ok: false, error: "Gang did not take part in this challenge." };
+    }
+
+    if ("fighterId" in event && event.fighterId) {
+      const fighter = await tx.query.fighters.findFirst({
+        where: and(
+          eq(schema.fighters.id, event.fighterId),
+          eq(schema.fighters.gangId, event.gangId),
+        ),
+        columns: { id: true },
+      });
+      if (!fighter) {
+        return { ok: false, error: "Fighter does not belong to this gang." };
+      }
+    }
+
+    // Apply the kind's effect. Guarded writes come FIRST: when they fail
+    // nothing has been written yet, so returning the error needs no rollback.
+    switch (event.kind) {
+      case "credits_gained": {
+        if (event.amount < 0) {
+          const paid = await debitStashCredits(event.gangId, -event.amount, tx);
+          if (!paid) {
+            return {
+              ok: false,
+              error: "Compensation exceeds the gang's Stash credits.",
+            };
+          }
+        } else {
+          await tx
+            .update(schema.gangs)
+            .set({
+              stashCredits: sql`${schema.gangs.stashCredits} + ${event.amount}`,
+            })
+            .where(eq(schema.gangs.id, event.gangId));
+        }
+        break;
+      }
+      case "xp_gained": {
+        // Conditional UPDATE: a negative delta only lands when the fighter
+        // has enough XP (`xp >= -delta`), mirroring debitStashCredits.
+        const rows = await tx
+          .update(schema.fighters)
+          .set({ xp: sql`${schema.fighters.xp} + ${event.amount}` })
+          .where(
+            and(
+              eq(schema.fighters.id, event.fighterId),
+              event.amount < 0
+                ? gte(schema.fighters.xp, -event.amount)
+                : undefined,
+            ),
+          )
+          .returning({ id: schema.fighters.id });
+        if (rows.length === 0) {
+          return {
+            ok: false,
+            error: "Compensation exceeds the fighter's XP.",
+          };
+        }
+        break;
+      }
+      case "fighter_injured": {
+        // Post-battle injuries put the fighter in recovery (Downtime clears
+        // it). Lasting-injury automation is issue #71 territory.
+        await tx
+          .update(schema.fighters)
+          .set({ status: "in_recovery", capturedByGangId: null })
+          .where(eq(schema.fighters.id, event.fighterId));
+        break;
+      }
+      case "fighter_dead": {
+        await tx
+          .update(schema.fighters)
+          .set({ status: "dead", capturedByGangId: null })
+          .where(eq(schema.fighters.id, event.fighterId));
+        break;
+      }
+      case "fighter_captured": {
+        const captor =
+          participants.find((id) => id !== event.gangId) ?? null;
+        await tx
+          .update(schema.fighters)
+          .set({ status: "captured", capturedByGangId: captor })
+          .where(eq(schema.fighters.id, event.fighterId));
+        break;
+      }
+      case "reputation_change": {
+        // Floor of 1: Reputation never drops below 1 in campaign play.
+        await tx
+          .update(schema.gangs)
+          .set({
+            reputation: sql`greatest(1, ${schema.gangs.reputation} + ${event.amount})`,
+          })
+          .where(eq(schema.gangs.id, event.gangId));
+        break;
+      }
+    }
+
+    // Append-only log row — recorded with its effect, in the same transaction.
+    await tx.insert(schema.battleEvents).values({
+      challengeId: event.challengeId,
+      gangId: event.gangId,
+      kind: event.kind,
+      fighterId: "fighterId" in event ? (event.fighterId ?? null) : null,
+      amount: "amount" in event ? (event.amount ?? null) : null,
+      notes: event.notes,
+    });
+
+    await recalcGangScores(event.gangId, tx);
+    return { ok: true };
+  });
 }
 
 /**

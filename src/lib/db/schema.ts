@@ -61,6 +61,20 @@ export const equipmentCategory = pgEnum("equipment_category", [
   "upgrade",
 ]);
 
+/**
+ * Battle aftermath event kinds (issue #69) — what actually happened in a
+ * resolved challenge. Amount-bearing kinds (credits/xp/reputation) accept
+ * negative amounts as COMPENSATING events (append-only corrections).
+ */
+export const battleEventKind = pgEnum("battle_event_kind", [
+  "credits_gained",
+  "xp_gained",
+  "fighter_injured",
+  "fighter_dead",
+  "fighter_captured",
+  "reputation_change",
+]);
+
 /** Campaign journal post kinds (issue #5). */
 export const postType = pgEnum("post_type", [
   "session_report", // jogo que faz parte da campanha em andamento
@@ -299,6 +313,40 @@ export const challenges = pgTable("challenge", {
   playedAt: timestamp("played_at"),
 });
 
+/**
+ * Battle aftermath log (issue #69) — append-only record of what a resolved
+ * challenge did to gangs and fighters: credits, XP, injuries, deaths,
+ * captures, reputation. Rows are NEVER edited or deleted; a mistake is fixed
+ * by a compensating event (e.g. credits_gained with a negative amount), so
+ * the trail stays auditable. Effects are applied by `applyBattleEvent`
+ * (lib/db/mutations.ts) in the same transaction that inserts the row.
+ * See scripts/battle-events.sql.
+ */
+export const battleEvents = pgTable(
+  "battle_event",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    challengeId: uuid("challenge_id")
+      .notNull()
+      .references(() => challenges.id, { onDelete: "cascade" }),
+    /** Gang the event applies to — must be a participant of the challenge. */
+    gangId: uuid("gang_id")
+      .notNull()
+      .references(() => gangs.id, { onDelete: "cascade" }),
+    kind: battleEventKind("kind").notNull(),
+    /** Fighter kinds only (xp/injured/dead/captured). Kept on fighter removal
+     *  (set null) so the log survives roster cleanups. */
+    fighterId: uuid("fighter_id").references(() => fighters.id, {
+      onDelete: "set null",
+    }),
+    /** Credits/XP/reputation delta; null for status kinds. Negative = compensation. */
+    amount: integer("amount"),
+    notes: text("notes").notNull().default(""),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("battle_event_challenge_idx").on(t.challengeId, t.createdAt)],
+);
+
 export const triumphs = pgTable("triumph", {
   id: uuid("id").defaultRandom().primaryKey(),
   campaignId: uuid("campaign_id")
@@ -519,6 +567,25 @@ export const postsRelations = relations(posts, ({ one }) => ({
 
 export const campaignsRelations = relations(campaigns, ({ many }) => ({
   gangs: many(gangs),
+}));
+
+export const challengesRelations = relations(challenges, ({ many }) => ({
+  events: many(battleEvents),
+}));
+
+export const battleEventsRelations = relations(battleEvents, ({ one }) => ({
+  challenge: one(challenges, {
+    fields: [battleEvents.challengeId],
+    references: [challenges.id],
+  }),
+  gang: one(gangs, {
+    fields: [battleEvents.gangId],
+    references: [gangs.id],
+  }),
+  fighter: one(fighters, {
+    fields: [battleEvents.fighterId],
+    references: [fighters.id],
+  }),
 }));
 
 export const galleryImagesRelations = relations(galleryImages, ({ many }) => ({

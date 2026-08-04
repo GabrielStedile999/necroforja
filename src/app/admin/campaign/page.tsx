@@ -12,6 +12,7 @@ import {
   EditCampaignForm,
 } from "@/components/admin/CampaignLifecycleForms";
 import { SetCycleForm } from "@/components/admin/SetCycleForm";
+import { BattleAftermathPanel } from "@/components/admin/BattleAftermathPanel";
 import { toggleGangActive } from "@/app/admin/gangs/actions";
 import { downtimeCycle } from "@/lib/campaign-rules";
 import {
@@ -22,6 +23,8 @@ import {
   listSympathisers,
   getSympathiserControllerMap,
   listTriumphs,
+  listBattleEventsForChallenges,
+  listFightersByCampaign,
 } from "@/lib/db/queries";
 import { SYMPATHISERS } from "@/lib/data/sympathisers";
 import { advanceCycle, toggleSympathiser, finishCampaign } from "./actions";
@@ -117,6 +120,52 @@ export default async function CampaignAdminPage() {
 
   const pending = challenges.filter((c) => !c.resolved);
   const resolved = challenges.filter((c) => c.resolved);
+
+  // Battle aftermath (issue #69): events grouped per resolved challenge and
+  // the campaign's fighters (aftermath panel selectors). Two flat queries —
+  // no per-challenge round trips.
+  const [battleEvents, campaignFighters] = await Promise.all([
+    listBattleEventsForChallenges(resolved.map((c) => c.id)),
+    listFightersByCampaign(campaign.id),
+  ]);
+  const eventsByChallenge = new Map<string, typeof battleEvents>();
+  for (const ev of battleEvents) {
+    const list = eventsByChallenge.get(ev.challengeId) ?? [];
+    list.push(ev);
+    eventsByChallenge.set(ev.challengeId, list);
+  }
+  const fightersByGang: Record<
+    string,
+    { id: string; name: string; status: string }[]
+  > = {};
+  for (const f of campaignFighters) {
+    (fightersByGang[f.gangId] ??= []).push({
+      id: f.id,
+      name: f.name,
+      status: f.status,
+    });
+  }
+
+  /** Human-readable line for one aftermath event (issue #69). */
+  const describeEvent = (ev: (typeof battleEvents)[number]): string => {
+    const fighter = ev.fighter?.name ?? "removed fighter";
+    const signed = (n: number, suffix = "") =>
+      `${n > 0 ? "+" : ""}${n}${suffix}`;
+    switch (ev.kind) {
+      case "credits_gained":
+        return signed(ev.amount ?? 0, "c");
+      case "xp_gained":
+        return `${fighter} ${signed(ev.amount ?? 0)} XP`;
+      case "fighter_injured":
+        return `${fighter} injured (in recovery)`;
+      case "fighter_dead":
+        return `${fighter} died`;
+      case "fighter_captured":
+        return `${fighter} captured`;
+      case "reputation_change":
+        return `Reputation ${signed(ev.amount ?? 0)}`;
+    }
+  };
 
   return (
     <>
@@ -516,30 +565,88 @@ export default async function CampaignAdminPage() {
             </CardHeader>
             <CardContent className="px-0 py-0">
               <ul className="divide-y divide-rivet/50">
-                {resolved.map((c) => (
-                  <li
-                    key={c.id}
-                    className="flex items-center justify-between gap-3 px-5 py-3 text-sm"
-                  >
-                    <span>
-                      <span className="font-mono text-xs text-muted">
-                        C{c.cycle}{" "}
-                      </span>
-                      <span className="text-ink">
-                        {gangName.get(c.challengerGangId) ?? "—"}
-                      </span>
-                      <span className="text-muted">
-                        {" · "}
-                        {c.sympathiserId
-                          ? sympName
-                              .get(c.sympathiserId)
-                              ?.replace(" Sympathisers", "")
-                          : "—"}
-                      </span>
-                    </span>
-                    <Badge variant="muted">{c.outcome}</Badge>
-                  </li>
-                ))}
+                {resolved.map((c) => {
+                  const participants = [
+                    c.challengerGangId,
+                    c.challengedGangId,
+                  ]
+                    .filter((id): id is string => !!id)
+                    .map((id) => ({
+                      id,
+                      name: gangName.get(id) ?? "—",
+                    }));
+                  const events = eventsByChallenge.get(c.id) ?? [];
+                  return (
+                    <li key={c.id} className="px-5 py-3 text-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <span>
+                          <span className="font-mono text-xs text-muted">
+                            C{c.cycle}{" "}
+                          </span>
+                          <span className="text-ink">
+                            {gangName.get(c.challengerGangId) ?? "—"}
+                          </span>
+                          {c.challengedGangId && (
+                            <>
+                              <span className="text-muted"> vs </span>
+                              <span className="text-ink">
+                                {gangName.get(c.challengedGangId) ?? "—"}
+                              </span>
+                            </>
+                          )}
+                          <span className="text-muted">
+                            {" · "}
+                            {c.sympathiserId
+                              ? sympName
+                                  .get(c.sympathiserId)
+                                  ?.replace(" Sympathisers", "")
+                              : "—"}
+                          </span>
+                        </span>
+                        <Badge variant="muted">{c.outcome}</Badge>
+                      </div>
+
+                      {/* issue #69 — battle aftermath: append-only event log */}
+                      {events.length > 0 && (
+                        <ul className="mt-2 flex flex-col gap-1 border-l-2 border-rivet/60 pl-3">
+                          {events.map((ev) => (
+                            <li key={ev.id} className="text-xs">
+                              <span className="text-hazard">
+                                {gangName.get(ev.gangId) ?? "—"}
+                              </span>{" "}
+                              <span className="text-ink">
+                                {describeEvent(ev)}
+                              </span>
+                              {ev.notes && (
+                                <span className="text-muted"> — {ev.notes}</span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {!isFinished && participants.length > 0 && (
+                        <details className="mt-2">
+                          <summary className="cursor-pointer py-1 font-mono text-xs uppercase tracking-wider text-muted transition-colors hover:text-hazard">
+                            Aftermath — log event
+                          </summary>
+                          <div className="mt-2 border-t border-rivet/50 pt-3">
+                            <p className="mb-2 text-xs text-muted">
+                              One event per submit. Fix a mistake with a
+                              compensating event (negative amount) — the log
+                              is never edited.
+                            </p>
+                            <BattleAftermathPanel
+                              challengeId={c.id}
+                              gangs={participants}
+                              fightersByGang={fightersByGang}
+                            />
+                          </div>
+                        </details>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </CardContent>
           </Card>
