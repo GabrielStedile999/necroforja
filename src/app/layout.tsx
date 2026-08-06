@@ -7,6 +7,7 @@ import NextTopLoader from "nextjs-toploader";
 import { PwaRegister } from "@/components/PwaRegister";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SITE_URL } from "@/lib/site-url";
 
 const chakra = Chakra_Petch({
@@ -155,6 +156,7 @@ export default async function RootLayout({
 					<PwaRegister />
 				</NextIntlClientProvider>
 				<Analytics />
+				<SpeedInsights />
 			</body>
 		</html>
 	);
