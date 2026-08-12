@@ -267,6 +267,68 @@ export async function listChallenges(campaignId: string, limit = 20) {
   });
 }
 
+/* ------------------ Gang history & timeline (issue #70) ------------------ */
+
+/**
+ * Every snapshot of a campaign with the gang's name and participation flag,
+ * cycle ascending — feeds the public rating-evolution chart. One query; the
+ * pure mapper (lib/campaign-history.ts) groups it into series.
+ */
+export async function listGangSnapshots(campaignId: string) {
+  return db.query.gangSnapshots.findMany({
+    where: eq(schema.gangSnapshots.campaignId, campaignId),
+    with: { gang: { columns: { name: true, isActive: true } } },
+    orderBy: [asc(schema.gangSnapshots.cycle), asc(schema.gangSnapshots.id)],
+  });
+}
+
+/**
+ * Key battle events for the public timeline (issue #70): deaths and
+ * captures, joined to their challenge for the cycle. Filtered in SQL —
+ * the timeline never loads the full aftermath log.
+ */
+export async function listTimelineBattleEvents(campaignId: string) {
+  return db
+    .select({
+      id: schema.battleEvents.id,
+      kind: schema.battleEvents.kind,
+      gangId: schema.battleEvents.gangId,
+      fighterName: schema.fighters.name,
+      cycle: schema.challenges.cycle,
+      createdAt: schema.battleEvents.createdAt,
+    })
+    .from(schema.battleEvents)
+    .innerJoin(
+      schema.challenges,
+      eq(schema.battleEvents.challengeId, schema.challenges.id),
+    )
+    .leftJoin(
+      schema.fighters,
+      eq(schema.battleEvents.fighterId, schema.fighters.id),
+    )
+    .where(
+      and(
+        eq(schema.challenges.campaignId, campaignId),
+        inArray(schema.battleEvents.kind, [
+          "fighter_dead",
+          "fighter_captured",
+        ]),
+      ),
+    )
+    .orderBy(asc(schema.battleEvents.createdAt));
+}
+
+/** Resolved challenges of a campaign, oldest first (public timeline). */
+export async function listResolvedChallenges(campaignId: string) {
+  return db.query.challenges.findMany({
+    where: and(
+      eq(schema.challenges.campaignId, campaignId),
+      eq(schema.challenges.resolved, true),
+    ),
+    orderBy: [asc(schema.challenges.cycle), asc(schema.challenges.playedAt)],
+  });
+}
+
 /* --------------------- Battle aftermath log (issue #69) --------------------- */
 
 /**

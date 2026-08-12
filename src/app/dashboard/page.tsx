@@ -5,7 +5,9 @@ import { GangRankingTable } from "@/components/GangRankingTable";
 import { SympathiserMap } from "@/components/SympathiserMap";
 import { ChallengeLog } from "@/components/ChallengeLog";
 import { Triumphs } from "@/components/Triumphs";
-import { getPublicView } from "@/lib/repo";
+import { RatingChart } from "@/components/RatingChart";
+import { CampaignTimeline } from "@/components/CampaignTimeline";
+import { getPublicView, getHistoryView } from "@/lib/repo";
 
 /**
  * Public campaign dashboard — moved from / to /dashboard.
@@ -24,7 +26,12 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardPage() {
-  const view = await getPublicView();
+  // History (issue #70) degrades to empty sections without the migration —
+  // the page renders exactly as before in that case.
+  const [view, history] = await Promise.all([
+    getPublicView(),
+    getHistoryView(),
+  ]);
 
   return (
     <>
@@ -44,6 +51,11 @@ export default async function DashboardPage() {
             <SympathiserMap sympathisers={view.sympathisers} />
           </div>
         </div>
+        {/* issue #70 — rating evolution + cycle-by-cycle timeline. Both are
+            server-rendered (SVG chart, zero client JS, fixed viewBox → CLS 0)
+            and omit themselves while there is no history yet. */}
+        <RatingChart series={history.series} />
+        <CampaignTimeline timeline={history.timeline} />
       </main>
       <footer className="border-t border-rivet px-4 py-6 text-center text-xs text-muted">
         <p className="m-0 mb-3">

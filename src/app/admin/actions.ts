@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/auth/guards";
 import { createPlayerSchema, updatePlayerSchema } from "@/lib/validation";
 import { hashPassword } from "@/lib/auth/password";
 import { getActiveCampaign } from "@/lib/db/queries";
+import { snapshotCampaignGangs } from "@/lib/db/mutations";
 
 export type AdminState = { error?: string; success?: string };
 
@@ -40,11 +41,16 @@ export async function createPlayer(
     .returning();
   if (!user) return { error: "Failed to create user." };
 
-  await db.insert(schema.gangs).values({
-    campaignId: campaign.id,
-    ownerUserId: user.id,
-    name: gangName,
-    house,
+  // Atomic (issue #62 pattern): gang insert + its first history snapshot
+  // (issue #70 — the newborn's starting point at the current cycle).
+  await db.transaction(async (tx) => {
+    await tx.insert(schema.gangs).values({
+      campaignId: campaign.id,
+      ownerUserId: user.id,
+      name: gangName,
+      house,
+    });
+    await snapshotCampaignGangs(campaign.id, campaign.currentCycle, tx);
   });
 
   revalidatePath("/admin");

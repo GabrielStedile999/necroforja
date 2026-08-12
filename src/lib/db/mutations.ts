@@ -61,6 +61,64 @@ export async function debitStashCredits(
   return rows.length > 0;
 }
 
+/**
+ * Snapshots every gang of a campaign at `cycle` (issue #70) — one row per
+ * gang with the CACHED scores (kept fresh on every write, so this is a
+ * cheap read, no tree walking) plus the current Sympathiser count. Upsert
+ * on (gang, cycle): re-running refreshes the same row instead of
+ * duplicating, which makes the advanceCycle hook and the gang-creation
+ * hook idempotent. Pass the caller's `dbc` to join its transaction.
+ */
+export async function snapshotCampaignGangs(
+  campaignId: string,
+  cycle: number,
+  dbc: DbOrTx = db,
+): Promise<void> {
+  const campaignGangs = await dbc.query.gangs.findMany({
+    where: eq(schema.gangs.campaignId, campaignId),
+    columns: {
+      id: true,
+      ratingCached: true,
+      wealthCached: true,
+      reputation: true,
+    },
+  });
+  if (campaignGangs.length === 0) return;
+
+  const controls = await dbc.query.sympathiserControl.findMany({
+    where: eq(schema.sympathiserControl.isCurrent, true),
+    columns: { gangId: true },
+  });
+  const sympCount = new Map<string, number>();
+  for (const c of controls) {
+    if (c.gangId) sympCount.set(c.gangId, (sympCount.get(c.gangId) ?? 0) + 1);
+  }
+
+  await dbc
+    .insert(schema.gangSnapshots)
+    .values(
+      campaignGangs.map((g) => ({
+        gangId: g.id,
+        campaignId,
+        cycle,
+        rating: g.ratingCached,
+        wealth: g.wealthCached,
+        reputation: g.reputation,
+        sympathiserCount: sympCount.get(g.id) ?? 0,
+      })),
+    )
+    .onConflictDoUpdate({
+      target: [schema.gangSnapshots.gangId, schema.gangSnapshots.cycle],
+      set: {
+        rating: sql`excluded.rating`,
+        wealth: sql`excluded.wealth`,
+        reputation: sql`excluded.reputation`,
+        sympathiserCount: sql`excluded.sympathiser_count`,
+        createdAt: sql`now()`,
+      },
+    });
+}
+
 /** Result of applying one battle aftermath event (issue #69). */
 export type BattleEventResult = { ok: true } | { ok: false; error: string };
 

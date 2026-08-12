@@ -33,9 +33,15 @@ vi.mock("@/lib/db/queries", () => ({
   getActiveCampaign: mockGetActiveCampaign,
 }));
 
-/* ---- recalc ---- */
-const { mockRecalc } = vi.hoisted(() => ({ mockRecalc: vi.fn() }));
-vi.mock("@/lib/db/mutations", () => ({ recalcGangScores: mockRecalc }));
+/* ---- mutations (recalc + issue #70 snapshot) ---- */
+const { mockRecalc, mockSnapshot } = vi.hoisted(() => ({
+  mockRecalc: vi.fn(),
+  mockSnapshot: vi.fn(),
+}));
+vi.mock("@/lib/db/mutations", () => ({
+  recalcGangScores: mockRecalc,
+  snapshotCampaignGangs: mockSnapshot,
+}));
 
 /* ---- Drizzle db ---- */
 const {
@@ -227,7 +233,7 @@ describe("createGangForUser", () => {
       displayName: "Kal",
       gangs: [],
     });
-    mockGetActiveCampaign.mockResolvedValue({ id: "camp-1" });
+    mockGetActiveCampaign.mockResolvedValue({ id: "camp-1", currentCycle: 2 });
 
     const res = await createGangForUser(
       {},
@@ -238,6 +244,8 @@ describe("createGangForUser", () => {
     expect(mockTransaction).toHaveBeenCalledTimes(1);
     expect(txMock.insert).toHaveBeenCalledTimes(1);
     expect(mockRecalc).toHaveBeenCalledWith("gang-new", txMock);
+    // issue #70 — the newborn's first history snapshot joins the transaction
+    expect(mockSnapshot).toHaveBeenCalledWith("camp-1", 2, txMock);
   });
 
   it("rejects an account that already owns a gang", async () => {
