@@ -59,12 +59,20 @@ const {
   return { mockFindFirst, mockInsertReturning, mockInsertValues, mockInsert };
 });
 
+/* issue #70 — createPlayer snapshots the newborn gang inside a transaction */
+vi.mock("@/lib/db/mutations", () => ({ snapshotCampaignGangs: vi.fn() }));
+
 vi.mock("@/lib/db", () => ({
   db: {
     query: {
       users: { findFirst: mockFindFirst },
     },
     insert: mockInsert,
+    // the gang insert + snapshot run inside a transaction (issue #70);
+    // the tx handle reuses the same insert mocks so assertions still see it
+    transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
+      fn({ insert: mockInsert }),
+    ),
   },
   schema: {
     users: "users_table",

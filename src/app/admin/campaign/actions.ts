@@ -21,6 +21,7 @@ import {
   advanceCampaignCycle,
   applyDowntimeEffects,
   applyBattleEvent,
+  snapshotCampaignGangs,
 } from "@/lib/db/mutations";
 import { SYMPATHISERS } from "@/lib/data/sympathisers";
 import {
@@ -438,6 +439,11 @@ export async function advanceCycle() {
   // Atomic (issue #62): the cycle advance and the Downtime side effects
   // commit together — entering the Downtime cycle can no longer half-apply.
   await db.transaction(async (tx) => {
+    // History snapshot (issue #70): every gang's scores BEFORE the cycle
+    // increments — the row records the state at the END of the finished
+    // cycle. Upsert on (gang, cycle), so a rewind + re-advance refreshes.
+    await snapshotCampaignGangs(campaign.id, campaign.currentCycle, tx);
+
     await advanceCampaignCycle(campaign.id, tx);
 
     // Entering Downtime: reset fighters in_recovery and captured (issue #66
@@ -451,4 +457,6 @@ export async function advanceCycle() {
   revalidatePath("/admin/campaign");
   revalidatePath("/");
   revalidatePath("/player");
+  // the snapshot feeds the public history chart (issue #70)
+  revalidatePath("/dashboard");
 }

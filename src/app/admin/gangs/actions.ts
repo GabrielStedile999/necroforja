@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { db, schema } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/guards";
 import { getActiveCampaign } from "@/lib/db/queries";
-import { recalcGangScores } from "@/lib/db/mutations";
+import { recalcGangScores, snapshotCampaignGangs } from "@/lib/db/mutations";
 import {
   updateGangSchema,
   transferGangSchema,
@@ -142,13 +142,17 @@ export async function createGangForUser(
   const campaign = await getActiveCampaign();
   if (!campaign) return { error: "No active campaign found." };
 
-  // Atomic (issue #62 pattern): insert + cached-score seed commit together.
+  // Atomic (issue #62 pattern): insert + cached-score seed + first history
+  // snapshot (issue #70) commit together.
   await db.transaction(async (tx) => {
     const [gang] = await tx
       .insert(schema.gangs)
       .values({ campaignId: campaign.id, ownerUserId: userId, name, house })
       .returning();
-    if (gang) await recalcGangScores(gang.id, tx);
+    if (gang) {
+      await recalcGangScores(gang.id, tx);
+      await snapshotCampaignGangs(campaign.id, campaign.currentCycle, tx);
+    }
   });
 
   revalidateGangViews();

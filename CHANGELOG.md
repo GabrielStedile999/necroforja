@@ -7,6 +7,24 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Added
+- **Histórico de Rating + timeline pública da campanha** (issue #70): nova
+  tabela `gang_snapshot` (migração aditiva `scripts/gang-snapshots.sql`) —
+  um retrato de Rating/Wealth/Reputation/nº de Sympathisers por gangue a
+  cada ciclo, tirado **dentro da transação do "Advance cycle"** antes do
+  incremento (o registro é o estado no FIM do ciclo) e na criação de cada
+  gangue (ponto de partida). `snapshotCampaignGangs` lê os scores cacheados
+  (leitura barata) e faz **UPSERT em (gangue, ciclo)** — repetir o avanço
+  nunca duplica, só atualiza. No `/dashboard` público: **"Rating history"**,
+  gráfico de evolução renderizado no servidor em SVG puro (zero JS no
+  cliente, viewBox fixo → CLS 0), uma linha por gangue com o nome da gangue
+  na ponta da linha (cor nunca é o único canal) e `<details>` "View as
+  table" com os mesmos dados em tabela acessível — degrada com elegância
+  com 1 único ponto de dado; e **"Campaign timeline"**, ciclo a ciclo,
+  mesclando challenges resolvidos (com desfecho), mortes e capturas do
+  aftermath log (issue #69) e Triunfos fechando a lista. Mappers puros em
+  `lib/campaign-history.ts` (série, geometria do gráfico, merge da
+  timeline) com 18 testes novos; sem histórico ainda, a página fica
+  exatamente como era.
 - **Battle aftermath log — o que a batalha realmente fez** (issue #69):
   nova tabela `battle_event` (migração aditiva `scripts/battle-events.sql`)
   — um registro **append-only** de eventos estruturados por challenge

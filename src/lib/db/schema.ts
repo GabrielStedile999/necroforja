@@ -314,6 +314,39 @@ export const challenges = pgTable("challenge", {
 });
 
 /**
+ * Per-cycle gang history (issue #70) — one snapshot per gang per cycle,
+ * taken inside the `advanceCycle` transaction right BEFORE the cycle
+ * increments (the row records the gang's state at the END of that cycle),
+ * and on gang creation (the newborn's starting point). Values come from the
+ * cached scores kept fresh on every write, so the snapshot is a cheap read.
+ * Upsert on (gang, cycle): re-running never duplicates, it refreshes.
+ * Feeds the public rating-evolution chart and timeline (/dashboard).
+ * See scripts/gang-snapshots.sql.
+ */
+export const gangSnapshots = pgTable(
+  "gang_snapshot",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    gangId: uuid("gang_id")
+      .notNull()
+      .references(() => gangs.id, { onDelete: "cascade" }),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    cycle: smallint("cycle").notNull(),
+    rating: integer("rating").notNull().default(0),
+    wealth: integer("wealth").notNull().default(0),
+    reputation: integer("reputation").notNull().default(1),
+    sympathiserCount: smallint("sympathiser_count").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    unique("gang_snapshot_gang_cycle_uq").on(t.gangId, t.cycle),
+    index("gang_snapshot_campaign_idx").on(t.campaignId, t.cycle),
+  ],
+);
+
+/**
  * Battle aftermath log (issue #69) — append-only record of what a resolved
  * challenge did to gangs and fighters: credits, XP, injuries, deaths,
  * captures, reputation. Rows are NEVER edited or deleted; a mistake is fixed
@@ -571,6 +604,17 @@ export const campaignsRelations = relations(campaigns, ({ many }) => ({
 
 export const challengesRelations = relations(challenges, ({ many }) => ({
   events: many(battleEvents),
+}));
+
+export const gangSnapshotsRelations = relations(gangSnapshots, ({ one }) => ({
+  gang: one(gangs, {
+    fields: [gangSnapshots.gangId],
+    references: [gangs.id],
+  }),
+  campaign: one(campaigns, {
+    fields: [gangSnapshots.campaignId],
+    references: [campaigns.id],
+  }),
 }));
 
 export const battleEventsRelations = relations(battleEvents, ({ one }) => ({

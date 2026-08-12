@@ -12,6 +12,12 @@ import {
   controllerOf,
 } from "@/lib/data/campaign";
 import { gangRating, gangWealth } from "@/lib/scoring";
+import {
+  buildRatingSeries,
+  buildTimeline,
+  type RatingSeries,
+  type Timeline,
+} from "@/lib/campaign-history";
 
 function rankGangs(rows: GangRankRow[]): GangRankRow[] {
   return [...rows].sort(
@@ -121,6 +127,99 @@ async function getDbView(): Promise<PublicView> {
     triumphs,
     source: "db",
   };
+}
+
+/* ------------------ Gang history & timeline (issue #70) ------------------ */
+
+export type HistoryView = { series: RatingSeries[]; timeline: Timeline };
+
+const EMPTY_HISTORY: HistoryView = {
+  series: [],
+  timeline: { cycles: [], triumphs: [] },
+};
+
+/**
+ * Rating-evolution series + cycle-by-cycle timeline for the public
+ * dashboard (issue #70). Same DB-or-fallback contract as getPublicView:
+ * without a database (or before the migration runs) it degrades to an
+ * empty view and the dashboard simply omits the sections.
+ */
+export async function getHistoryView(): Promise<HistoryView> {
+  if (!process.env.DATABASE_URL) return EMPTY_HISTORY;
+  try {
+    const {
+      getActiveCampaign,
+      getLatestCampaign,
+      listGangsBasic,
+      listGangSnapshots,
+      listResolvedChallenges,
+      listTimelineBattleEvents,
+      listTriumphs,
+    } = await import("@/lib/db/queries");
+
+    const campaign = (await getActiveCampaign()) ?? (await getLatestCampaign());
+    if (!campaign) return EMPTY_HISTORY;
+
+    const [gangs, snapshots, challenges, events, triumphRows] =
+      await Promise.all([
+        listGangsBasic(campaign.id),
+        listGangSnapshots(campaign.id),
+        listResolvedChallenges(campaign.id),
+        listTimelineBattleEvents(campaign.id),
+        listTriumphs(campaign.id),
+      ]);
+
+    const nameById = new Map(gangs.map((g) => [g.id, g.name]));
+    const sympNameById = new Map(SYMPATHISERS.map((s) => [s.id, s.name]));
+
+    // Inactive gangs leave the public ranking — and the chart, for the same
+    // reason; their snapshots stay in the table for when they return.
+    const series = buildRatingSeries(
+      snapshots
+        .filter((s) => s.gang.isActive)
+        .map((s) => ({
+          gangId: s.gangId,
+          gangName: s.gang.name,
+          cycle: s.cycle,
+          rating: s.rating,
+        })),
+    );
+
+    const timeline = buildTimeline(
+      challenges.map((c) => ({
+        id: c.id,
+        cycle: c.cycle,
+        challengerName: nameById.get(c.challengerGangId) ?? "—",
+        challengedName: c.challengedGangId
+          ? (nameById.get(c.challengedGangId) ?? null)
+          : null,
+        sympathiserName: c.sympathiserId
+          ? (sympNameById.get(c.sympathiserId) ?? null)
+          : null,
+        outcome: c.outcome,
+        playedAt: c.playedAt,
+      })),
+      events.map((e) => ({
+        id: e.id,
+        kind: e.kind as "fighter_dead" | "fighter_captured",
+        cycle: e.cycle,
+        gangName: nameById.get(e.gangId) ?? "—",
+        fighterName: e.fighterName,
+        createdAt: e.createdAt,
+      })),
+      triumphRows.map((t) => ({
+        id: t.id,
+        title: t.title,
+        gangName: t.gangId ? (nameById.get(t.gangId) ?? null) : null,
+        awardedAt: t.awardedAt,
+      })),
+    );
+
+    return { series, timeline };
+  } catch {
+    // tables not yet migrated / database unavailable → graceful omission
+    return EMPTY_HISTORY;
+  }
 }
 
 function getSeedView(): PublicView {
