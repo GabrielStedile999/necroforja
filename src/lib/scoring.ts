@@ -7,13 +7,22 @@ import type { Fighter, Gang } from "@/types";
 /** Founding budget in a Succession Campaign (Cinderak Burning). */
 export const SUCCESSION_FOUNDING_BUDGET = 2000;
 
-/** Total cost of a fighter = base cost + sum of all equipped items. */
+/**
+ * Total cost of a fighter = base cost + equipped items + advancement credit
+ * increases (issue #71 — "the model's Cost is adjusted by the amount of
+ * credits shown", Core Rulebook 2023, p.149). Fighters without
+ * advancements keep their pre-#71 totals exactly.
+ */
 export function fighterTotalCost(fighter: Fighter): number {
   const equipmentCost = fighter.equipment.reduce(
     (sum, item) => sum + item.cost,
     0,
   );
-  return fighter.baseCost + equipmentCost;
+  const advancementCost = (fighter.advancements ?? []).reduce(
+    (sum, adv) => sum + adv.creditIncrease,
+    0,
+  );
+  return fighter.baseCost + equipmentCost + advancementCost;
 }
 
 /**

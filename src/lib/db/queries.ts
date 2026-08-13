@@ -46,7 +46,15 @@ function findGangWithRelations(where: SQL | undefined, dbc: DbOrTx = db) {
     where,
     with: {
       owner: true,
-      fighters: { with: { equipment: { with: { equipment: true } } } },
+      fighters: {
+        with: {
+          equipment: { with: { equipment: true } },
+          // issue #71 — advancements join the fighter cost; injuries render
+          // on the card and PDF.
+          advancements: true,
+          injuries: true,
+        },
+      },
       stash: { with: { equipment: true } },
     },
   });
@@ -79,6 +87,26 @@ export function toDomainGang(g: GangWithRelations): Gang {
       category: fe.equipment.category,
       cost: fe.equipment.cost,
     })),
+    // issue #71 — chronological, so the card reads like a career history
+    advancements: [...f.advancements]
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+      .map((adv) => ({
+        id: adv.id,
+        kind: adv.kind,
+        statKey: adv.statKey,
+        skillName: adv.skillName,
+        xpCost: adv.xpCost,
+        creditIncrease: adv.creditIncrease,
+      })),
+    injuries: [...f.injuries]
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+      .map((inj) => ({
+        id: inj.id,
+        name: inj.name,
+        statKey: inj.statKey,
+        statDelta: inj.statDelta,
+        notes: inj.notes,
+      })),
   }));
 
   return {
@@ -216,7 +244,13 @@ export async function getAllGangs(): Promise<Gang[]> {
     where: eq(schema.gangs.isActive, true),
     with: {
       owner: true,
-      fighters: { with: { equipment: { with: { equipment: true } } } },
+      fighters: {
+        with: {
+          equipment: { with: { equipment: true } },
+          advancements: true,
+          injuries: true,
+        },
+      },
       stash: { with: { equipment: true } },
     },
   });

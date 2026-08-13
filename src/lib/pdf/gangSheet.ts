@@ -19,6 +19,7 @@ import {
 } from "pdf-lib";
 import type { Gang } from "@/types";
 import { gangRating, gangWealth, fighterTotalCost } from "@/lib/scoring";
+import { STAT_LABEL, ROLL_STATS, type StatKey } from "@/lib/data/advancements";
 
 /* ------------------------------------------------------------------ */
 /*  Pure data layer (no pdf-lib dependency)                             */
@@ -35,6 +36,10 @@ export interface GangSheetFighterRow {
   /** false when status === "dead" (excluded from Rating). */
   isAlive: boolean;
   equipment: { name: string; category: string; cost: number }[];
+  /** Display-ready advancement lines (issue #71), e.g. "+1 WS (6 XP, +20c)". */
+  advancements: string[];
+  /** Display-ready injury lines (issue #71), e.g. "Eye Injury (BS −1)". */
+  injuries: string[];
 }
 
 export interface GangSheetData {
@@ -55,6 +60,17 @@ export interface GangSheetData {
  * Pure function: extracts all display-ready data from a Gang domain object.
  * No side-effects; suitable for unit testing without pdf-lib.
  */
+/** Injury stat effect in BOOK semantics (roll stats worsen upwards). */
+function injuryEffectLabel(
+  statKey: string | null,
+  statDelta: number | null,
+): string | null {
+  if (!statKey || !statDelta) return null;
+  const stat = statKey as StatKey;
+  const improvement = ROLL_STATS.includes(stat) ? -statDelta : statDelta;
+  return `${STAT_LABEL[stat] ?? statKey} ${improvement > 0 ? "+" : "-"}${Math.abs(improvement)}`;
+}
+
 export function buildGangSheetData(gang: Gang): GangSheetData {
   return {
     gangName: gang.name,
@@ -77,6 +93,15 @@ export function buildGangSheetData(gang: Gang): GangSheetData {
         category: e.category,
         cost: e.cost,
       })),
+      advancements: (f.advancements ?? []).map((adv) =>
+        adv.kind === "stat_increase"
+          ? `+1 ${STAT_LABEL[adv.statKey as StatKey] ?? adv.statKey} (${adv.xpCost} XP, +${adv.creditIncrease}c)`
+          : `Skill: ${adv.skillName} (${adv.xpCost} XP, +${adv.creditIncrease}c)`,
+      ),
+      injuries: (f.injuries ?? []).map((inj) => {
+        const effect = injuryEffectLabel(inj.statKey, inj.statDelta);
+        return effect ? `${inj.name} (${effect})` : inj.name;
+      }),
     })),
     stashItems: gang.stash.map((s) => ({
       name: s.equipment.name,
@@ -343,7 +368,28 @@ export async function buildGangSheetPdf(gang: Gang): Promise<Uint8Array> {
           f.equipment.map((e) => `${e.name} (${e.cost}c)`).join(",  ");
     const equipLines = wrap(equipStr, fontReg, 8.5, W - PAD * 2 - 8);
 
-    const blockH = PAD + 15 + 13 + equipLines.length * 11 + PAD;
+    // issue #71 — advancement & injury lines (omitted when empty)
+    const advLines =
+      f.advancements.length === 0
+        ? []
+        : wrap(
+            "Advancements: " + f.advancements.join(",  "),
+            fontReg,
+            8.5,
+            W - PAD * 2 - 8,
+          );
+    const injLines =
+      f.injuries.length === 0
+        ? []
+        : wrap(
+            "Injuries: " + f.injuries.join(",  "),
+            fontReg,
+            8.5,
+            W - PAD * 2 - 8,
+          );
+
+    const blockH =
+      PAD + 15 + 13 + (equipLines.length + advLines.length + injLines.length) * 11 + PAD;
     ensureSpace(blockH + 8);
 
     // panel + left accent stripe
@@ -385,6 +431,28 @@ export async function buildGangSheetPdf(gang: Gang): Promise<Uint8Array> {
         size: 8.5,
         font: fontReg,
         color: f.isAlive ? rgb(0.25, 0.25, 0.24) : C_MUTED,
+      });
+      yy -= 11;
+    }
+
+    // advancements & injuries (issue #71)
+    for (const line of advLines) {
+      txt(line, {
+        x: innerX,
+        y: yy,
+        size: 8.5,
+        font: fontReg,
+        color: f.isAlive ? rgb(0.25, 0.25, 0.24) : C_MUTED,
+      });
+      yy -= 11;
+    }
+    for (const line of injLines) {
+      txt(line, {
+        x: innerX,
+        y: yy,
+        size: 8.5,
+        font: fontReg,
+        color: f.isAlive ? C_BLOOD : C_MUTED,
       });
       yy -= 11;
     }

@@ -75,6 +75,12 @@ export const battleEventKind = pgEnum("battle_event_kind", [
   "reputation_change",
 ]);
 
+/** Fighter advancement kinds (issue #71): stat bump or a recorded skill. */
+export const advancementKind = pgEnum("advancement_kind", [
+  "stat_increase",
+  "skill",
+]);
+
 /** Campaign journal post kinds (issue #5). */
 export const postType = pgEnum("post_type", [
   "session_report", // jogo que faz parte da campanha em andamento
@@ -251,6 +257,63 @@ export const fighters = pgTable("fighter", {
    */
   avatarPath: text("avatar_path"),
 });
+
+/**
+ * Fighter Advancements (issue #71) — XP spent on a stat bump or a skill.
+ * Each row raises the fighter's cost by `creditIncrease` (see
+ * lib/scoring.ts fighterTotalCost) and therefore the gang Rating. XP costs
+ * and credit values are configured in src/lib/data/advancements.ts (numbers
+ * from the Core Rulebook 2023, p.149 — never rule text; the dice roll for
+ * random skills happens at the table). Retires the old skill-as-equipment
+ * workaround: NEW skills live here; legacy equipment rows stay untouched.
+ * See scripts/fighter-progression.sql.
+ */
+export const fighterAdvancements = pgTable(
+  "fighter_advancement",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    fighterId: uuid("fighter_id")
+      .notNull()
+      .references(() => fighters.id, { onDelete: "cascade" }),
+    kind: advancementKind("kind").notNull(),
+    /** One of m/ws/bs/s/t/w/i/a/ld/cl/wil/int; null for skills. */
+    statKey: text("stat_key"),
+    /** Recorded skill name; null for stat increases. */
+    skillName: text("skill_name"),
+    /** XP actually debited (base + repeat surcharge where it applies). */
+    xpCost: integer("xp_cost").notNull(),
+    /** Credits added to the fighter's cost (joins the Rating). */
+    creditIncrease: integer("credit_increase").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("fighter_advancement_fighter_idx").on(t.fighterId)],
+);
+
+/**
+ * Lasting Injuries (issue #71) — permanent marks on the Fighter card. The
+ * Arbitrator (or owner) rolls at the table and records the result; the row
+ * stores the injury NAME and, when it has one, the stat effect. `statDelta`
+ * is the STORED-value delta that was ACTUALLY applied after clamping to the
+ * p.73 bounds — so removing the injury (Arbitrator correction) reverts
+ * exactly what was applied. Injuries never change the fighter's cost
+ * (Core Rulebook 2023, p.126). See scripts/fighter-progression.sql.
+ */
+export const fighterInjuries = pgTable(
+  "fighter_injury",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    fighterId: uuid("fighter_id")
+      .notNull()
+      .references(() => fighters.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    statKey: text("stat_key"),
+    /** Applied stored-value delta (post-clamp); null = no stat effect. */
+    statDelta: smallint("stat_delta"),
+    notes: text("notes").notNull().default(""),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("fighter_injury_fighter_idx").on(t.fighterId)],
+);
 
 export const fighterEquipment = pgTable(
   "fighter_equipment",
@@ -555,7 +618,29 @@ export const gangsRelations = relations(gangs, ({ many, one }) => ({
 export const fightersRelations = relations(fighters, ({ many, one }) => ({
   gang: one(gangs, { fields: [fighters.gangId], references: [gangs.id] }),
   equipment: many(fighterEquipment),
+  advancements: many(fighterAdvancements),
+  injuries: many(fighterInjuries),
 }));
+
+export const fighterAdvancementsRelations = relations(
+  fighterAdvancements,
+  ({ one }) => ({
+    fighter: one(fighters, {
+      fields: [fighterAdvancements.fighterId],
+      references: [fighters.id],
+    }),
+  }),
+);
+
+export const fighterInjuriesRelations = relations(
+  fighterInjuries,
+  ({ one }) => ({
+    fighter: one(fighters, {
+      fields: [fighterInjuries.fighterId],
+      references: [fighters.id],
+    }),
+  }),
+);
 
 export const fighterEquipmentRelations = relations(
   fighterEquipment,
