@@ -59,6 +59,27 @@ export interface EquipmentItem {
   cost: number;
 }
 
+/** An advancement bought with XP (issue #71): stat bump or recorded skill. */
+export interface FighterAdvancement {
+  id: string;
+  kind: "stat_increase" | "skill";
+  statKey: string | null;
+  skillName: string | null;
+  xpCost: number;
+  /** Credits added to the fighter's cost (joins the Rating). */
+  creditIncrease: number;
+}
+
+/** A lasting injury recorded on the Fighter card (issue #71). */
+export interface FighterInjury {
+  id: string;
+  name: string;
+  statKey: string | null;
+  /** Stored-value delta actually applied (post-clamp); null = no effect. */
+  statDelta: number | null;
+  notes: string;
+}
+
 export interface Fighter {
   id: string;
   name: string;
@@ -72,6 +93,13 @@ export interface Fighter {
   status: FighterStatus;
   /** Portrait object path in the gallery bucket (issue #63); null = crest fallback. */
   avatarPath?: string | null;
+  /**
+   * Advancements & injuries (issue #71). Optional so seed fixtures and
+   * legacy call sites stay valid — scoring treats absence as none, which
+   * also guarantees pre-#71 Ratings are byte-identical.
+   */
+  advancements?: FighterAdvancement[];
+  injuries?: FighterInjury[];
 }
 
 export interface StashItem {

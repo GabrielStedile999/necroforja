@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, gt, gte, lt, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db, schema } from "@/lib/db";
 import {
@@ -29,7 +29,22 @@ import {
   fighterAvatarConfirmSchema,
   FIGHTER_AVATAR_MAX_BYTES,
   purchaseEquipmentSchema,
+  buyAdvancementSchema,
+  addInjurySchema,
+  removeInjurySchema,
 } from "@/lib/validation";
+import {
+  STAT_ADVANCEMENTS,
+  SKILL_ADVANCEMENTS,
+  STAT_BOUNDS,
+  STAT_LABEL,
+  REPEAT_STAT_SURCHARGE,
+  FAST_LEARNER_CATEGORIES,
+  storageDelta,
+  clampStat,
+  getInjuryPreset,
+  type StatKey,
+} from "@/lib/data/advancements";
 import { recalcGangScores, debitStashCredits } from "@/lib/db/mutations";
 import {
   GALLERY_BUCKET,
@@ -858,6 +873,334 @@ export async function confirmFighterAvatar(input: {
   revalidatePath("/player");
   revalidatePath(`/admin/gangs/${gang.id}`);
   return { success: "Portrait updated." };
+}
+
+/* -------------- Advancements & lasting injuries (issue #71) -------------- */
+
+/** Control-flow error: the stat guard failed AFTER the XP debit — throwing
+ *  rolls the whole transaction back (debit included). */
+class AdvancementCapError extends Error {}
+
+/**
+ * Buys ONE advancement with XP (issue #71): +1 to a characteristic
+ * (respecting the p.73 bounds) or a recorded skill. Server-authoritative
+ * costs from src/lib/data/advancements.ts, including the +2 XP repeat
+ * surcharge per prior advancement of the SAME stat (Juves and Prospects
+ * are exempt — p.149). One transaction:
+ *   conditional XP debit (`xp >= cost` — concurrent buys can never
+ *   double-spend, the Trading Post pattern) → guarded stat bump
+ *   (bound-checked in the WHERE; failure throws to roll the debit back)
+ *   → advancement row → recalcGangScores (cost joins the Rating).
+ * Dead fighters cannot advance.
+ */
+export async function buyAdvancement(
+  _prev: PlayerState,
+  formData: FormData,
+): Promise<PlayerState> {
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return { error: resolved.error };
+  const gang = resolved.gang;
+
+  const parsed = buyAdvancementSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+  const d = parsed.data;
+
+  let result: PlayerState = { error: "Advancement failed." };
+  try {
+    await db.transaction(async (tx) => {
+      const fighter = await tx.query.fighters.findFirst({
+        where: and(
+          eq(schema.fighters.id, d.fighterId),
+          eq(schema.fighters.gangId, gang.id),
+        ),
+      });
+      if (!fighter) {
+        result = { error: "Invalid fighter." };
+        return;
+      }
+      if (fighter.status === "dead") {
+        result = { error: "Dead fighters cannot advance." };
+        return;
+      }
+
+      let xpCost: number;
+      let creditIncrease: number;
+      let statKey: StatKey | null = null;
+      let skillName: string | null = null;
+      let successLabel: string;
+
+      if (d.kind === "stat_increase") {
+        statKey = d.statKey;
+        const cfg = STAT_ADVANCEMENTS[statKey];
+        const label = STAT_LABEL[statKey];
+
+        const current = fighter[statKey];
+        if (current == null) {
+          result = {
+            error: `Set ${label} on the fighter card before advancing it.`,
+          };
+          return;
+        }
+        const delta = storageDelta(statKey, 1);
+        const next = current + delta;
+        const { min, max } = STAT_BOUNDS[statKey];
+        if (next < min || next > max) {
+          result = { error: `${label} is already at its maximum.` };
+          return;
+        }
+
+        // Repeat surcharge: +2 XP per PRIOR advancement of the same stat
+        // (p.149); Juves/Prospects always pay the base cost.
+        const prior = await tx.query.fighterAdvancements.findMany({
+          where: and(
+            eq(schema.fighterAdvancements.fighterId, d.fighterId),
+            eq(schema.fighterAdvancements.statKey, statKey),
+          ),
+          columns: { id: true },
+        });
+        const fastLearner = (
+          FAST_LEARNER_CATEGORIES as readonly string[]
+        ).includes(fighter.category);
+        xpCost =
+          cfg.xpCost + (fastLearner ? 0 : prior.length * REPEAT_STAT_SURCHARGE);
+        creditIncrease = cfg.creditIncrease;
+        successLabel = `${label} improved`;
+      } else {
+        const cfg = SKILL_ADVANCEMENTS[d.skillTier];
+        xpCost = cfg.xpCost;
+        creditIncrease = cfg.creditIncrease;
+        skillName = d.skillName;
+        successLabel = `Skill "${d.skillName}" recorded`;
+      }
+
+      // Conditional XP debit FIRST — nothing else has been written yet, so
+      // an insufficient balance returns cleanly, no rollback needed.
+      const paid = await tx
+        .update(schema.fighters)
+        .set({ xp: sql`${schema.fighters.xp} - ${xpCost}` })
+        .where(
+          and(
+            eq(schema.fighters.id, d.fighterId),
+            gte(schema.fighters.xp, xpCost),
+          ),
+        )
+        .returning({ id: schema.fighters.id });
+      if (paid.length === 0) {
+        result = {
+          error: `Insufficient XP: this advancement costs ${xpCost} XP but ${fighter.name} has ${fighter.xp}.`,
+        };
+        return;
+      }
+
+      if (statKey) {
+        // Guarded bump: the bound lives in the WHERE, so two concurrent
+        // buys cannot push a stat past its cap. Failure AFTER the debit
+        // throws — the transaction rolls the XP back.
+        const delta = storageDelta(statKey, 1);
+        const col = schema.fighters[statKey];
+        const { min, max } = STAT_BOUNDS[statKey];
+        const rows = await tx
+          .update(schema.fighters)
+          .set({ [statKey]: sql`${col} + ${delta}` })
+          .where(
+            and(
+              eq(schema.fighters.id, d.fighterId),
+              delta > 0 ? lt(col, max) : gt(col, min),
+            ),
+          )
+          .returning({ id: schema.fighters.id });
+        if (rows.length === 0) throw new AdvancementCapError();
+      }
+
+      await tx.insert(schema.fighterAdvancements).values({
+        fighterId: d.fighterId,
+        kind: d.kind,
+        statKey,
+        skillName,
+        xpCost,
+        creditIncrease,
+      });
+
+      await recalcGangScores(gang.id, tx);
+      result = {
+        success: `${successLabel} — ${xpCost} XP spent, cost +${creditIncrease}c.`,
+      };
+    });
+  } catch (e) {
+    if (e instanceof AdvancementCapError) {
+      result = { error: "That characteristic is already at its maximum." };
+    } else {
+      throw e;
+    }
+  }
+
+  revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
+  return result;
+}
+
+/**
+ * Records a lasting injury (issue #71): a preset from the config (name +
+ * numeric effects, server-authoritative) or a custom entry (optional
+ * single-stat penalty of 1). The stat change is clamped to the p.73 bounds
+ * and the row stores the delta ACTUALLY applied, so removing the injury
+ * reverts exactly. Injuries never change the fighter's cost (p.126).
+ * Dual-stat presets record one row per effect (same name).
+ */
+export async function addInjury(
+  _prev: PlayerState,
+  formData: FormData,
+): Promise<PlayerState> {
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return { error: resolved.error };
+  const gang = resolved.gang;
+
+  const parsed = addInjurySchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+  const d = parsed.data;
+
+  const preset = d.preset ? getInjuryPreset(d.preset) : null;
+  if (d.preset && !preset) return { error: "Unknown injury preset." };
+
+  const name = preset ? preset.name : d.name!;
+  const effects: { stat: StatKey; improvement: number }[] = preset
+    ? preset.effects
+    : d.statKey
+      ? [{ stat: d.statKey, improvement: -1 }]
+      : [];
+
+  let result: PlayerState = { error: "Failed to record the injury." };
+  await db.transaction(async (tx) => {
+    const fighter = await tx.query.fighters.findFirst({
+      where: and(
+        eq(schema.fighters.id, d.fighterId),
+        eq(schema.fighters.gangId, gang.id),
+      ),
+    });
+    if (!fighter) {
+      result = { error: "Invalid fighter." };
+      return;
+    }
+
+    if (effects.length === 0) {
+      await tx.insert(schema.fighterInjuries).values({
+        fighterId: d.fighterId,
+        name,
+        statKey: null,
+        statDelta: null,
+        notes: d.notes,
+      });
+    } else {
+      for (const effect of effects) {
+        const current = fighter[effect.stat];
+        let applied: number | null = null;
+        if (current != null) {
+          const target = clampStat(
+            effect.stat,
+            current + storageDelta(effect.stat, effect.improvement),
+          );
+          applied = target - current;
+          if (applied !== 0) {
+            await tx
+              .update(schema.fighters)
+              .set({ [effect.stat]: target })
+              .where(eq(schema.fighters.id, d.fighterId));
+            // keep the local copy coherent for a second effect on the
+            // same stat within one preset
+            fighter[effect.stat] = target;
+          }
+        }
+        await tx.insert(schema.fighterInjuries).values({
+          fighterId: d.fighterId,
+          name,
+          statKey: effect.stat,
+          statDelta: applied,
+          notes: d.notes,
+        });
+      }
+    }
+
+    await recalcGangScores(gang.id, tx);
+    result = { success: `Lasting injury "${name}" recorded.` };
+  });
+
+  revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
+  return result;
+}
+
+/**
+ * Removes a lasting injury — an ARBITRATOR-ONLY correction (players record
+ * injuries; taking one back rewrites history). Reverts exactly the stat
+ * delta the row applied (clamped storage kept it truthful) and deletes the
+ * row in the same transaction.
+ */
+export async function removeInjury(
+  _prev: PlayerState,
+  formData: FormData,
+): Promise<PlayerState> {
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return { error: resolved.error };
+  if (!resolved.isAdmin) {
+    return { error: "Only the Arbitrator can remove a lasting injury." };
+  }
+  const gang = resolved.gang;
+
+  const parsed = removeInjurySchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+  const { fighterId, injuryId } = parsed.data;
+
+  let result: PlayerState = { error: "Failed to remove the injury." };
+  await db.transaction(async (tx) => {
+    const fighter = await tx.query.fighters.findFirst({
+      where: and(
+        eq(schema.fighters.id, fighterId),
+        eq(schema.fighters.gangId, gang.id),
+      ),
+    });
+    if (!fighter) {
+      result = { error: "Invalid fighter." };
+      return;
+    }
+    const injury = await tx.query.fighterInjuries.findFirst({
+      where: and(
+        eq(schema.fighterInjuries.id, injuryId),
+        eq(schema.fighterInjuries.fighterId, fighterId),
+      ),
+    });
+    if (!injury) {
+      result = { error: "Injury not found." };
+      return;
+    }
+
+    if (injury.statKey && injury.statDelta) {
+      const stat = injury.statKey as StatKey;
+      const current = fighter[stat];
+      if (current != null) {
+        await tx
+          .update(schema.fighters)
+          .set({ [stat]: clampStat(stat, current - injury.statDelta) })
+          .where(eq(schema.fighters.id, fighterId));
+      }
+    }
+
+    await tx
+      .delete(schema.fighterInjuries)
+      .where(eq(schema.fighterInjuries.id, injuryId));
+
+    await recalcGangScores(gang.id, tx);
+    result = { success: `Injury "${injury.name}" removed.` };
+  });
+
+  revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
+  return result;
 }
 
 /** Removes a fighter's portrait (falls back to the site crest in the UI). */

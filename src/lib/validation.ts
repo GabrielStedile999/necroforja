@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SKILL_TIER_KEYS } from "@/lib/data/advancements";
 
 /** Login (Credentials provider). */
 export const loginSchema = z.object({
@@ -572,6 +573,72 @@ export const equipFromStashSchema = z.object({
   stashItemId: z.string().uuid("Invalid item ID."),
   fighterId: z.string().uuid("Invalid fighter ID."),
 });
+
+/* -------------- Advancements & lasting injuries (issue #71) -------------- */
+
+export const statKeyEnum = z.enum([
+  "m", "ws", "bs", "s", "t", "w", "i", "a", "ld", "cl", "wil", "int",
+]);
+
+/**
+ * Buys one advancement with XP (issue #71) — discriminated by kind. The XP
+ * cost and credit increase are NEVER client input: the server derives them
+ * from src/lib/data/advancements.ts (plus the repeat surcharge).
+ */
+export const buyAdvancementSchema = z.discriminatedUnion("kind", [
+  z.object({
+    fighterId: z.string().uuid("Invalid fighter ID."),
+    kind: z.literal("stat_increase"),
+    statKey: statKeyEnum,
+  }),
+  z.object({
+    fighterId: z.string().uuid("Invalid fighter ID."),
+    kind: z.literal("skill"),
+    skillTier: z.enum(SKILL_TIER_KEYS),
+    skillName: z.string().trim().min(2, "Skill name too short.").max(60),
+  }),
+]);
+
+/**
+ * Records a lasting injury (issue #71): either a preset id (server pulls
+ * name + effects from the config — client fields ignored) or a custom
+ * entry (name required; optional single-stat penalty of 1).
+ */
+export const addInjurySchema = z
+  .object({
+    fighterId: z.string().uuid("Invalid fighter ID."),
+    preset: z
+      .string()
+      .trim()
+      .max(60)
+      .optional()
+      .or(z.literal("").transform(() => undefined)),
+    name: z
+      .string()
+      .trim()
+      .min(2, "Injury name too short.")
+      .max(80)
+      .optional()
+      .or(z.literal("").transform(() => undefined)),
+    /** Custom-only: stat that takes a 1-step penalty. */
+    statKey: statKeyEnum
+      .optional()
+      .or(z.literal("").transform(() => undefined)),
+    notes: z.string().trim().max(300, "Notes too long.").optional().default(""),
+  })
+  .refine((d) => d.preset || d.name, {
+    message: "Pick an injury or name a custom one.",
+    path: ["name"],
+  });
+
+/** Removes a lasting injury and reverts its applied stat delta (Arbitrator). */
+export const removeInjurySchema = z.object({
+  fighterId: z.string().uuid("Invalid fighter ID."),
+  injuryId: z.string().uuid("Invalid injury ID."),
+});
+
+export type BuyAdvancementInput = z.infer<typeof buyAdvancementSchema>;
+export type AddInjuryInput = z.infer<typeof addInjurySchema>;
 
 /** Changes a fighter's status (active/in_recovery/injured/captured/dead). */
 export const updateFighterStatusSchema = z.object({

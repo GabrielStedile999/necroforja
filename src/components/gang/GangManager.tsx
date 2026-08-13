@@ -14,6 +14,10 @@ import { UpdateFighterStatusForm } from "@/components/player/UpdateFighterStatus
 import { FighterXpForm } from "@/components/player/FighterXpForm";
 import { EditFighterForm } from "@/components/player/EditFighterForm";
 import { FighterAvatarForm } from "@/components/player/FighterAvatarForm";
+import { AdvancementForm } from "@/components/player/AdvancementForm";
+import { InjuryForm } from "@/components/player/InjuryForm";
+import { RemoveInjuryButton } from "@/components/player/RemoveInjuryButton";
+import { STAT_LABEL, ROLL_STATS, type StatKey } from "@/lib/data/advancements";
 import Image from "next/image";
 import { Bot, FileDown } from "lucide-react";
 import { GALLERY_BUCKET, storagePublicUrl } from "@/lib/storage";
@@ -73,6 +77,21 @@ export function GangManager({
     path && process.env.SUPABASE_URL
       ? storagePublicUrl(GALLERY_BUCKET, path)
       : "/brand/logo-light.png";
+
+  /**
+   * Injury stat effect in BOOK semantics (issue #71): the row stores the
+   * applied STORED delta, where roll stats worsen upwards — "BS stored +1"
+   * reads as "BS −1" on the card.
+   */
+  const injuryEffect = (
+    statKey: string | null,
+    statDelta: number | null,
+  ): string | null => {
+    if (!statKey || !statDelta) return null;
+    const stat = statKey as StatKey;
+    const improvement = ROLL_STATS.includes(stat) ? -statDelta : statDelta;
+    return `${STAT_LABEL[stat]} ${improvement > 0 ? "+" : "−"}${Math.abs(improvement)}`;
+  };
 
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-8">
@@ -163,6 +182,22 @@ export function GangManager({
                       <div className="text-xs text-muted">
                         {f.type} · {f.category} · XP {f.xp}
                       </div>
+                      {/* issue #71 — career badges */}
+                      {((f.advancements?.length ?? 0) > 0 ||
+                        (f.injuries?.length ?? 0) > 0) && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {(f.advancements?.length ?? 0) > 0 && (
+                            <Badge variant="toxic">
+                              {f.advancements!.length} adv
+                            </Badge>
+                          )}
+                          {(f.injuries?.length ?? 0) > 0 && (
+                            <Badge variant="blood">
+                              {f.injuries!.length} inj
+                            </Badge>
+                          )}
+                        </div>
+                      )}
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -223,6 +258,94 @@ export function GangManager({
                         </li>
                       ))}
                     </ul>
+                  )}
+
+                  {/* Advancements & lasting injuries (issue #71) */}
+                  {((f.advancements?.length ?? 0) > 0 ||
+                    (f.injuries?.length ?? 0) > 0) && (
+                    <div className="flex flex-col gap-2 border-t border-rivet/30 px-5 py-2">
+                      {(f.advancements?.length ?? 0) > 0 && (
+                        <ul className="flex flex-col gap-1">
+                          {f.advancements!.map((adv) => (
+                            <li
+                              key={adv.id}
+                              className="flex items-center justify-between gap-2 text-sm"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Badge variant="toxic">advancement</Badge>
+                                <span className="text-ink">
+                                  {adv.kind === "stat_increase"
+                                    ? `+1 ${STAT_LABEL[adv.statKey as StatKey] ?? adv.statKey}`
+                                    : `Skill: ${adv.skillName}`}
+                                </span>
+                              </div>
+                              <span className="font-mono text-xs text-muted">
+                                {adv.xpCost} XP · +{adv.creditIncrease}c
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {(f.injuries?.length ?? 0) > 0 && (
+                        <ul className="flex flex-col gap-1">
+                          {f.injuries!.map((inj) => (
+                            <li
+                              key={inj.id}
+                              className="flex flex-wrap items-center justify-between gap-2 text-sm"
+                            >
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Badge variant="blood">injury</Badge>
+                                <span className="text-ink">{inj.name}</span>
+                                {injuryEffect(inj.statKey, inj.statDelta) && (
+                                  <span className="font-mono text-xs text-blood">
+                                    {injuryEffect(inj.statKey, inj.statDelta)}
+                                  </span>
+                                )}
+                                {inj.notes && (
+                                  <span className="text-xs text-muted">
+                                    — {inj.notes}
+                                  </span>
+                                )}
+                              </div>
+                              {arbitratorMode && (
+                                <RemoveInjuryButton
+                                  injuryId={inj.id}
+                                  fighterId={f.id}
+                                  gangId={gangId}
+                                />
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Buy advancement / record injury (issue #71) */}
+                  {f.status !== "dead" && (
+                    <details className="border-t border-rivet/30 bg-void/40 px-5 py-3">
+                      <summary className="cursor-pointer py-1 font-mono text-xs uppercase tracking-wider text-muted transition-colors hover:text-hazard">
+                        Advancements &amp; injuries
+                      </summary>
+                      <div className="mt-3 flex flex-col gap-6 border-t border-rivet/50 pt-4">
+                        <div>
+                          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
+                            Buy advancement (spends XP)
+                          </p>
+                          <AdvancementForm
+                            fighterId={f.id}
+                            gangId={gangId}
+                            xp={f.xp}
+                          />
+                        </div>
+                        <div>
+                          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
+                            Record lasting injury
+                          </p>
+                          <InjuryForm fighterId={f.id} gangId={gangId} />
+                        </div>
+                      </div>
+                    </details>
                   )}
 
                   {/* Controls: status + XP */}

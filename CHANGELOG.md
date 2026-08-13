@@ -7,6 +7,30 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Added
+- **Advancements & Lasting Injuries — o XP tem onde ir e os ferimentos onde
+  morar** (issue #71): duas tabelas aditivas
+  (`scripts/fighter-progression.sql`). `fighter_advancement` registra cada
+  compra de Advancement — +1 numa característica ou uma skill — com o XP
+  realmente debitado e o aumento de custo que entra no Rating
+  (`fighterTotalCost` soma os `creditIncrease`; fighter sem advancement
+  mantém total **byte-idêntico**, coberto por regression guard).
+  `buyAdvancement` roda numa transação com **débito de XP condicional**
+  (`xp >= custo` — compras concorrentes nunca gastam o mesmo XP) e bump de
+  stat **guardado no WHERE** (limites da p.73; corrida perdida após o
+  débito reverte tudo); cobra a **sobretaxa oficial de +2 XP por repetição
+  da mesma característica** (Juves/Prospects isentos, p.149) e recusa
+  fighters mortos. Custos e limites são server-authoritative, vindos de
+  `src/lib/data/advancements.ts` — **só números e nomes do livro, zero
+  texto de regra** (repo público): as rolagens 2D6/D66 acontecem na mesa,
+  o app registra o resultado. `fighter_injury` guarda o ferimento com o
+  **delta efetivamente aplicado após o clamp**, então a remoção (correção
+  exclusiva do Árbitro) reverte exatamente; presets oficiais da p.127
+  (duais como Humiliated registram uma linha por efeito) ou entrada
+  custom. Skills novas passam por advancements; as antigas via equipment
+  ficam intocadas. UI: badges "N adv"/"N inj" no card, listas com efeito
+  em semântica de livro ("BS −1"), forms em `<details>`; o gang sheet PDF
+  ganhou as listas de Advancements e Injuries. 26 testes novos
+  (`tests/advancements.test.ts`).
 - **Histórico de Rating + timeline pública da campanha** (issue #70): nova
   tabela `gang_snapshot` (migração aditiva `scripts/gang-snapshots.sql`) —
   um retrato de Rating/Wealth/Reputation/nº de Sympathisers por gangue a
