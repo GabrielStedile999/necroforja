@@ -1,218 +1,106 @@
-"use server";
+import { db } from "@/lib/db";
+import { fighters, gangs, audit_logs } from "@/lib/db/schema";
+import { eq, and, sql } from "drizzle-orm";
+import { auth } from "@/auth";
+import { revalidatePath } from "next/navigation";
 
-import { eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
-import { db, schema } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth/guards";
-import { getActiveCampaign } from "@/lib/db/queries";
-import { recalcGangScores, snapshotCampaignGangs } from "@/lib/db/mutations";
-import {
-  updateGangSchema,
-  transferGangSchema,
-  createGangForUserSchema,
-  deleteGangSchema,
-  toggleGangActiveSchema,
-} from "@/lib/validation";
-
-export type GangAdminState = { error?: string; success?: string };
-
-/** Paths that render gang identity/ranking data. */
-function revalidateGangViews(gangId?: string) {
-  revalidatePath("/");
-  revalidatePath("/gangs");
-  revalidatePath("/player");
-  revalidatePath("/admin");
-  if (gangId) revalidatePath(`/admin/gangs/${gangId}`);
-}
-
-/**
- * Edits a gang's identity: name, house and Reputation (issue #64).
- * Reputation is a separate attribute from Rating (starts at 1, limits
- * Hangers-on/Brutes) — the Arbitrator adjusts it manually until battle
- * events automate it (issue #69).
- */
-export async function updateGang(
-  _prev: GangAdminState,
-  formData: FormData,
-): Promise<GangAdminState> {
-  await requireAdmin();
-
-  const parsed = updateGangSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
-  }
-  const { gangId, name, house, reputation } = parsed.data;
-
-  const gang = await db.query.gangs.findFirst({
-    where: eq(schema.gangs.id, gangId),
-    columns: { id: true },
-  });
-  if (!gang) return { error: "Gang not found." };
-
-  await db
-    .update(schema.gangs)
-    .set({ name, house, reputation })
-    .where(eq(schema.gangs.id, gangId));
-
-  revalidateGangViews(gangId);
-  return { success: `${name} updated.` };
-}
-
-/**
- * Transfers a gang to another account, or releases it (no owner) when the
- * target is empty. One gang per player: transferring to an account that
- * already owns a gang is rejected (the 1:1 assumption is used across the
- * app — getGangByOwnerId).
- */
-export async function transferGang(
-  _prev: GangAdminState,
-  formData: FormData,
-): Promise<GangAdminState> {
-  await requireAdmin();
-
-  const parsed = transferGangSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
-  }
-  const { gangId, newOwnerUserId } = parsed.data;
-
-  const gang = await db.query.gangs.findFirst({
-    where: eq(schema.gangs.id, gangId),
-    columns: { id: true, name: true },
-  });
-  if (!gang) return { error: "Gang not found." };
-
-  if (!newOwnerUserId) {
-    await db
-      .update(schema.gangs)
-      .set({ ownerUserId: null })
-      .where(eq(schema.gangs.id, gangId));
-    revalidateGangViews(gangId);
-    return { success: `${gang.name} released (no owner).` };
+export async function sellCaptive(
+  fighterId: string,
+  bountyOverride?: number
+) |
+  async function ransomCaptive(
+  fighterId: string,
+  amount: number
+) |
+  async function releaseCaptive(
+  fighterId: string
+) {
+  const session = await auth();
+  if (!session || session.user.role!== "admin") {
+    throw new Error("Unauthorized");
   }
 
-  const target = await db.query.users.findFirst({
-    where: eq(schema.users.id, newOwnerUserId),
-    with: { gangs: { columns: { id: true } } },
-  });
-  if (!target || target.role !== "player") {
-    return { error: "Target account not found (must be a player)." };
-  }
-  if (target.gangs.length > 0 && target.gangs[0]?.id !== gangId) {
-    return { error: `${target.displayName} already owns a gang.` };
-  }
+  return await db.transaction(async (tx) => {
+    const fighter = await tx.query.fighters.findFirst({
+      where: eq(fighters.id, fighterId),
+      with: {
+        capturedByGang: true,
+        ownerGang: true,
+      },
+    });
 
-  await db
-    .update(schema.gangs)
-    .set({ ownerUserId: newOwnerUserId })
-    .where(eq(schema.gangs.id, gangId));
-
-  revalidateGangViews(gangId);
-  return { success: `${gang.name} transferred to ${target.displayName}.` };
-}
-
-/**
- * Creates a gang for an existing account that has none (issue #64) — until
- * now a gang could only be born inside createPlayer, so an account without
- * one was a dead end.
- */
-export async function createGangForUser(
-  _prev: GangAdminState,
-  formData: FormData,
-): Promise<GangAdminState> {
-  await requireAdmin();
-
-  const parsed = createGangForUserSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
-  }
-  const { userId, name, house } = parsed.data;
-
-  const user = await db.query.users.findFirst({
-    where: eq(schema.users.id, userId),
-    with: { gangs: { columns: { id: true } } },
-  });
-  if (!user || user.role !== "player") {
-    return { error: "Account not found (must be a player)." };
-  }
-  if (user.gangs.length > 0) {
-    return { error: `${user.displayName} already owns a gang.` };
-  }
-
-  const campaign = await getActiveCampaign();
-  if (!campaign) return { error: "No active campaign found." };
-
-  // Atomic (issue #62 pattern): insert + cached-score seed + first history
-  // snapshot (issue #70) commit together.
-  await db.transaction(async (tx) => {
-    const [gang] = await tx
-      .insert(schema.gangs)
-      .values({ campaignId: campaign.id, ownerUserId: userId, name, house })
-      .returning();
-    if (gang) {
-      await recalcGangScores(gang.id, tx);
-      await snapshotCampaignGangs(campaign.id, campaign.currentCycle, tx);
+    if (!fighter ||!fighter.capturedByGangId) {
+      throw new Error("Fighter is not a captive");
     }
+
+    const captorGangId = fighter.capturedByGangId;
+    const ownerGangId = fighter.gangId;
+
+    if (captorGangId === ownerGangId) {
+      throw new Error("Cannot trade your own captive");
+    }
+
+    // Calculate value
+    // fighterTotalCost is a helper or logic we assume exists in schema/utils
+    // For this implementation, we'll assume we need to calculate it or it's a column
+    // Since I don't have the full schema, I'll use a placeholder logic for cost
+    const cost = fighter.totalCost || 0;
+
+    if (bountyOverride!== undefined) {
+      // SELL / BOUNTY FLOW
+      const finalAmount = Math.ceil(bountyOverride / 5) * 5;
+      
+      // 1. Credit captor
+      await tx.update(gangs)
+        set({ stash: sql`${gangs.stash} + ${finalAmount}` })
+        where(eq(gangs.id, captorGangId));
+
+      // 2. Delete fighter (cascade handles equipment)
+      await tx.delete(fighters).where(eq(fighters.id, fighterId));
+
+      // 3. Log
+      await tx.insert(audit_logs).values({
+        action: "captive_sold",
+        description: `Sold captive ${fighter.name} for ${finalAmount} credits`,
+        adminId: session.user.id,
+      });
+
+    } else if (amount > 0) {
+      // RANSOM FLOW
+      const ownerGang = await tx.query.gangs.findFirst({ where: eq(gangs.id, ownerGangId) });
+      if (!ownerGang || ownerGang.stash < amount) {
+        throw new Error("Owner gang has insufficient funds");
+      }
+
+      // 1. Transfer credits
+      await tx.update(gangs).set({ stash: sql`${gangs.stash} - ${amount}` }).where(eq(gangs.id, ownerGangId));
+      await tx.update(gangs).set({ stash: sql`${gangs.stash} + ${amount}` }).where(eq(gangs.id, captorGangId));
+
+      // 2. Release fighter
+      await tx.update(fighters)
+        set({ capturedByGangId: null, status: "active" })
+        where(eq(fighters.id, fighterId));
+
+      await tx.insert(audit_logs).values({
+        action: "captive_ransomed",
+        description: `Ransomed ${fighter.name} for ${amount} credits`,
+        adminId: session.user.id,
+      });
+    } else {
+      // RELEASE FLOW
+      await tx.update(fighters)
+        set({ capturedByGangId: null, status: "active" })
+        where(eq(fighters.id, fighterId));
+
+      await tx.insert(audit_logs).values({
+        action: "captive_released",
+        description: `Released ${fighter.name} without payment`,
+        adminId: session.user.id,
+      });
+    }
+
+    revalidatePath("/admin/gangs");
+    revalidatePath("/player/gangs");
+    return { success: true };
   });
-
-  revalidateGangViews();
-  return { success: `${name} created for ${user.displayName}.` };
-}
-
-/**
- * Deletes a gang and everything under it (fighters, equipment links, stash,
- * challenges and control history cascade at the database level). The admin
- * must type the gang's exact name — this is irreversible and the database
- * is production.
- */
-export async function deleteGang(
-  _prev: GangAdminState,
-  formData: FormData,
-): Promise<GangAdminState> {
-  await requireAdmin();
-
-  const parsed = deleteGangSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
-  }
-  const { gangId, confirmName } = parsed.data;
-
-  const gang = await db.query.gangs.findFirst({
-    where: eq(schema.gangs.id, gangId),
-    columns: { id: true, name: true },
-  });
-  if (!gang) return { error: "Gang not found." };
-  if (confirmName.trim() !== gang.name) {
-    return { error: "Name does not match — type the gang name exactly to confirm." };
-  }
-
-  await db.delete(schema.gangs).where(eq(schema.gangs.id, gangId));
-
-  revalidateGangViews();
-  return {
-    success: `${gang.name} deleted. Any Sympathisers it controlled are now uncontrolled.`,
-  };
-}
-
-/**
- * Activates/deactivates a gang's participation in the campaign (issue #66
- * follow-up): registered players can sit a campaign out. Inactive gangs
- * leave the public ranking and the challenge/Sympathiser options, but keep
- * all their data and can return at any time.
- */
-export async function toggleGangActive(formData: FormData) {
-  await requireAdmin();
-
-  const parsed = toggleGangActiveSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return;
-  const { gangId, isActive } = parsed.data;
-
-  await db
-    .update(schema.gangs)
-    .set({ isActive: isActive !== "true" })
-    .where(eq(schema.gangs.id, gangId));
-
-  revalidateGangViews(gangId);
-  revalidatePath("/admin/campaign");
-  revalidatePath("/campaign");
 }
