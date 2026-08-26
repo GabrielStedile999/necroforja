@@ -32,7 +32,9 @@ import {
   buyAdvancementSchema,
   addInjurySchema,
   removeInjurySchema,
+  setGangAllegianceSchema,
 } from "@/lib/validation";
+import { ALLEGIANCE_LABEL } from "@/lib/data/allegiances";
 import {
   STAT_ADVANCEMENTS,
   SKILL_ADVANCEMENTS,
@@ -873,6 +875,78 @@ export async function confirmFighterAvatar(input: {
   revalidatePath("/player");
   revalidatePath(`/admin/gangs/${gang.id}`);
   return { success: "Portrait updated." };
+}
+
+/* ------------------------ Allegiances (issue #82) ------------------------ */
+
+/**
+ * Declares or changes a gang's civil-war side (issue #82 — Cinderak
+ * Burning p.61–63). Rules: a PLAYER declares once — Unaligned may pick a
+ * side at any time ("Take a Side"), but switching sides afterwards is an
+ * ARBITRATOR-only correction (history is war). Every change appends an
+ * allegiance_change row with the current cycle, and the current state
+ * lives on the gang row — same current-vs-trail split as battle_event.
+ */
+export async function setGangAllegiance(
+  _prev: PlayerState,
+  formData: FormData,
+): Promise<PlayerState> {
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return { error: resolved.error };
+  const { gang, isAdmin } = resolved;
+
+  const parsed = setGangAllegianceSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+  const target = parsed.data.allegiance;
+  const current = gang.allegiance ?? "unaligned";
+
+  if (target === current) {
+    return { error: `${gang.name} is already ${ALLEGIANCE_LABEL[current]}.` };
+  }
+  if (!isAdmin && current !== "unaligned") {
+    return {
+      error:
+        "A declared side is final — ask the Arbitrator to correct an allegiance.",
+    };
+  }
+
+  // The log row records the campaign cycle of the declaration.
+  const gangRow = await db.query.gangs.findFirst({
+    where: eq(schema.gangs.id, gang.id),
+    columns: { campaignId: true },
+  });
+  if (!gangRow) return { error: "Gang not found." };
+  const campaign = await db.query.campaigns.findFirst({
+    where: eq(schema.campaigns.id, gangRow.campaignId),
+    columns: { currentCycle: true },
+  });
+
+  // Atomic (issue #62 pattern): the state change and its history row
+  // commit together.
+  await db.transaction(async (tx) => {
+    await tx
+      .update(schema.gangs)
+      .set({ allegiance: target })
+      .where(eq(schema.gangs.id, gang.id));
+    await tx.insert(schema.allegianceChanges).values({
+      gangId: gang.id,
+      allegiance: target,
+      cycle: campaign?.currentCycle ?? 1,
+    });
+  });
+
+  revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
+  revalidatePath("/admin/campaign");
+  revalidatePath("/dashboard");
+  return {
+    success:
+      target === "unaligned"
+        ? `${gang.name} is now Unaligned.`
+        : `${gang.name} now stands with the ${ALLEGIANCE_LABEL[target]}.`,
+  };
 }
 
 /* -------------- Advancements & lasting injuries (issue #71) -------------- */

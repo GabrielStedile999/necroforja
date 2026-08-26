@@ -25,7 +25,13 @@ import {
   listTriumphs,
   listBattleEventsForChallenges,
   listFightersByCampaign,
+  countChallengeWinsByAllegiance,
 } from "@/lib/db/queries";
+import {
+  ALLEGIANCE_OPTIONS,
+  ALLEGIANCE_BADGE,
+  ALLEGIANCE_LABEL,
+} from "@/lib/data/allegiances";
 import { SYMPATHISERS } from "@/lib/data/sympathisers";
 import { advanceCycle, toggleSympathiser, finishCampaign } from "./actions";
 import type { CampaignPhase } from "@/types";
@@ -76,13 +82,14 @@ export default async function CampaignAdminPage() {
   const isFinished = campaign.status === "finished";
   const isLastCycle = campaign.currentCycle >= campaign.totalCycles;
 
-  const [gangs, challenges, controllerMap, allSymps, triumphs] =
+  const [gangs, challenges, controllerMap, allSymps, triumphs, winsBySide] =
     await Promise.all([
       listGangsBasic(campaign.id),
       listChallenges(campaign.id, 30),
       getSympathiserControllerMap(),
       listSympathisers(),
       listTriumphs(campaign.id),
+      countChallengeWinsByAllegiance(campaign.id),
     ]);
 
   const gangName = new Map(gangs.map((g) => [g.id, g.name]));
@@ -305,6 +312,55 @@ export default async function CampaignAdminPage() {
                 </p>
               </>
             )}
+          </CardContent>
+        </Card>
+
+        {/* issue #82 — the civil war: sides and win counts (snapshot-based) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Civil war</CardTitle>
+            <span className="ml-auto text-xs text-muted">
+              wins counted at resolution time
+            </span>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <div className="grid gap-3 sm:grid-cols-3">
+              {ALLEGIANCE_OPTIONS.map((o) => {
+                const sideGangs = gangs.filter(
+                  (g) => (g.allegiance ?? "unaligned") === o.key && g.isActive,
+                );
+                return (
+                  <div
+                    key={o.key}
+                    className="flex flex-col gap-2 border border-rivet/60 p-3 clip-chamfer-sm"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <Badge variant={ALLEGIANCE_BADGE[o.key]}>{o.label}</Badge>
+                      {o.key !== "unaligned" && (
+                        <span
+                          className="font-mono text-sm text-ink"
+                          aria-label={`${ALLEGIANCE_LABEL[o.key]} wins`}
+                        >
+                          {winsBySide[o.key] ?? 0} wins
+                        </span>
+                      )}
+                    </div>
+                    <p className="m-0 text-xs text-muted">
+                      {sideGangs.length === 0
+                        ? "no gangs"
+                        : sideGangs.map((g) => g.name).join(", ")}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="m-0 text-xs text-muted">
+              Gangs declare during Downtime (or any time while Unaligned) on
+              their own panel; corrections are Arbitrator-only, from the
+              gang&apos;s page. Wins are stamped with the winner&apos;s side
+              when the challenge is resolved — later re-declarations never
+              rewrite them.
+            </p>
           </CardContent>
         </Card>
 

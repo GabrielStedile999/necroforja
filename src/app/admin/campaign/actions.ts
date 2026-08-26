@@ -261,9 +261,27 @@ export async function resolveChallenge(
       );
     }
 
+    // Snapshot the winner's allegiance AT RESOLUTION TIME (issue #82) —
+    // the Champion Triumph counts must never drift when a gang later
+    // re-declares. Null when there is no winner (draw/declined).
+    let winnerAllegiance: "unaligned" | "imperial_house" | "rebellion" | null =
+      null;
+    if (winner) {
+      const winnerGang = await tx.query.gangs.findFirst({
+        where: eq(schema.gangs.id, winner),
+        columns: { allegiance: true },
+      });
+      winnerAllegiance = winnerGang?.allegiance ?? null;
+    }
+
     await tx
       .update(schema.challenges)
-      .set({ outcome, resolved: true, playedAt: new Date() })
+      .set({
+        outcome,
+        resolved: true,
+        playedAt: new Date(),
+        winnerAllegiance,
+      })
       .where(eq(schema.challenges.id, challengeId));
   });
 

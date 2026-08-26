@@ -72,6 +72,7 @@ async function getDbView(): Promise<PublicView> {
     rating: gangRating(g),
     wealth: gangWealth(g),
     sympathiserCount: controlMap[g.id]?.length ?? 0,
+    allegiance: g.allegiance,
   }));
 
   const sympathisers: SympathiserView[] = enabledSymps

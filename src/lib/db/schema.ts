@@ -75,6 +75,16 @@ export const battleEventKind = pgEnum("battle_event_kind", [
   "reputation_change",
 ]);
 
+/**
+ * Gang allegiance in the Succession Campaign (issue #82) — declared during
+ * Downtime: the Imperial House, Lady Credo's Rebellion, or Unaligned.
+ */
+export const gangAllegiance = pgEnum("gang_allegiance", [
+  "unaligned",
+  "imperial_house",
+  "rebellion",
+]);
+
 /** Fighter advancement kinds (issue #71): stat bump or a recorded skill. */
 export const advancementKind = pgEnum("advancement_kind", [
   "stat_increase",
@@ -146,8 +156,33 @@ export const gangs = pgTable("gang", {
    * See scripts/campaign-players.sql.
    */
   isActive: boolean("is_active").notNull().default(true),
+  /**
+   * Declared side in the civil war (issue #82). Gangs are born Unaligned;
+   * declaring a side is one-way for players (switching is an Arbitrator
+   * correction). Every change is logged in allegiance_change.
+   */
+  allegiance: gangAllegiance("allegiance").notNull().default("unaligned"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+/**
+ * Append-only allegiance history (issue #82) — who declared what, and in
+ * which cycle. Mirrors the battle_event philosophy: never edited, the
+ * current state lives on the gang row, the trail lives here.
+ */
+export const allegianceChanges = pgTable(
+  "allegiance_change",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    gangId: uuid("gang_id")
+      .notNull()
+      .references(() => gangs.id, { onDelete: "cascade" }),
+    allegiance: gangAllegiance("allegiance").notNull(),
+    cycle: smallint("cycle").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("allegiance_change_gang_idx").on(t.gangId, t.createdAt)],
+);
 
 /**
  * Official equipment catalogue (issue #67) — the Arbitrator's master list of
@@ -374,6 +409,12 @@ export const challenges = pgTable("challenge", {
   outcome: text("outcome"), // "challenger_win" | "challenged_win" | "declined" | "draw"
   resolved: boolean("resolved").notNull().default(false),
   playedAt: timestamp("played_at"),
+  /**
+   * The WINNER's allegiance snapshotted AT RESOLUTION TIME (issue #82) —
+   * feeds the Champion Triumph counts. A later re-declaration never
+   * rewrites history; null = no winner (draw/declined) or pre-#82 row.
+   */
+  winnerAllegiance: gangAllegiance("winner_allegiance"),
 });
 
 /**
