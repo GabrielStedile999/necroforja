@@ -574,6 +574,26 @@ export const equipFromStashSchema = z.object({
   fighterId: z.string().uuid("Invalid fighter ID."),
 });
 
+/* ------------------------ Allegiances (issue #82) ------------------------ */
+
+export const gangAllegianceEnum = z.enum([
+  "unaligned",
+  "imperial_house",
+  "rebellion",
+]);
+
+/**
+ * Declares/changes a gang's civil-war side (issue #82). The gangId travels
+ * as the usual hidden field (resolveGangForWrite authorises); the RULES —
+ * players declare once and never switch, the Arbitrator can set anything —
+ * live in the action, which knows who is asking.
+ */
+export const setGangAllegianceSchema = z.object({
+  allegiance: gangAllegianceEnum,
+});
+
+export type SetGangAllegianceInput = z.infer<typeof setGangAllegianceSchema>;
+
 /* -------------- Advancements & lasting injuries (issue #71) -------------- */
 
 export const statKeyEnum = z.enum([

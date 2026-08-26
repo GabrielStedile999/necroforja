@@ -92,6 +92,8 @@ const { txMock, dbMock, mockTransaction, mockDbFindFirst } = vi.hoisted(() => {
   };
 
   const txMock: any = build();
+  // issue #82 — resolveChallenge reads the winner's allegiance through the tx
+  txMock.query = { gangs: { findFirst: vi.fn().mockResolvedValue(undefined) } };
   const mockDbFindFirst = vi.fn();
   const mockTransaction = vi.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
     fn(txMock),

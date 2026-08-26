@@ -7,6 +7,20 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Added
+- **Allegiances — a guerra civil chega às gangues** (issue #82): toda
+  gangue agora declara um lado na Succession Campaign — **Imperial House,
+  Lady Credo's Rebellion ou Unaligned** (migração aditiva
+  `scripts/allegiances.sql`). Jogador declara **uma única vez** (Unaligned
+  pode escolher lado a qualquer momento); trocar um lado declarado é
+  correção exclusiva do Árbitro — e toda mudança entra num histórico
+  **append-only** (`allegiance_change`) carimbado com o ciclo. Ao resolver
+  um challenge, o lado do vencedor é **fotografado na hora**
+  (`challenge.winner_allegiance`, na mesma transação): a contagem de
+  vitórias da guerra civil nunca muda se uma gangue trocar de lado depois —
+  é ela que alimentará os Triumphs de Champion. UI: badge de allegiance no
+  painel da gangue com o form de declaração, badges no ranking público do
+  dashboard e card **"Civil war"** no painel do Árbitro com as gangues e as
+  vitórias de cada lado. 8 testes novos (`tests/allegiances.test.ts`).
 - **Advancements & Lasting Injuries — o XP tem onde ir e os ferimentos onde
   morar** (issue #71): duas tabelas aditivas
   (`scripts/fighter-progression.sql`). `fighter_advancement` registra cada

@@ -8,6 +8,9 @@ export type CampaignPhase =
   | "downtime"
   | "spark_of_rebellion";
 
+/** Declared side in the Succession Campaign's civil war (issue #82). */
+export type GangAllegiance = "unaligned" | "imperial_house" | "rebellion";
+
 export type FighterCategory =
   | "leader"
   | "champion"
@@ -120,6 +123,8 @@ export interface Gang {
   /** Equipment stored in the Stash (counts towards Wealth, not Rating). */
   stash: StashItem[];
   reputation: number;
+  /** Declared civil-war side (issue #82); absent = unaligned (seed data). */
+  allegiance?: GangAllegiance;
 }
 
 export interface Sympathiser {
@@ -157,6 +162,8 @@ export interface GangRankRow {
   rating: number;
   wealth: number;
   sympathiserCount: number;
+  /** Declared civil-war side (issue #82); absent = unaligned (seed data). */
+  allegiance?: GangAllegiance;
 }
 
 export interface SympathiserView {

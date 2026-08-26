@@ -17,7 +17,12 @@ import { FighterAvatarForm } from "@/components/player/FighterAvatarForm";
 import { AdvancementForm } from "@/components/player/AdvancementForm";
 import { InjuryForm } from "@/components/player/InjuryForm";
 import { RemoveInjuryButton } from "@/components/player/RemoveInjuryButton";
+import { AllegianceForm } from "@/components/player/AllegianceForm";
 import { STAT_LABEL, ROLL_STATS, type StatKey } from "@/lib/data/advancements";
+import {
+  ALLEGIANCE_LABEL,
+  ALLEGIANCE_BADGE,
+} from "@/lib/data/allegiances";
 import Image from "next/image";
 import { Bot, FileDown } from "lucide-react";
 import { GALLERY_BUCKET, storagePublicUrl } from "@/lib/storage";
@@ -141,6 +146,24 @@ export function GangManager({
           ))}
         </div>
       )}
+
+      {/* Allegiance (issue #82): badge + declaration. Players declare once
+          (form hides after); the Arbitrator can always correct. */}
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-xs uppercase tracking-wider text-muted">
+          Allegiance:
+        </span>
+        <Badge variant={ALLEGIANCE_BADGE[gang.allegiance ?? "unaligned"]}>
+          {ALLEGIANCE_LABEL[gang.allegiance ?? "unaligned"]}
+        </Badge>
+        {(arbitratorMode || (gang.allegiance ?? "unaligned") === "unaligned") && (
+          <AllegianceForm
+            gangId={gangId}
+            current={gang.allegiance ?? "unaligned"}
+            arbitratorMode={arbitratorMode}
+          />
+        )}
+      </div>
 
       <Card>
         <CardHeader>

@@ -1,5 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  ALLEGIANCE_LABEL,
+  ALLEGIANCE_BADGE,
+} from "@/lib/data/allegiances";
 import type { GangRankRow } from "@/types";
 
 /**
@@ -30,8 +34,16 @@ export function GangRankingTable({ gangs }: { gangs: GangRankRow[] }) {
               <tr key={g.id} className="border-b border-rivet/50 last:border-0">
                 <td className="px-5 py-3 font-mono text-muted">{i + 1}</td>
                 <td className="px-5 py-3">
-                  <div className="font-display text-base font-semibold uppercase text-ink">
-                    {g.name}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-display text-base font-semibold uppercase text-ink">
+                      {g.name}
+                    </span>
+                    {/* issue #82 — declared side; Unaligned stays unbadged */}
+                    {g.allegiance && g.allegiance !== "unaligned" && (
+                      <Badge variant={ALLEGIANCE_BADGE[g.allegiance]}>
+                        {ALLEGIANCE_LABEL[g.allegiance]}
+                      </Badge>
+                    )}
                   </div>
                   <div className="text-xs text-muted">{g.ownerName}</div>
                 </td>
@@ -58,8 +70,15 @@ export function GangRankingTable({ gangs }: { gangs: GangRankRow[] }) {
             <li key={g.id} className="flex items-center gap-3 px-5 py-3">
               <span className="font-mono text-lg text-muted">{i + 1}</span>
               <div className="flex-1">
-                <div className="font-display text-base font-semibold uppercase text-ink">
-                  {g.name}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-display text-base font-semibold uppercase text-ink">
+                    {g.name}
+                  </span>
+                  {g.allegiance && g.allegiance !== "unaligned" && (
+                    <Badge variant={ALLEGIANCE_BADGE[g.allegiance]}>
+                      {ALLEGIANCE_LABEL[g.allegiance]}
+                    </Badge>
+                  )}
                 </div>
                 <div className="text-xs text-muted">
                   {g.ownerName} · {g.house}

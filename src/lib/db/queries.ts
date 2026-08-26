@@ -2,7 +2,7 @@
  * Read layer (Drizzle). Maps database rows to the domain types
  * used by lib/scoring.ts. All functions run server-side only.
  */
-import { eq, and, or, ilike, asc, desc, lt, sql, isNull, inArray, type SQL } from "drizzle-orm";
+import { eq, and, or, ilike, asc, desc, lt, sql, isNull, isNotNull, inArray, type SQL } from "drizzle-orm";
 import { db, schema, type DbOrTx } from "./index";
 import type {
   Fighter,
@@ -115,6 +115,7 @@ export function toDomainGang(g: GangWithRelations): Gang {
     house: g.house,
     ownerName: g.owner?.displayName ?? "—",
     reputation: g.reputation,
+    allegiance: g.allegiance,
     stashCredits: g.stashCredits,
     stash: g.stash.map((s) => ({
       id: s.id,
@@ -516,7 +517,13 @@ export async function getPostById(postId: string) {
 export async function listGangsBasic(campaignId: string) {
   const rows = await db.query.gangs.findMany({
     where: eq(schema.gangs.campaignId, campaignId),
-    columns: { id: true, name: true, ratingCached: true, isActive: true },
+    columns: {
+      id: true,
+      name: true,
+      ratingCached: true,
+      isActive: true,
+      allegiance: true,
+    },
     with: { owner: { columns: { displayName: true, isActive: true } } },
   });
   return rows.map((g) => ({
@@ -524,9 +531,40 @@ export async function listGangsBasic(campaignId: string) {
     name: g.name,
     ratingCached: g.ratingCached,
     isActive: g.isActive,
+    allegiance: g.allegiance,
     ownerName: g.owner?.displayName ?? null,
     ownerActive: g.owner?.isActive ?? false,
   }));
+}
+
+/**
+ * Resolved-challenge wins per allegiance (issue #82) — counted from the
+ * winner_allegiance SNAPSHOT taken at resolution time, so re-declarations
+ * never rewrite the score. Feeds the civil-war card and, later, the
+ * Champion Triumph suggestions.
+ */
+export async function countChallengeWinsByAllegiance(
+  campaignId: string,
+): Promise<Record<string, number>> {
+  const rows = await db
+    .select({
+      allegiance: schema.challenges.winnerAllegiance,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(schema.challenges)
+    .where(
+      and(
+        eq(schema.challenges.campaignId, campaignId),
+        eq(schema.challenges.resolved, true),
+        isNotNull(schema.challenges.winnerAllegiance),
+      ),
+    )
+    .groupBy(schema.challenges.winnerAllegiance);
+  const map: Record<string, number> = {};
+  for (const r of rows) {
+    if (r.allegiance) map[r.allegiance] = r.count;
+  }
+  return map;
 }
 
 /* ------------------------- Gallery (issues #6/#24) ------------------------- */
