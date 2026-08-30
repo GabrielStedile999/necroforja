@@ -28,7 +28,10 @@ import {
   listFightersByCampaign,
   countChallengeWinsByAllegiance,
   listDowntimeEvents,
+  listSympathiserIncome,
 } from "@/lib/db/queries";
+import { sympathiserIncomeDice, DEEP_POCKETS_DICE } from "@/lib/data/sympathisers";
+import { CollectIncomeForm } from "@/components/admin/CollectIncomeForm";
 import {
   ALLEGIANCE_OPTIONS,
   ALLEGIANCE_BADGE,
@@ -92,6 +95,7 @@ export default async function CampaignAdminPage() {
     triumphs,
     winsBySide,
     downtimeEvents,
+    sympIncome,
   ] = await Promise.all([
     listGangsBasic(campaign.id),
     listChallenges(campaign.id, 30),
@@ -100,6 +104,7 @@ export default async function CampaignAdminPage() {
     listTriumphs(campaign.id),
     countChallengeWinsByAllegiance(campaign.id),
     listDowntimeEvents(campaign.id),
+    listSympathiserIncome(campaign.id),
   ]);
   // issue #83 — the Downtime panel appears once the campaign reaches the
   // Downtime cycle (or when a log exists, e.g. after a rewind).
@@ -390,6 +395,127 @@ export default async function CampaignAdminPage() {
             activeGangCount={gangs.filter((g) => g.isActive).length}
             isFinished={isFinished}
           />
+        )}
+
+        {/* issue #85 — Sympathiser income: collected once per (gang, symp,
+            cycle) in the Spark phase; the ledger below is the audit trail. */}
+        {(campaign.phase === "spark_of_rebellion" || sympIncome.length > 0) && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Sympathiser income</CardTitle>
+              <span className="ml-auto text-xs text-muted">
+                dice rolled at the table · once per cycle
+              </span>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              {campaign.phase === "spark_of_rebellion" && !isFinished ? (
+                (() => {
+                  const collected = new Map(
+                    sympIncome
+                      .filter((r) => r.cycle === campaign.currentCycle)
+                      .map((r) => [`${r.gangId}:${r.sympathiserId}`, r.amount]),
+                  );
+                  const rows = gangs
+                    .filter((g) => g.isActive)
+                    .flatMap((g) =>
+                      sympsOrdered
+                        .filter(
+                          (s) =>
+                            s.enabled &&
+                            controllerMap[s.id] === g.id &&
+                            sympathiserIncomeDice(s.id, campaign.phase).length > 0,
+                        )
+                        .map((s) => ({ gang: g, symp: s })),
+                    );
+                  if (rows.length === 0) {
+                    return (
+                      <p className="m-0 text-sm text-muted">
+                        No active gang controls a Sympathiser with credit
+                        income right now.
+                      </p>
+                    );
+                  }
+                  return (
+                    <ul className="m-0 flex list-none flex-col gap-3 p-0">
+                      {rows.map(({ gang: g, symp: s }) => {
+                        const paid = collected.get(`${g.id}:${s.id}`);
+                        const dice = sympathiserIncomeDice(
+                          s.id,
+                          campaign.phase,
+                        ).join(" + ");
+                        return (
+                          <li
+                            key={`${g.id}:${s.id}`}
+                            className="flex flex-wrap items-center justify-between gap-3 border-b border-rivet/40 pb-3"
+                          >
+                            <div className="text-sm">
+                              <span className="text-ink">{g.name}</span>
+                              <span className="text-muted"> · </span>
+                              <span className="text-hazard">
+                                {s.name.replace(" Sympathisers", "")}
+                              </span>
+                              {(g.allegiance ?? "unaligned") ===
+                                "imperial_house" && (
+                                <span className="block text-xs text-cyan">
+                                  Deep Pockets: add +{DEEP_POCKETS_DICE} to the
+                                  roll
+                                </span>
+                              )}
+                            </div>
+                            {paid !== undefined ? (
+                              <span className="font-mono text-xs uppercase tracking-wider text-toxic">
+                                collected +{paid}c (cycle {campaign.currentCycle})
+                              </span>
+                            ) : (
+                              <CollectIncomeForm
+                                gangId={g.id}
+                                sympathiserId={s.id}
+                                diceLabel={dice}
+                              />
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  );
+                })()
+              ) : (
+                <p className="m-0 text-sm text-muted">
+                  Income is collected during the Spark of Rebellion phase.
+                </p>
+              )}
+
+              {sympIncome.length > 0 && (
+                <details>
+                  <summary className="cursor-pointer py-1 font-mono text-xs uppercase tracking-wider text-muted transition-colors hover:text-hazard">
+                    Income ledger ({sympIncome.length})
+                  </summary>
+                  <ul className="m-0 mt-2 flex list-none flex-col gap-1 border-t border-rivet/50 p-0 pt-3">
+                    {sympIncome.map((r) => (
+                      <li key={r.id} className="text-xs">
+                        <span className="font-mono text-muted">
+                          C{r.cycle}{" "}
+                        </span>
+                        <span className="text-ink">
+                          {gangName.get(r.gangId) ?? "—"}
+                        </span>
+                        <span className="text-muted">
+                          {" · "}
+                          {sympName
+                            .get(r.sympathiserId)
+                            ?.replace(" Sympathisers", "") ?? r.sympathiserId}
+                          {" · "}
+                        </span>
+                        <span className="font-mono text-hazard">
+                          +{r.amount}c
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {/* issue #66 — the previous campaign is finished: a new one can start */}

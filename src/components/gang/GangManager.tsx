@@ -17,6 +17,15 @@ import { FighterAvatarForm } from "@/components/player/FighterAvatarForm";
 import { AdvancementForm } from "@/components/player/AdvancementForm";
 import { InjuryForm } from "@/components/player/InjuryForm";
 import { MedicalEscortForm } from "@/components/player/MedicalEscortForm";
+import {
+  ClearRecoveryBoonForm,
+  HomeSupportRecruitForm,
+} from "@/components/player/SympathiserBoonForms";
+import {
+  getSympathiserBoons,
+  sympathiserIncomeDice,
+  HOME_SUPPORT_RECRUIT,
+} from "@/lib/data/sympathisers";
 import { RemoveInjuryButton } from "@/components/player/RemoveInjuryButton";
 import { AllegianceForm } from "@/components/player/AllegianceForm";
 import { STAT_LABEL, ROLL_STATS, type StatKey } from "@/lib/data/advancements";
@@ -61,6 +70,9 @@ export function GangManager({
   arbitratorMode = false,
   catalog = [],
   keywordRules = {},
+  controlledSympathisers = [],
+  boonSummaries = {},
+  campaignPhase,
 }: {
   gang: Gang & { id: string };
   otherGangs: GangOption[];
@@ -68,6 +80,15 @@ export function GangManager({
   exportHref: string;
   assistantHref?: string;
   arbitratorMode?: boolean;
+  /**
+   * Sympathiser boons (issue #85): the gang's controlled Sympathiser ids,
+   * the rewritten summaries (private DB) and the campaign phase — feeds
+   * the boon panel (income hints, Water Guild recovery clear, Home Support
+   * recruit). All optional so existing callers/tests stay valid.
+   */
+  controlledSympathisers?: { id: string; name: string }[];
+  boonSummaries?: Record<string, string>;
+  campaignPhase?: string;
   /** Enabled catalogue items (issue #67) — feeds the equipment pickers. */
   catalog?: CatalogOption[];
   /** Keyword glossary map (issue #67 follow-up) — clickable trait chips. */
@@ -146,6 +167,70 @@ export function GangManager({
             </Badge>
           ))}
         </div>
+      )}
+
+      {/* Sympathiser boons (issue #85): summaries come from the private DB;
+          the repo only knows ids and dice labels. */}
+      {(controlledSympathisers.length > 0 ||
+        campaignPhase === "spark_of_rebellion") && (
+        <details className="border border-rivet/60 bg-panel px-5 py-3 clip-chamfer-sm">
+          <summary className="cursor-pointer py-1 font-mono text-xs uppercase tracking-wider text-muted transition-colors hover:text-hazard">
+            Sympathiser boons
+          </summary>
+          <div className="mt-3 flex flex-col gap-4 border-t border-rivet/50 pt-4">
+            {controlledSympathisers.map((s) => {
+              const dice = sympathiserIncomeDice(s.id, campaignPhase ?? "");
+              return (
+                <div key={s.id} className="flex flex-col gap-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="toxic">
+                      {s.name.replace(" Sympathisers", "")}
+                    </Badge>
+                    {dice.length > 0 && (
+                      <span className="font-mono text-xs text-hazard">
+                        income {dice.join(" + ")} (Arbitrator collects)
+                      </span>
+                    )}
+                  </div>
+                  {boonSummaries[s.id] && (
+                    <p className="m-0 text-sm text-muted">
+                      {boonSummaries[s.id]}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+
+            {controlledSympathisers.some(
+              (s) => getSympathiserBoons(s.id)?.rosterEffect === "clear_recovery",
+            ) && (
+              <div>
+                <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
+                  Clear a recovery (Water Guild boon)
+                </p>
+                <ClearRecoveryBoonForm
+                  gangId={gangId}
+                  fighters={gang.fighters
+                    .filter((f) => f.status === "in_recovery")
+                    .map((f) => ({ id: f.id, name: f.name }))}
+                />
+              </div>
+            )}
+
+            {campaignPhase === "spark_of_rebellion" && (
+              <div>
+                <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
+                  Home Support — free Ganger
+                </p>
+                <HomeSupportRecruitForm
+                  gangId={gangId}
+                  dice={HOME_SUPPORT_RECRUIT.dice}
+                  threshold={HOME_SUPPORT_RECRUIT.threshold}
+                />
+              </div>
+            )}
+          </div>
+        </details>
       )}
 
       {/* Allegiance (issue #82): badge + declaration. Players declare once

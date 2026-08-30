@@ -14,7 +14,11 @@ import {
   updateKeywordRuleSchema,
   deleteKeywordRuleSchema,
   importKeywordRulesSchema,
+  sympathiserBoonSchema,
+  importSympathiserBoonsSchema,
+  deleteSympathiserBoonSchema,
 } from "@/lib/validation";
+import { getSympathiser } from "@/lib/data/sympathisers";
 
 export type CatalogAdminState = { error?: string; success?: string };
 
@@ -362,4 +366,111 @@ export async function importKeywordRules(
 
   revalidateCatalogViews();
   return { success: `${rules.length} keyword rule(s) imported/updated.` };
+}
+
+/* ------------------- Sympathiser Boons (issue #85) ------------------- */
+/*
+ * Same IP strategy as keyword rules: the boon summaries are REWRITTEN in
+ * our own wording (function preserved, no book prose) and live ONLY in the
+ * private sympathiser_boon table — the repo ships ids, names and numeric
+ * parameters only (SYMPATHISER_BOONS). Populated by a JSON paste-import
+ * from a private gitignored file; upsert by sympathiser id.
+ */
+
+/** Boon-summary consumers: admin panels, gang panel, public dashboard map. */
+function revalidateBoonViews() {
+  revalidatePath("/admin/catalog");
+  revalidatePath("/admin/campaign");
+  revalidatePath("/player");
+  revalidatePath("/dashboard");
+}
+
+/**
+ * Bulk paste-import of rewritten boon summaries from a JSON array
+ * ([{sympathiserId, summary}, …], the private gitignored file). Every id
+ * must exist in the fixed catalogue; UPSERT by sympathiser id — safe to
+ * re-import after editing the source file.
+ */
+export async function importSympathiserBoons(
+  _prev: CatalogAdminState,
+  formData: FormData,
+): Promise<CatalogAdminState> {
+  await requireAdmin();
+
+  const parsed = importSympathiserBoonsSchema.safeParse(
+    Object.fromEntries(formData),
+  );
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(parsed.data.payload);
+  } catch {
+    return { error: "Invalid JSON — paste the full array, including [ ]." };
+  }
+  if (!Array.isArray(raw) || raw.length === 0) {
+    return { error: "Expected a non-empty JSON array of boon summaries." };
+  }
+
+  const boons: import("@/lib/validation").SympathiserBoonInput[] = [];
+  for (const [index, entry] of raw.entries()) {
+    const item = sympathiserBoonSchema.safeParse(entry);
+    if (!item.success) {
+      return {
+        error: `Entry ${index + 1}: ${item.error.issues[0]?.message ?? "invalid"}`,
+      };
+    }
+    if (!getSympathiser(item.data.sympathiserId)) {
+      return {
+        error: `Entry ${index + 1}: unknown sympathiser id "${item.data.sympathiserId}".`,
+      };
+    }
+    boons.push(item.data);
+  }
+
+  // Atomic upsert-by-id: all entries land together or none do.
+  await db.transaction(async (tx) => {
+    for (const boon of boons) {
+      await tx
+        .insert(schema.sympathiserBoons)
+        .values(boon)
+        .onConflictDoUpdate({
+          target: schema.sympathiserBoons.sympathiserId,
+          set: { summary: boon.summary, updatedAt: new Date() },
+        });
+    }
+  });
+
+  revalidateBoonViews();
+  return { success: `${boons.length} boon summar${boons.length === 1 ? "y" : "ies"} imported/updated.` };
+}
+
+/** Removes one boon summary (re-import recreates it). */
+export async function deleteSympathiserBoon(
+  _prev: CatalogAdminState,
+  formData: FormData,
+): Promise<CatalogAdminState> {
+  await requireAdmin();
+
+  const parsed = deleteSympathiserBoonSchema.safeParse(
+    Object.fromEntries(formData),
+  );
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+
+  const boon = await db.query.sympathiserBoons.findFirst({
+    where: eq(schema.sympathiserBoons.id, parsed.data.sympathiserBoonId),
+    columns: { id: true, sympathiserId: true },
+  });
+  if (!boon) return { error: "Boon summary not found." };
+
+  await db
+    .delete(schema.sympathiserBoons)
+    .where(eq(schema.sympathiserBoons.id, boon.id));
+
+  revalidateBoonViews();
+  return { success: `Boon summary for "${boon.sympathiserId}" removed.` };
 }

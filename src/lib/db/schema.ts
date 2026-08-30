@@ -404,6 +404,82 @@ export const sympathisers = pgTable("sympathiser", {
   enabled: boolean("enabled").notNull().default(true),
 });
 
+/**
+ * Rewritten Sympathiser boon summaries (issue #85) — the keyword_rule IP
+ * pattern: the summaries are (1) REWRITTEN in our own concise wording
+ * (function preserved, never book prose) and (2) stored ONLY in this
+ * private table, imported by the Arbitrator from a gitignored private
+ * JSON. The public repo carries only ids, names and numeric parameters
+ * (src/lib/data/sympathisers.ts SYMPATHISER_BOONS).
+ */
+export const sympathiserBoons = pgTable("sympathiser_boon", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sympathiserId: text("sympathiser_id")
+    .notNull()
+    .unique()
+    .references(() => sympathisers.id, { onDelete: "cascade" }),
+  /** Concise functional summary, rewritten — never book prose. */
+  summary: text("summary").notNull(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/**
+ * Sympathiser income ledger (issue #85) — append-only record of credits a
+ * controlling gang collected from a Sympathiser, one row per collection.
+ * The UNIQUE (gang, sympathiser, cycle) is the one-shot guard: the insert
+ * happens FIRST in the collection transaction (onConflictDoNothing +
+ * returning), so two concurrent collections can never both credit the
+ * Stash. Dice are rolled at the table; `amount` is the validated result.
+ */
+export const sympathiserIncome = pgTable(
+  "sympathiser_income",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    gangId: uuid("gang_id")
+      .notNull()
+      .references(() => gangs.id, { onDelete: "cascade" }),
+    sympathiserId: text("sympathiser_id")
+      .notNull()
+      .references(() => sympathisers.id, { onDelete: "cascade" }),
+    cycle: smallint("cycle").notNull(),
+    amount: integer("amount").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    unique("sympathiser_income_gang_symp_cycle_uq").on(
+      t.gangId,
+      t.sympathiserId,
+      t.cycle,
+    ),
+    index("sympathiser_income_campaign_idx").on(t.campaignId, t.createdAt),
+  ],
+);
+
+/**
+ * Home Support recruit guard (issue #85) — the Spark-phase free Ganger
+ * (table roll 2D6 ≥ 10) lands at most once per gang per cycle: UNIQUE
+ * (gang, cycle), inserted in the same transaction as the fighter row.
+ */
+export const homeSupportRecruits = pgTable(
+  "home_support_recruit",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    gangId: uuid("gang_id")
+      .notNull()
+      .references(() => gangs.id, { onDelete: "cascade" }),
+    cycle: smallint("cycle").notNull(),
+    /** The recruited fighter; kept on fighter removal (set null). */
+    fighterId: uuid("fighter_id").references(() => fighters.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [unique("home_support_recruit_gang_cycle_uq").on(t.gangId, t.cycle)],
+);
+
 export const sympathiserControl = pgTable("sympathiser_control", {
   id: uuid("id").defaultRandom().primaryKey(),
   sympathiserId: text("sympathiser_id")

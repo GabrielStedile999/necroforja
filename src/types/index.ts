@@ -172,6 +172,8 @@ export interface SympathiserView {
   name: string;
   controllerGangId: string | null;
   controllerName: string | null;
+  /** Rewritten boon summary from the private DB (issue #85); null = unset. */
+  boon?: string | null;
 }
 
 export interface ChallengeView {
