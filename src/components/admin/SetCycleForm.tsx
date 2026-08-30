@@ -55,7 +55,8 @@ export function SetCycleForm({
       </div>
       <p className="text-xs text-muted">
         Jump forwards or backwards (phase re-derives). Rewinding does not
-        restore fighters already reset by Downtime.
+        undo Downtime effects already applied (resets, captor payments,
+        promotions).
       </p>
       {state.error && (
         <p className="text-xs text-blood">{state.error}</p>

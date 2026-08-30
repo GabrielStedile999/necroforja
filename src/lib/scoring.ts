@@ -2,7 +2,7 @@
  * Gang scoring calculations — official formulas (Core Rulebook 2023, p.80–92).
  * Pure and testable functions (see tests/scoring.test.ts).
  */
-import type { Fighter, Gang } from "@/types";
+import type { Gang } from "@/types";
 
 /** Founding budget in a Succession Campaign (Cinderak Burning). */
 export const SUCCESSION_FOUNDING_BUDGET = 2000;
@@ -11,9 +11,17 @@ export const SUCCESSION_FOUNDING_BUDGET = 2000;
  * Total cost of a fighter = base cost + equipped items + advancement credit
  * increases (issue #71 — "the model's Cost is adjusted by the amount of
  * credits shown", Core Rulebook 2023, p.149). Fighters without
- * advancements keep their pre-#71 totals exactly.
+ * advancements keep their pre-#71 totals exactly. Structurally typed on the
+ * three cost-bearing fields, so lightweight rows (issue #83 — valuing a
+ * captive during Downtime) can be priced without building a full Fighter.
  */
-export function fighterTotalCost(fighter: Fighter): number {
+export interface CostBearingFighter {
+  baseCost: number;
+  equipment: { cost: number }[];
+  advancements?: { creditIncrease: number }[];
+}
+
+export function fighterTotalCost(fighter: CostBearingFighter): number {
   const equipmentCost = fighter.equipment.reduce(
     (sum, item) => sum + item.cost,
     0,

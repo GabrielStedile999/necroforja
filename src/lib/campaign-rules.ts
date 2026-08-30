@@ -2,9 +2,43 @@
  * Pure rules of the Succession Campaign (Cinderak Burning). No I/O — testable.
  * Structure: 7 cycles → Great Darkness (1-3), Downtime (4), Spark of Rebellion (5-7).
  */
-import type { CampaignPhase } from "@/types";
+import type { CampaignPhase, FighterCategory } from "@/types";
 
 export const TOTAL_CYCLES = 7;
+
+/* ----------------------- Downtime (issue #83) ------------------------ */
+
+/**
+ * Downtime step B — a returned captive's former captor is compensated with
+ * HALF the fighter's credits value, rounded UP to the nearest 5 credits
+ * (Cinderak Burning, p.61). Non-positive values pay nothing.
+ */
+export function captiveReturnPayment(fighterValue: number): number {
+  if (!Number.isFinite(fighterValue) || fighterValue <= 0) return 0;
+  return Math.ceil(fighterValue / 2 / 5) * 5;
+}
+
+/** Downtime step C — Advancements needed for a Juve/Prospect promotion. */
+export const DOWNTIME_PROMOTION_ADVANCEMENTS = 5;
+
+/**
+ * Downtime step C — the category an experienced Juve/Prospect is promoted
+ * to (Juve → Ganger, Prospect → Champion) once they hold at least
+ * DOWNTIME_PROMOTION_ADVANCEMENTS Advancements. Characteristics and cost
+ * stay as they are; only the category changes. Null = no promotion.
+ */
+export function downtimePromotion(
+  category: FighterCategory,
+  advancementCount: number,
+): FighterCategory | null {
+  if (advancementCount < DOWNTIME_PROMOTION_ADVANCEMENTS) return null;
+  if (category === "juve") return "ganger";
+  if (category === "prospect") return "champion";
+  return null;
+}
+
+/** Downtime step D — credits every gang receives for Fresh Recruitment. */
+export const FRESH_RECRUITMENT_CREDITS = 250;
 
 /**
  * "Equipping a Fighter" (Core Rulebook 2023, p.83): a fighter on foot can

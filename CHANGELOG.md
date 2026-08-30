@@ -7,6 +7,27 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Added
+- **Downtime completo — os Effects of Downtime oficiais, do início ao fim**
+  (issue #83; Cinderak Burning, p.61, passos A–E): ao entrar no ciclo de
+  Downtime, além de limpar recovery e devolver cativos, o app agora **paga a
+  captora** — metade do valor do cativo arredondada PARA CIMA em múltiplos
+  de 5 (`captiveReturnPayment`), valorado ANTES da soltura com equipamento e
+  advancements inclusos; cativo sem captora registrada é solto sem pagamento
+  — e **promove automaticamente** Juves → Gangers e Prospects → Champions
+  com 5+ Advancements (`downtimePromotion`; só a categoria muda — custo,
+  perfil e o texto do type ficam intactos; 4 ou menos não são tocados).
+  Tudo roda **dentro da transação do avanço de ciclo** (disciplina da issue
+  #62) e cada efeito vira uma linha **append-only** em `downtime_event`
+  (migração aditiva `scripts/downtime.sql`) — a trilha de auditoria que
+  alimenta o novo card **"Downtime"** no painel do Árbitro (reverter uma
+  promoção que a mesa vetou é só editar a categoria). O passo D, **Fresh
+  Recruitment**, é um botão one-shot: credita 250c ao Stash de TODAS as
+  gangues ativas, guardado por UPDATE condicional em
+  `campaign.fresh_recruitment_at is null` — duplo clique ou duas abas nunca
+  pagam duas vezes (desvio documentado: o livro manda gastar na hora sem
+  entrar no Stash; um escrow fiel seria pesado demais, o Árbitro polícia as
+  sobras na mesa). O passo E aponta para as Allegiances (issue #82).
+  16 testes novos (`tests/downtime.test.ts`).
 - **Allegiances — a guerra civil chega às gangues** (issue #82): toda
   gangue agora declara um lado na Succession Campaign — **Imperial House,
   Lady Credo's Rebellion ou Unaligned** (migração aditiva

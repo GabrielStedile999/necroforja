@@ -14,6 +14,7 @@ import {
   updateCampaignSchema,
   setCampaignCycleSchema,
   battleEventSchema,
+  grantFreshRecruitmentSchema,
 } from "@/lib/validation";
 import {
   setSympathiserController,
@@ -22,6 +23,7 @@ import {
   applyDowntimeEffects,
   applyBattleEvent,
   snapshotCampaignGangs,
+  grantFreshRecruitment as grantFreshRecruitmentCredits,
 } from "@/lib/db/mutations";
 import { SYMPATHISERS } from "@/lib/data/sympathisers";
 import {
@@ -81,9 +83,10 @@ export async function createCampaign(
 /**
  * Jumps the campaign to a specific cycle — forwards or BACKWARDS (regret
  * button for a mis-clicked "Advance cycle"). The phase is re-derived for
- * the target cycle. Downtime side effects (recovery/captured resets) are
- * NOT un-applied when rewinding — they are lossy; jumping forward into the
- * Downtime cycle applies them again (harmless: they only clear statuses).
+ * the target cycle. Downtime side effects (recovery/captured resets, captor
+ * payments, promotions — issue #83) are NOT un-applied when rewinding —
+ * they are lossy; jumping forward into the Downtime cycle applies them
+ * again, which only touches fighters injured/captured/advanced since.
  */
 export async function setCampaignCycle(
   _prev: CampaignState,
@@ -441,9 +444,55 @@ export async function finishCampaign() {
   revalidatePath("/");
 }
 
+/**
+ * Downtime step D — Fresh Recruitment (issue #83): credits 250 to every
+ * ACTIVE gang's Stash, once per campaign. The one-shot guard is a
+ * conditional UPDATE on `campaign.fresh_recruitment_at is null` inside the
+ * mutation's transaction, so a double click (or two Arbitrator tabs) can
+ * never pay twice. Allowed from the Downtime phase onwards: the panel
+ * appears when Downtime is reached, and an Arbitrator who advanced past it
+ * before granting can still catch up.
+ */
+export async function grantFreshRecruitment(
+  _prev: CampaignState,
+  formData: FormData,
+): Promise<CampaignState> {
+  await requireAdmin();
+
+  const parsed = grantFreshRecruitmentSchema.safeParse(
+    Object.fromEntries(formData),
+  );
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+  const { campaignId } = parsed.data;
+
+  const campaign = await getActiveCampaign();
+  if (!campaign || campaign.id !== campaignId) {
+    return { error: "No active campaign." };
+  }
+  if (campaign.phase === "great_darkness") {
+    return {
+      error: "Fresh Recruitment is granted during Downtime — not before.",
+    };
+  }
+
+  const result = await grantFreshRecruitmentCredits(campaign.id);
+  if (!result.ok) return { error: result.error };
+
+  revalidatePath("/admin/campaign");
+  revalidatePath("/player");
+  revalidatePath("/");
+  revalidatePath("/dashboard");
+  return {
+    success: `Fresh Recruitment: ${result.credits}c credited to ${result.gangs} active gang${result.gangs === 1 ? "" : "s"}.`,
+  };
+}
+
 /** Advances the campaign by one cycle (and adjusts the phase). When entering
- *  cycle 4 (Downtime), automatically applies the effects: clears in_recovery,
- *  returns captured fighters. */
+ *  the Downtime cycle, automatically applies the Effects of Downtime (issue
+ *  #83): clears in_recovery, returns captives (paying their captors) and
+ *  promotes experienced Juves/Prospects — logged in downtime_event. */
 export async function advanceCycle() {
   await requireAdmin();
   const campaign = await getActiveCampaign();
@@ -464,9 +513,10 @@ export async function advanceCycle() {
 
     await advanceCampaignCycle(campaign.id, tx);
 
-    // Entering Downtime: reset fighters in_recovery and captured (issue #66
-    // generalised the campaign length, so the trigger is the PHASE, not a
-    // hardcoded cycle number).
+    // Entering Downtime: the Effects of Downtime, steps A–C (issue #83) —
+    // issue #66 generalised the campaign length, so the trigger is the
+    // PHASE, not a hardcoded cycle number. The summary lands in
+    // downtime_event and is rendered by the Downtime panel.
     if (newPhase === "downtime" && campaign.phase !== "downtime") {
       await applyDowntimeEffects(campaign.id, tx);
     }

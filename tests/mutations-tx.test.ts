@@ -30,17 +30,20 @@ const { txMock, dbMock, mockTransaction } = vi.hoisted(() => {
     const update = vi.fn(() => ({ set: updateSet }));
     return { insert, insertValues, update, updateSet, updateWhere, updateReturning };
   };
-  const txMock: any = {
-    ...build(),
-    query: { gangs: { findMany: vi.fn() } },
-  };
+  const queries = () => ({
+    gangs: { findMany: vi.fn() },
+    // issue #83 — Downtime reads the campaign cycle and fighter rows
+    campaigns: { findFirst: vi.fn().mockResolvedValue({ currentCycle: 4 }) },
+    fighters: { findMany: vi.fn().mockResolvedValue([]) },
+  });
+  const txMock: any = { ...build(), query: queries() };
   const mockTransaction = vi.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
     fn(txMock),
   );
   const dbMock: any = {
     ...build(),
     transaction: mockTransaction,
-    query: { gangs: { findMany: vi.fn() } },
+    query: queries(),
   };
   /* eslint-enable @typescript-eslint/no-explicit-any */
   return { txMock, dbMock, mockTransaction };
@@ -50,12 +53,19 @@ vi.mock("@/lib/db", () => ({
   db: dbMock,
   schema: {
     gangs: { id: "gangs.id", campaignId: "gangs.campaign_id", stashCredits: "gangs.stash_credits" },
-    fighters: { gangId: "fighters.gang_id", status: "fighters.status" },
+    fighters: {
+      id: "fighters.id",
+      name: "fighters.name",
+      gangId: "fighters.gang_id",
+      status: "fighters.status",
+      category: "fighters.category",
+    },
     sympathiserControl: {
       sympathiserId: "sc.sympathiser_id",
       isCurrent: "sc.is_current",
     },
     campaigns: { id: "campaigns.id" },
+    downtimeEvents: {},
   },
 }));
 
@@ -77,6 +87,9 @@ const GANG = {
 beforeEach(() => {
   vi.clearAllMocks();
   mockGetGangById.mockResolvedValue(GANG);
+  // clearAllMocks wipes mockResolvedValue defaults — restore the #83 reads
+  txMock.query.campaigns.findFirst.mockResolvedValue({ currentCycle: 4 });
+  txMock.query.fighters.findMany.mockResolvedValue([]);
 });
 
 describe("setSympathiserController", () => {
@@ -128,8 +141,9 @@ describe("applyDowntimeEffects", () => {
     await applyDowntimeEffects("camp-1");
 
     expect(mockTransaction).toHaveBeenCalledTimes(1);
-    // 2 status resets + 2 recalc writes (one per gang), all through the tx
-    expect(txMock.update).toHaveBeenCalledTimes(4);
+    // 1 recovery reset (no captives → no captive reset) + 2 recalc writes
+    // (one per gang), all through the tx
+    expect(txMock.update).toHaveBeenCalledTimes(3);
     expect(dbMock.update).not.toHaveBeenCalled();
     expect(mockGetGangById).toHaveBeenNthCalledWith(1, "gang-1", txMock);
     expect(mockGetGangById).toHaveBeenNthCalledWith(2, "gang-2", txMock);
@@ -138,9 +152,15 @@ describe("applyDowntimeEffects", () => {
   it("does nothing when the campaign has no gangs", async () => {
     txMock.query.gangs.findMany.mockResolvedValue([]);
 
-    await applyDowntimeEffects("camp-1");
+    const summary = await applyDowntimeEffects("camp-1");
 
     expect(txMock.update).not.toHaveBeenCalled();
+    expect(summary).toEqual({
+      cycle: 4,
+      recovered: [],
+      returned: [],
+      promoted: [],
+    });
   });
 });
 

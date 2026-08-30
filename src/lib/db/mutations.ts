@@ -1,9 +1,15 @@
-import { and, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, ne, sql } from "drizzle-orm";
 import { db, schema, type DbOrTx } from "./index";
 import { getGangById } from "./queries";
-import { gangRating, gangWealth } from "@/lib/scoring";
-import { nextCycleState } from "@/lib/campaign-rules";
+import { fighterTotalCost, gangRating, gangWealth } from "@/lib/scoring";
+import {
+  captiveReturnPayment,
+  downtimePromotion,
+  FRESH_RECRUITMENT_CREDITS,
+  nextCycleState,
+} from "@/lib/campaign-rules";
 import type { BattleEventInput } from "@/lib/validation";
+import type { FighterCategory } from "@/types";
 
 /**
  * Runs `fn` inside `dbc` when a transaction handle is provided, or opens a
@@ -317,28 +323,79 @@ export async function setSympathiserController(
   });
 }
 
+/** What one Downtime pass did (issue #83) — also persisted as downtime_event rows. */
+export type DowntimeSummary = {
+  cycle: number;
+  recovered: { fighterId: string; fighterName: string; gangId: string }[];
+  returned: {
+    fighterId: string;
+    fighterName: string;
+    gangId: string;
+    captorGangId: string | null;
+    /** Credits actually credited to the captor (0 = no captor on record). */
+    paid: number;
+  }[];
+  promoted: {
+    fighterId: string;
+    fighterName: string;
+    gangId: string;
+    from: FighterCategory;
+    to: FighterCategory;
+  }[];
+};
+
 /**
- * Downtime steps (cycle 4):
- * - Fighters "in_recovery" return to "active".
- * - Fighters "captured" are returned: they go back to "active" and capturedByGangId is cleared.
- * Recalculates scores for all affected gangs.
- * Atomic (issue #62): both status resets and every recalc commit together.
+ * The Effects of Downtime (Cinderak Burning, p.61 — issue #83 completes
+ * the sequence), applied to every gang of the campaign:
+ *
+ * - A. Fighters recover: "in_recovery" → "active".
+ * - B. Captives are returned: "captured" → "active", capturedByGangId
+ *   cleared — and the CAPTOR is compensated with half the captive's credits
+ *   value rounded up to 5s (`captiveReturnPayment`), valued BEFORE release
+ *   with `fighterTotalCost` (equipment + advancements included). A captive
+ *   with no captor on record (legacy rows) is released unpaid.
+ * - C. Experienced Juves/Prospects are promoted: 5+ Advancements → the
+ *   category changes (Juve → Ganger, Prospect → Champion); cost, profile
+ *   and the free-text type stay untouched. Dead fighters are skipped.
+ * - D. Fresh Recruitment is a separate Arbitrator-triggered grant
+ *   (`grantFreshRecruitment`) — E. Declare Allegiance lives in issue #82.
+ *
+ * Every effect is logged in `downtime_event` (the audit trail — promotion
+ * overwrites the category) and every touched gang is recalculated, all in
+ * one transaction (issue #62): a Downtime can never half-apply. Re-running
+ * on the same state is harmless: recovered/returned fighters are already
+ * active and promoted fighters no longer match, so nothing is paid or
+ * promoted twice.
  */
 export async function applyDowntimeEffects(
   campaignId: string,
   dbc?: DbOrTx,
-): Promise<void> {
-  await withTx(dbc, async (tx) => {
+): Promise<DowntimeSummary> {
+  return withTx(dbc, async (tx): Promise<DowntimeSummary> => {
+    const summary: DowntimeSummary = {
+      cycle: 0,
+      recovered: [],
+      returned: [],
+      promoted: [],
+    };
+
+    const campaign = await tx.query.campaigns.findFirst({
+      where: eq(schema.campaigns.id, campaignId),
+      columns: { currentCycle: true },
+    });
+    if (!campaign) return summary;
+    summary.cycle = campaign.currentCycle;
+
     const campaignGangs = await tx.query.gangs.findMany({
       where: eq(schema.gangs.campaignId, campaignId),
       columns: { id: true },
     });
-    if (campaignGangs.length === 0) return;
+    if (campaignGangs.length === 0) return summary;
 
     const gangIds = campaignGangs.map((g) => g.id);
 
-    // 1. Clear in_recovery → active
-    await tx
+    // A. Fighters recover — in_recovery → active
+    const recovered = await tx
       .update(schema.fighters)
       .set({ status: "active" })
       .where(
@@ -346,23 +403,238 @@ export async function applyDowntimeEffects(
           inArray(schema.fighters.gangId, gangIds),
           eq(schema.fighters.status, "in_recovery"),
         ),
-      );
+      )
+      .returning({
+        id: schema.fighters.id,
+        name: schema.fighters.name,
+        gangId: schema.fighters.gangId,
+      });
+    summary.recovered = recovered.map((f) => ({
+      fighterId: f.id,
+      fighterName: f.name,
+      gangId: f.gangId,
+    }));
 
-    // 2. Return captured → active (clears the capturing gang)
-    await tx
-      .update(schema.fighters)
-      .set({ status: "active", capturedByGangId: null })
-      .where(
-        and(
-          inArray(schema.fighters.gangId, gangIds),
-          eq(schema.fighters.status, "captured"),
-        ),
-      );
+    // B. Captives are returned — value each captive BEFORE releasing, pay
+    // the captor, then clear the status. The payment is a plain credit
+    // (no conditional guard needed: it only ever adds).
+    const captives = await tx.query.fighters.findMany({
+      where: and(
+        inArray(schema.fighters.gangId, gangIds),
+        eq(schema.fighters.status, "captured"),
+      ),
+      columns: {
+        id: true,
+        name: true,
+        gangId: true,
+        baseCost: true,
+        capturedByGangId: true,
+      },
+      with: {
+        equipment: { with: { equipment: { columns: { cost: true } } } },
+        advancements: { columns: { creditIncrease: true } },
+      },
+    });
+    const captorIds = new Set<string>();
+    for (const c of captives) {
+      const value = fighterTotalCost({
+        baseCost: c.baseCost,
+        equipment: c.equipment.map((fe) => ({ cost: fe.equipment.cost })),
+        advancements: c.advancements,
+      });
+      let paid = 0;
+      const owed = captiveReturnPayment(value);
+      if (c.capturedByGangId && owed > 0) {
+        const rows = await tx
+          .update(schema.gangs)
+          .set({
+            stashCredits: sql`${schema.gangs.stashCredits} + ${owed}`,
+          })
+          .where(eq(schema.gangs.id, c.capturedByGangId))
+          .returning({ id: schema.gangs.id });
+        // A captor gang that no longer exists simply is not paid.
+        if (rows.length > 0) {
+          paid = owed;
+          captorIds.add(c.capturedByGangId);
+        }
+      }
+      summary.returned.push({
+        fighterId: c.id,
+        fighterName: c.name,
+        gangId: c.gangId,
+        captorGangId: c.capturedByGangId,
+        paid,
+      });
+    }
+    if (captives.length > 0) {
+      await tx
+        .update(schema.fighters)
+        .set({ status: "active", capturedByGangId: null })
+        .where(
+          inArray(
+            schema.fighters.id,
+            captives.map((c) => c.id),
+          ),
+        );
+    }
 
-    // 3. Recalculate scores (dead/active status affects Rating)
-    for (const { id } of campaignGangs) {
+    // C. Experienced Juves and Prospects are promoted — 5+ Advancements.
+    const candidates = await tx.query.fighters.findMany({
+      where: and(
+        inArray(schema.fighters.gangId, gangIds),
+        inArray(schema.fighters.category, ["juve", "prospect"]),
+        ne(schema.fighters.status, "dead"),
+      ),
+      columns: { id: true, name: true, gangId: true, category: true },
+      with: { advancements: { columns: { id: true } } },
+    });
+    for (const f of candidates) {
+      const to = downtimePromotion(f.category, f.advancements.length);
+      if (!to) continue;
+      await tx
+        .update(schema.fighters)
+        .set({ category: to })
+        .where(eq(schema.fighters.id, f.id));
+      summary.promoted.push({
+        fighterId: f.id,
+        fighterName: f.name,
+        gangId: f.gangId,
+        from: f.category,
+        to,
+      });
+    }
+
+    // Append-only log — one row per effect, in the same transaction.
+    const cycle = summary.cycle;
+    const log: (typeof schema.downtimeEvents.$inferInsert)[] = [
+      ...summary.recovered.map((r) => ({
+        campaignId,
+        cycle,
+        gangId: r.gangId,
+        fighterId: r.fighterId,
+        kind: "fighter_recovered" as const,
+      })),
+      ...summary.returned.map((r) => ({
+        campaignId,
+        cycle,
+        gangId: r.gangId,
+        fighterId: r.fighterId,
+        kind: "captive_returned" as const,
+        amount: r.paid,
+      })),
+      ...summary.returned
+        .filter((r) => r.captorGangId && r.paid > 0)
+        .map((r) => ({
+          campaignId,
+          cycle,
+          gangId: r.captorGangId!,
+          fighterId: r.fighterId,
+          kind: "captor_paid" as const,
+          amount: r.paid,
+          notes: r.fighterName,
+        })),
+      ...summary.promoted.map((p) => ({
+        campaignId,
+        cycle,
+        gangId: p.gangId,
+        fighterId: p.fighterId,
+        kind: "fighter_promoted" as const,
+        notes: `${p.from} → ${p.to}`,
+      })),
+    ];
+    if (log.length > 0) {
+      await tx.insert(schema.downtimeEvents).values(log);
+    }
+
+    // Recalculate every campaign gang (status changes move the Rating) plus
+    // any paid captor (Stash credits move the Wealth).
+    const toRecalc = new Set<string>([...gangIds, ...captorIds]);
+    for (const id of toRecalc) {
       await recalcGangScores(id, tx);
     }
+    return summary;
+  });
+}
+
+/** Result of the Fresh Recruitment grant (issue #83). */
+export type FreshRecruitmentResult =
+  | { ok: true; gangs: number; credits: number }
+  | { ok: false; error: string };
+
+/**
+ * Downtime step D — Fresh Recruitment (Cinderak Burning, p.61): every
+ * active gang gains FRESH_RECRUITMENT_CREDITS to recruit and re-equip.
+ * Arbitrator-triggered, ONE-SHOT per campaign: the claim is a conditional
+ * UPDATE on `campaign.fresh_recruitment_at is null` (the debitStashCredits
+ * pattern) — two concurrent clicks can never pay twice. Credits, log rows
+ * and recalcs commit together with the claim.
+ *
+ * Documented deviation: the book says these credits "must be spent now"
+ * and never join the Stash. A faithful escrow flow (a spend-only pool with
+ * its own purchase path) is heavy for the value it adds, so the grant lands
+ * in the Stash and the Arbitrator polices leftovers at the table.
+ */
+export async function grantFreshRecruitment(
+  campaignId: string,
+  dbc?: DbOrTx,
+): Promise<FreshRecruitmentResult> {
+  return withTx(dbc, async (tx): Promise<FreshRecruitmentResult> => {
+    // Read-only checks first: nothing is written until the grant can land.
+    const activeGangs = await tx.query.gangs.findMany({
+      where: and(
+        eq(schema.gangs.campaignId, campaignId),
+        eq(schema.gangs.isActive, true),
+      ),
+      columns: { id: true },
+    });
+    if (activeGangs.length === 0) {
+      return { ok: false, error: "No active gangs to pay." };
+    }
+
+    const claimed = await tx
+      .update(schema.campaigns)
+      .set({ freshRecruitmentAt: sql`now()` })
+      .where(
+        and(
+          eq(schema.campaigns.id, campaignId),
+          isNull(schema.campaigns.freshRecruitmentAt),
+        ),
+      )
+      .returning({ currentCycle: schema.campaigns.currentCycle });
+    if (claimed.length === 0) {
+      return {
+        ok: false,
+        error: "Fresh Recruitment was already granted in this campaign.",
+      };
+    }
+    const cycle = claimed[0]!.currentCycle;
+
+    const gangIds = activeGangs.map((g) => g.id);
+    await tx
+      .update(schema.gangs)
+      .set({
+        stashCredits: sql`${schema.gangs.stashCredits} + ${FRESH_RECRUITMENT_CREDITS}`,
+      })
+      .where(inArray(schema.gangs.id, gangIds));
+
+    await tx.insert(schema.downtimeEvents).values(
+      gangIds.map((gangId) => ({
+        campaignId,
+        cycle,
+        gangId,
+        kind: "fresh_recruitment" as const,
+        amount: FRESH_RECRUITMENT_CREDITS,
+      })),
+    );
+
+    for (const id of gangIds) {
+      await recalcGangScores(id, tx);
+    }
+    return {
+      ok: true,
+      gangs: gangIds.length,
+      credits: FRESH_RECRUITMENT_CREDITS,
+    };
   });
 }
 

@@ -567,6 +567,22 @@ export async function countChallengeWinsByAllegiance(
   return map;
 }
 
+/* ------------------------- Downtime (issue #83) ------------------------- */
+
+/**
+ * The campaign's Downtime log (issue #83), oldest first, with the fighter
+ * name resolved (null when the fighter was removed since) — feeds the
+ * Arbitrator's Downtime summary panel. Gang names are resolved by the
+ * caller from the gang list it already holds.
+ */
+export async function listDowntimeEvents(campaignId: string) {
+  return db.query.downtimeEvents.findMany({
+    where: eq(schema.downtimeEvents.campaignId, campaignId),
+    with: { fighter: { columns: { name: true } } },
+    orderBy: [asc(schema.downtimeEvents.createdAt)],
+  });
+}
+
 /* ------------------------- Gallery (issues #6/#24) ------------------------- */
 
 /** Published gallery images for the public /gallery page, newest first. */

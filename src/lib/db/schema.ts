@@ -85,6 +85,19 @@ export const gangAllegiance = pgEnum("gang_allegiance", [
   "rebellion",
 ]);
 
+/**
+ * Downtime event kinds (issue #83) — what the Downtime sequence did to a
+ * gang or fighter: recovery cleared, captive returned, captor compensated,
+ * Juve/Prospect promoted, Fresh Recruitment credits granted.
+ */
+export const downtimeEventKind = pgEnum("downtime_event_kind", [
+  "fighter_recovered",
+  "captive_returned",
+  "captor_paid",
+  "fighter_promoted",
+  "fresh_recruitment",
+]);
+
 /** Fighter advancement kinds (issue #71): stat bump or a recorded skill. */
 export const advancementKind = pgEnum("advancement_kind", [
   "stat_increase",
@@ -120,6 +133,13 @@ export const campaigns = pgTable("campaign", {
   startDate: date("start_date"),
   endDate: date("end_date"),
   status: text("status").notNull().default("active"),
+  /**
+   * When the Downtime Fresh Recruitment credits were granted (issue #83).
+   * Null = not yet. Set by a conditional UPDATE (`is null` in the WHERE),
+   * so the 250c grant lands exactly once per campaign even under
+   * concurrent clicks. See scripts/downtime.sql.
+   */
+  freshRecruitmentAt: timestamp("fresh_recruitment_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -484,6 +504,42 @@ export const battleEvents = pgTable(
   (t) => [index("battle_event_challenge_idx").on(t.challengeId, t.createdAt)],
 );
 
+/**
+ * Downtime log (issue #83) — append-only record of what the Downtime
+ * sequence (Cinderak Burning, p.61) did: fighters recovered, captives
+ * returned and their captors paid, Juves/Prospects promoted, Fresh
+ * Recruitment credits granted. Promotion overwrites the fighter's category,
+ * so this trail is the audit for the Arbitrator's summary panel. Rows are
+ * written in the same transaction as their effect and never edited.
+ * See scripts/downtime.sql.
+ */
+export const downtimeEvents = pgTable(
+  "downtime_event",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    /** Campaign cycle the Downtime ran in. */
+    cycle: smallint("cycle").notNull(),
+    /** Gang the event applies to (the captor for captor_paid). */
+    gangId: uuid("gang_id")
+      .notNull()
+      .references(() => gangs.id, { onDelete: "cascade" }),
+    /** Fighter kinds only; kept on fighter removal (set null). */
+    fighterId: uuid("fighter_id").references(() => fighters.id, {
+      onDelete: "set null",
+    }),
+    kind: downtimeEventKind("kind").notNull(),
+    /** Credits credited (captor_paid, fresh_recruitment); null otherwise. */
+    amount: integer("amount"),
+    /** Short functional note ("juve → ganger", captive's name…). */
+    notes: text("notes").notNull().default(""),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("downtime_event_campaign_idx").on(t.campaignId, t.createdAt)],
+);
+
 export const triumphs = pgTable("triumph", {
   id: uuid("id").defaultRandom().primaryKey(),
   campaignId: uuid("campaign_id")
@@ -754,6 +810,21 @@ export const battleEventsRelations = relations(battleEvents, ({ one }) => ({
   }),
   fighter: one(fighters, {
     fields: [battleEvents.fighterId],
+    references: [fighters.id],
+  }),
+}));
+
+export const downtimeEventsRelations = relations(downtimeEvents, ({ one }) => ({
+  campaign: one(campaigns, {
+    fields: [downtimeEvents.campaignId],
+    references: [campaigns.id],
+  }),
+  gang: one(gangs, {
+    fields: [downtimeEvents.gangId],
+    references: [gangs.id],
+  }),
+  fighter: one(fighters, {
+    fields: [downtimeEvents.fighterId],
     references: [fighters.id],
   }),
 }));

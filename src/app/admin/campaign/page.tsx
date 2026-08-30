@@ -13,6 +13,7 @@ import {
 } from "@/components/admin/CampaignLifecycleForms";
 import { SetCycleForm } from "@/components/admin/SetCycleForm";
 import { BattleAftermathPanel } from "@/components/admin/BattleAftermathPanel";
+import { DowntimePanel } from "@/components/admin/DowntimePanel";
 import { toggleGangActive } from "@/app/admin/gangs/actions";
 import { downtimeCycle } from "@/lib/campaign-rules";
 import {
@@ -26,6 +27,7 @@ import {
   listBattleEventsForChallenges,
   listFightersByCampaign,
   countChallengeWinsByAllegiance,
+  listDowntimeEvents,
 } from "@/lib/db/queries";
 import {
   ALLEGIANCE_OPTIONS,
@@ -82,15 +84,27 @@ export default async function CampaignAdminPage() {
   const isFinished = campaign.status === "finished";
   const isLastCycle = campaign.currentCycle >= campaign.totalCycles;
 
-  const [gangs, challenges, controllerMap, allSymps, triumphs, winsBySide] =
-    await Promise.all([
-      listGangsBasic(campaign.id),
-      listChallenges(campaign.id, 30),
-      getSympathiserControllerMap(),
-      listSympathisers(),
-      listTriumphs(campaign.id),
-      countChallengeWinsByAllegiance(campaign.id),
-    ]);
+  const [
+    gangs,
+    challenges,
+    controllerMap,
+    allSymps,
+    triumphs,
+    winsBySide,
+    downtimeEvents,
+  ] = await Promise.all([
+    listGangsBasic(campaign.id),
+    listChallenges(campaign.id, 30),
+    getSympathiserControllerMap(),
+    listSympathisers(),
+    listTriumphs(campaign.id),
+    countChallengeWinsByAllegiance(campaign.id),
+    listDowntimeEvents(campaign.id),
+  ]);
+  // issue #83 — the Downtime panel appears once the campaign reaches the
+  // Downtime cycle (or when a log exists, e.g. after a rewind).
+  const downtimeReached =
+    campaign.phase !== "great_darkness" || downtimeEvents.length > 0;
 
   const gangName = new Map(gangs.map((g) => [g.id, g.name]));
   /**
@@ -316,7 +330,7 @@ export default async function CampaignAdminPage() {
         </Card>
 
         {/* issue #82 — the civil war: sides and win counts (snapshot-based) */}
-        <Card>
+        <Card id="civil-war" className="scroll-mt-24">
           <CardHeader>
             <CardTitle>Civil war</CardTitle>
             <span className="ml-auto text-xs text-muted">
@@ -363,6 +377,20 @@ export default async function CampaignAdminPage() {
             </p>
           </CardContent>
         </Card>
+
+        {/* issue #83 — the Effects of Downtime: summary + Fresh Recruitment */}
+        {downtimeReached && (
+          <DowntimePanel
+            campaign={{
+              id: campaign.id,
+              freshRecruitmentAt: campaign.freshRecruitmentAt ?? null,
+            }}
+            events={downtimeEvents}
+            gangName={gangName}
+            activeGangCount={gangs.filter((g) => g.isActive).length}
+            isFinished={isFinished}
+          />
+        )}
 
         {/* issue #66 — the previous campaign is finished: a new one can start */}
         {isFinished && (
