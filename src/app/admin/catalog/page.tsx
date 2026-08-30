@@ -15,8 +15,17 @@ import {
   ImportKeywordRulesForm,
   type KeywordRuleView,
 } from "@/components/admin/KeywordRulesManager";
-import { listCatalogItems, listKeywordRules } from "@/lib/db/queries";
+import {
+  listCatalogItems,
+  listKeywordRules,
+  listSympathiserBoons,
+} from "@/lib/db/queries";
 import { keywordRuleMap } from "@/lib/keywords";
+import { SYMPATHISERS, getSympathiser } from "@/lib/data/sympathisers";
+import {
+  ImportSympathiserBoonsForm,
+  SympathiserBoonRow,
+} from "@/components/admin/SympathiserBoonsManager";
 import { Wrench, BookMarked } from "lucide-react";
 import type { Metadata } from "next";
 
@@ -48,11 +57,33 @@ function groupKey(item: CatalogItemView): string {
 }
 
 export default async function CatalogAdminPage() {
-  const [items, keywordRulesRows] = (await Promise.all([
+  const [items, keywordRulesRows, boonRows] = (await Promise.all([
     listCatalogItems(),
     listKeywordRules(),
-  ])) as [CatalogItemView[], KeywordRuleView[]];
+    listSympathiserBoons(),
+  ])) as [
+    CatalogItemView[],
+    KeywordRuleView[],
+    Awaited<ReturnType<typeof listSympathiserBoons>>,
+  ];
   const rulesMap = keywordRuleMap(keywordRulesRows);
+  // issue #85 — catalogue order, with the display name resolved.
+  const sympOrder = new Map(SYMPATHISERS.map((s, i) => [s.id, i]));
+  const boons = boonRows
+    .slice()
+    .sort(
+      (a, b) =>
+        (sympOrder.get(a.sympathiserId) ?? 99) -
+        (sympOrder.get(b.sympathiserId) ?? 99),
+    )
+    .map((b) => ({
+      id: b.id,
+      sympathiserId: b.sympathiserId,
+      name:
+        getSympathiser(b.sympathiserId)?.name.replace(" Sympathisers", "") ??
+        b.sympathiserId,
+      summary: b.summary,
+    }));
 
   const byGroup = new Map<string, CatalogItemView[]>();
   for (const item of items) {
@@ -166,6 +197,41 @@ export default async function CatalogAdminPage() {
               </summary>
               <div className="mt-3 border-t border-rivet/50 pt-4">
                 <ImportKeywordRulesForm />
+              </div>
+            </details>
+          </CardContent>
+        </Card>
+
+        {/* ── Sympathiser boons (issue #85) ─────────────────────────────
+            Rewritten summaries stored ONLY in the private database — the
+            public repo ships ids, names and dice labels. */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookMarked className="h-4 w-4 text-hazard" aria-hidden />
+              Sympathiser boons ({boons.length}/{SYMPATHISERS.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <p className="text-sm text-muted">
+              Boon summaries shown on the dashboard map and the gang panel.
+              Write them in YOUR OWN words (function preserved, never book
+              text) — they live only in the database, never in the public
+              repository. Import from the private JSON below.
+            </p>
+            {boons.length > 0 && (
+              <div className="flex flex-col">
+                {boons.map((boon) => (
+                  <SympathiserBoonRow key={boon.id} boon={boon} />
+                ))}
+              </div>
+            )}
+            <details>
+              <summary className="cursor-pointer py-1 font-mono text-xs uppercase tracking-wider text-muted transition-colors hover:text-hazard">
+                Import from JSON (private file)
+              </summary>
+              <div className="mt-3 border-t border-rivet/50 pt-4">
+                <ImportSympathiserBoonsForm />
               </div>
             </details>
           </CardContent>

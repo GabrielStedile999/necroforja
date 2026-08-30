@@ -286,6 +286,35 @@ export async function getSympathiserControllerMap(): Promise<
   return map;
 }
 
+/* ---------------------- Sympathiser Boons (issue #85) ---------------------- */
+
+/** All rewritten boon summaries (admin list), catalogue order left to callers. */
+export async function listSympathiserBoons() {
+  return db.query.sympathiserBoons.findMany({
+    orderBy: [asc(schema.sympathiserBoons.sympathiserId)],
+  });
+}
+
+/** Map sympathiserId -> rewritten summary (private DB; empty when unset). */
+export async function getSympathiserBoonMap(): Promise<
+  Record<string, string>
+> {
+  const rows = await db.query.sympathiserBoons.findMany({
+    columns: { sympathiserId: true, summary: true },
+  });
+  const map: Record<string, string> = {};
+  for (const r of rows) map[r.sympathiserId] = r.summary;
+  return map;
+}
+
+/** The campaign's Sympathiser income ledger, newest first (audit panel). */
+export async function listSympathiserIncome(campaignId: string) {
+  return db.query.sympathiserIncome.findMany({
+    where: eq(schema.sympathiserIncome.campaignId, campaignId),
+    orderBy: [desc(schema.sympathiserIncome.createdAt)],
+  });
+}
+
 /** Lists Sympathisers from the catalogue (optionally only the enabled ones). */
 export async function listSympathisers(onlyEnabled = false) {
   return db.query.sympathisers.findMany(

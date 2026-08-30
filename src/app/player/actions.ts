@@ -34,7 +34,14 @@ import {
   removeInjurySchema,
   setGangAllegianceSchema,
   medicalEscortSchema,
+  clearRecoveryBoonSchema,
+  homeSupportRecruitSchema,
 } from "@/lib/validation";
+import {
+  getSympathiser,
+  getSympathiserBoons,
+  HOME_SUPPORT_RECRUIT,
+} from "@/lib/data/sympathisers";
 import { ALLEGIANCE_LABEL } from "@/lib/data/allegiances";
 import {
   STAT_ADVANCEMENTS,
@@ -1459,4 +1466,182 @@ export async function removeFighterAvatar(
   revalidatePath("/player");
   revalidatePath(`/admin/gangs/${gang.id}`);
   return { success: "Portrait removed." };
+}
+
+/* ---------------------- Sympathiser Boons (issue #85) ---------------------- */
+
+/**
+ * Water Guild roster boon (issue #85; Cinderak Burning p.65–76): a gang
+ * controlling a Sympathiser with the clear-recovery boon may clear one
+ * fighter's Recovery per pre-battle sequence. The app gates on CURRENT
+ * control and the fighter's status; "once per pre-battle sequence" has no
+ * battle entity to bind to, so frequency is policed at the table (the
+ * status flip is visible to everyone). Player or Arbitrator.
+ */
+export async function clearRecoveryBoon(
+  _prev: PlayerState,
+  formData: FormData,
+): Promise<PlayerState> {
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return { error: resolved.error };
+  const gang = resolved.gang;
+
+  const parsed = clearRecoveryBoonSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+  const { fighterId } = parsed.data;
+
+  // Gate: the gang must CURRENTLY control a Sympathiser carrying the boon.
+  const controls = await db.query.sympathiserControl.findMany({
+    where: and(
+      eq(schema.sympathiserControl.gangId, gang.id),
+      eq(schema.sympathiserControl.isCurrent, true),
+    ),
+    columns: { sympathiserId: true },
+  });
+  const source = controls.find(
+    (c) => getSympathiserBoons(c.sympathiserId)?.rosterEffect === "clear_recovery",
+  );
+  if (!source) {
+    return {
+      error: "This boon needs control of a Sympathiser that grants it (Water Guild).",
+    };
+  }
+
+  let result: PlayerState = { error: "Failed to clear the recovery." };
+  await db.transaction(async (tx) => {
+    const fighter = await tx.query.fighters.findFirst({
+      where: and(
+        eq(schema.fighters.id, fighterId),
+        eq(schema.fighters.gangId, gang.id),
+      ),
+      columns: { id: true, name: true, status: true },
+    });
+    if (!fighter) {
+      result = { error: "Invalid fighter." };
+      return;
+    }
+
+    // Status lives in the WHERE: a double submit finds no row the second
+    // time and fails cleanly instead of "clearing" an active fighter.
+    const rows = await tx
+      .update(schema.fighters)
+      .set({ status: "active" })
+      .where(
+        and(
+          eq(schema.fighters.id, fighterId),
+          eq(schema.fighters.status, "in_recovery"),
+        ),
+      )
+      .returning({ id: schema.fighters.id });
+    if (rows.length === 0) {
+      result = { error: `${fighter.name} is not in recovery.` };
+      return;
+    }
+
+    await recalcGangScores(gang.id, tx);
+    const sympName = getSympathiser(source.sympathiserId)?.name ?? "Sympathiser";
+    result = {
+      success: `${fighter.name} is battle-ready — recovery cleared (${sympName.replace(" Sympathisers", "")} boon).`,
+    };
+  });
+
+  revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
+  return result;
+}
+
+/** Control-flow error: the Home Support guard row lost the (gang, cycle)
+ *  race AFTER the fighter insert — throwing rolls the fighter back. */
+class HomeSupportGuardError extends Error {}
+
+/**
+ * Home Support free Ganger (issue #85; Cinderak Burning p.65): every gang
+ * has its own Home Support Sympathisers (never contestable). In the Spark
+ * of Rebellion phase, a table roll of 2D6 ≥ 10 lets the gang add a Ganger
+ * for no credits — equipment is still paid as normal. The app records the
+ * confirmed roll: ONE recruit per gang per cycle, guarded by the UNIQUE
+ * (gang, cycle) row inserted in the same transaction as the fighter (a
+ * lost race rolls the fighter back). The recruit is born with an empty
+ * profile — the player fills the card via the normal edit flow.
+ */
+export async function homeSupportRecruit(
+  _prev: PlayerState,
+  formData: FormData,
+): Promise<PlayerState> {
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return { error: resolved.error };
+  const gang = resolved.gang;
+
+  const parsed = homeSupportRecruitSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+  const { name } = parsed.data;
+
+  const gangRow = await db.query.gangs.findFirst({
+    where: eq(schema.gangs.id, gang.id),
+    columns: { campaignId: true },
+  });
+  if (!gangRow) return { error: "Gang not found." };
+  const campaign = await db.query.campaigns.findFirst({
+    where: eq(schema.campaigns.id, gangRow.campaignId),
+    columns: { currentCycle: true, phase: true, status: true },
+  });
+  if (!campaign || campaign.status !== "active") {
+    return { error: "No active campaign." };
+  }
+  if (campaign.phase !== "spark_of_rebellion") {
+    return {
+      error: `Home Support recruiting (${HOME_SUPPORT_RECRUIT.dice} ≥ ${HOME_SUPPORT_RECRUIT.threshold}) happens in the Spark of Rebellion phase.`,
+    };
+  }
+
+  let result: PlayerState = { error: "Recruiting failed." };
+  try {
+    await db.transaction(async (tx) => {
+      const inserted = await tx
+        .insert(schema.fighters)
+        .values({
+          gangId: gang.id,
+          name,
+          type: "Ganger",
+          category: "ganger",
+          baseCost: 0,
+        })
+        .returning({ id: schema.fighters.id });
+      const fighterId = inserted[0]!.id;
+
+      // One recruit per gang per cycle: the guard row's UNIQUE decides —
+      // a conflict here rolls the fighter insert back.
+      const guard = await tx
+        .insert(schema.homeSupportRecruits)
+        .values({
+          gangId: gang.id,
+          cycle: campaign.currentCycle,
+          fighterId,
+        })
+        .onConflictDoNothing()
+        .returning({ id: schema.homeSupportRecruits.id });
+      if (guard.length === 0) throw new HomeSupportGuardError();
+
+      await recalcGangScores(gang.id, tx);
+      result = {
+        success: `${name} joins for free (Home Support, cycle ${campaign.currentCycle}). Fill in the card — equipment is paid as normal.`,
+      };
+    });
+  } catch (e) {
+    if (e instanceof HomeSupportGuardError) {
+      result = {
+        error: "Home Support already recruited a fighter this cycle.",
+      };
+    } else {
+      throw e;
+    }
+  }
+
+  revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
+  return result;
 }

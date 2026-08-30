@@ -47,6 +47,7 @@ async function getDbView(): Promise<PublicView> {
     listSympathisers,
     listChallenges,
     listTriumphs,
+    getSympathiserBoonMap,
   } = await import("@/lib/db/queries");
 
   // Prefer an active campaign; fall back to the most recent finished one
@@ -57,6 +58,7 @@ async function getDbView(): Promise<PublicView> {
   const controlMap = await getSympathiserControlMap();
   const controllerMap = await getSympathiserControllerMap();
   const enabledSymps = await listSympathisers(true); // enabled only
+  const boonMap = await getSympathiserBoonMap(); // issue #85 — private DB
   const challenges = await listChallenges(campaignRow.id, 8);
   const triumphRows = await listTriumphs(campaignRow.id);
 
@@ -87,6 +89,7 @@ async function getDbView(): Promise<PublicView> {
         controllerName: controllerGangId
           ? (nameById.get(controllerGangId) ?? null)
           : null,
+        boon: boonMap[s.id] ?? null,
       };
     });
 

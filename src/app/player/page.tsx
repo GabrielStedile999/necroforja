@@ -7,6 +7,8 @@ import {
   getOtherGangsInCampaign,
   listEnabledCatalogItems,
   listKeywordRules,
+  getSympathiserBoonMap,
+  getActiveCampaign,
 } from "@/lib/db/queries";
 import { keywordRuleMap } from "@/lib/keywords";
 import { getSympathiser } from "@/lib/data/sympathisers";
@@ -38,15 +40,20 @@ export default async function PlayerPage() {
     );
   }
 
-  const [controlMap, otherGangs, catalog, keywordRules] = await Promise.all([
-    getSympathiserControlMap(),
-    getOtherGangsInCampaign(gang.id),
-    listEnabledCatalogItems(),
-    listKeywordRules(),
-  ]);
-  const symps = (controlMap[gang.id] ?? [])
-    .map((id) => getSympathiser(id)?.name)
-    .filter((n): n is string => Boolean(n));
+  const [controlMap, otherGangs, catalog, keywordRules, boonMap, campaign] =
+    await Promise.all([
+      getSympathiserControlMap(),
+      getOtherGangsInCampaign(gang.id),
+      listEnabledCatalogItems(),
+      listKeywordRules(),
+      getSympathiserBoonMap(),
+      getActiveCampaign(),
+    ]);
+  // issue #85 — controlled Sympathisers feed the boon panel (id + name).
+  const controlled = (controlMap[gang.id] ?? [])
+    .map((id) => getSympathiser(id))
+    .filter((s): s is NonNullable<typeof s> => Boolean(s));
+  const symps = controlled.map((s) => s.name);
 
   return (
     <>
@@ -55,6 +62,9 @@ export default async function PlayerPage() {
         gang={gang}
         otherGangs={otherGangs}
         sympathiserNames={symps}
+        controlledSympathisers={controlled}
+        boonSummaries={boonMap}
+        campaignPhase={campaign?.phase}
         exportHref="/player/export"
         assistantHref="/player/assistant"
         catalog={catalog}

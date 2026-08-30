@@ -7,6 +7,31 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Added
+- **Sympathiser Boons — controlar um Sympathiser finalmente FAZ alguma
+  coisa** (issue #85; Cinderak Burning, p.65–76): novo card **"Sympathiser
+  income"** no painel do Árbitro — na fase Spark of Rebellion, cada
+  (gangue ativa × Sympathiser controlado com income) vira uma linha com o
+  label do dado (base + Spark somam, ex. "D6x10 + 2D6x10"); o valor rolado
+  na mesa é validado no servidor (múltiplo de 10, 10–300) e creditado no
+  Stash **atomicamente** com o recalc. **One-shot por (gangue, Sympathiser,
+  ciclo)**: o insert no ledger append-only `sympathiser_income` vai
+  PRIMEIRO na transação com guard UNIQUE — coletas concorrentes nunca pagam
+  duas vezes, e o ledger é a trilha de auditoria (visível no card). Gangues
+  Imperiais veem a dica do **Deep Pockets** (+D6x10). Efeitos de roster
+  automatizados: **Water Guild** ganha o botão de limpar a Recovery de um
+  fighter (gated no controle ATUAL; status guardado no WHERE — duplo submit
+  falha limpo; frequência policiada na mesa) e o **Home Support** de toda
+  gangue recruta um Ganger grátis na fase Spark após o 2D6 ≥ 10 da mesa —
+  um por (gangue, ciclo), guard UNIQUE na MESMA transação do fighter
+  (corrida perdida reverte o fighter). Estratégia de IP de sempre: o repo
+  só carrega ids, nomes e labels de dado (`SYMPATHISER_BOONS`, 26
+  entradas); os **resumos reescritos** vivem na tabela privada
+  `sympathiser_boon`, importados no /admin/catalog por paste de JSON
+  privado gitignorado (upsert por id, ids validados) — e aparecem no mapa
+  público do /dashboard e no painel "Sympathiser boons" da gangue.
+  Migração aditiva `scripts/sympathiser-boons.sql` (3 tabelas). Efeitos de
+  mesa (traits, re-rolls…) são display only — o app não rola dado nenhum.
+  17 testes novos (`tests/sympathiser-boons.test.ts`).
 - **Medical Escort & promoções fora do Downtime — o ciclo de vida do
   fighter fecha as últimas pontas** (issue #84; Core Rulebook 2023, p.145 e
   p.149): o card do fighter ferido ganhou o bloco **Medical Escort** —

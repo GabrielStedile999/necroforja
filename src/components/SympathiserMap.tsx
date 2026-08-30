@@ -59,6 +59,12 @@ export function SympathiserMap({
                 <span className="text-xs opacity-80">
                   {s.controllerName ?? "Free"}
                 </span>
+                {/* issue #85 — rewritten boon summary (private DB) */}
+                {s.boon && (
+                  <span className="text-xs leading-snug opacity-70">
+                    {s.boon}
+                  </span>
+                )}
               </div>
             );
           })}

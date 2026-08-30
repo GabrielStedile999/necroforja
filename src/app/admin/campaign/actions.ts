@@ -1,10 +1,14 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db, schema } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/guards";
 import { getActiveCampaign, getLatestCampaign } from "@/lib/db/queries";
+import {
+  getSympathiser,
+  sympathiserIncomeDice,
+} from "@/lib/data/sympathisers";
 import {
   createChallengeSchema,
   resolveChallengeSchema,
@@ -15,6 +19,7 @@ import {
   setCampaignCycleSchema,
   battleEventSchema,
   grantFreshRecruitmentSchema,
+  collectSympathiserIncomeSchema,
 } from "@/lib/validation";
 import {
   setSympathiserController,
@@ -24,6 +29,7 @@ import {
   applyBattleEvent,
   snapshotCampaignGangs,
   grantFreshRecruitment as grantFreshRecruitmentCredits,
+  recalcGangScores,
 } from "@/lib/db/mutations";
 import { SYMPATHISERS } from "@/lib/data/sympathisers";
 import {
@@ -487,6 +493,115 @@ export async function grantFreshRecruitment(
   return {
     success: `Fresh Recruitment: ${result.credits}c credited to ${result.gangs} active gang${result.gangs === 1 ? "" : "s"}.`,
   };
+}
+
+/**
+ * Collects a controlled Sympathiser's income for a gang (issue #85;
+ * Cinderak Burning p.65–76) — Arbitrator-only, Spark of Rebellion phase.
+ * The dice are rolled at the table; the server validates the amount
+ * (schema: multiple of 10 within bounds) and enforces control and the
+ * ONE-SHOT per (gang, sympathiser, cycle):
+ *   the ledger insert goes FIRST in the transaction with
+ *   onConflictDoNothing on the unique guard — a conflict means "already
+ *   collected this cycle" and nothing has been written; only a landed row
+ *   credits the Stash and recalculates. Imperial gangs may add Deep
+ *   Pockets on top (the bound accommodates it); the panel shows the hint.
+ */
+export async function collectSympathiserIncome(
+  _prev: CampaignState,
+  formData: FormData,
+): Promise<CampaignState> {
+  await requireAdmin();
+
+  const parsed = collectSympathiserIncomeSchema.safeParse(
+    Object.fromEntries(formData),
+  );
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+  const d = parsed.data;
+
+  const campaign = await getActiveCampaign();
+  if (!campaign) return { error: "No active campaign." };
+  if (campaign.phase !== "spark_of_rebellion") {
+    return {
+      error:
+        "Sympathiser income is collected in the Spark of Rebellion phase.",
+    };
+  }
+
+  const symp = getSympathiser(d.sympathiserId);
+  if (!symp) return { error: "Unknown Sympathiser." };
+  const dice = sympathiserIncomeDice(d.sympathiserId, campaign.phase);
+  if (dice.length === 0) {
+    return {
+      error: `${symp.name} pay no credit income — their boons are applied at the table.`,
+    };
+  }
+
+  const gang = await db.query.gangs.findFirst({
+    where: and(
+      eq(schema.gangs.id, d.gangId),
+      eq(schema.gangs.campaignId, campaign.id),
+    ),
+    columns: { id: true, name: true, isActive: true },
+  });
+  if (!gang || !gang.isActive) {
+    return { error: "Invalid gang for this campaign." };
+  }
+
+  const control = await db.query.sympathiserControl.findFirst({
+    where: and(
+      eq(schema.sympathiserControl.sympathiserId, d.sympathiserId),
+      eq(schema.sympathiserControl.gangId, d.gangId),
+      eq(schema.sympathiserControl.isCurrent, true),
+    ),
+    columns: { id: true },
+  });
+  if (!control) {
+    return { error: `${gang.name} does not control ${symp.name}.` };
+  }
+
+  let result: CampaignState = { error: "Income collection failed." };
+  await db.transaction(async (tx) => {
+    // One-shot guard FIRST: a conflict on (gang, sympathiser, cycle)
+    // means this cycle's income was already collected — nothing written.
+    const rows = await tx
+      .insert(schema.sympathiserIncome)
+      .values({
+        campaignId: campaign.id,
+        gangId: d.gangId,
+        sympathiserId: d.sympathiserId,
+        cycle: campaign.currentCycle,
+        amount: d.amount,
+      })
+      .onConflictDoNothing()
+      .returning({ id: schema.sympathiserIncome.id });
+    if (rows.length === 0) {
+      result = {
+        error: `${gang.name} already collected ${symp.name} income this cycle.`,
+      };
+      return;
+    }
+
+    await tx
+      .update(schema.gangs)
+      .set({
+        stashCredits: sql`${schema.gangs.stashCredits} + ${d.amount}`,
+      })
+      .where(eq(schema.gangs.id, d.gangId));
+
+    await recalcGangScores(d.gangId, tx);
+    result = {
+      success: `${symp.name.replace(" Sympathisers", "")}: ${d.amount}c to ${gang.name}'s Stash (cycle ${campaign.currentCycle}).`,
+    };
+  });
+
+  revalidatePath("/admin/campaign");
+  revalidatePath("/player");
+  revalidatePath("/");
+  revalidatePath("/dashboard");
+  return result;
 }
 
 /** Advances the campaign by one cycle (and adjusts the phase). When entering

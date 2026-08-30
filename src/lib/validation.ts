@@ -428,6 +428,52 @@ export const importKeywordRulesSchema = z.object({
 
 export type KeywordRuleInput = z.infer<typeof keywordRuleSchema>;
 
+/* ---------------------- Sympathiser Boons (issue #85) ---------------------- */
+
+/**
+ * Arbitrator collects a controlled Sympathiser's income for a gang (issue
+ * #85). The dice are rolled at the table; the server validates the result
+ * (multiple of 10 within sane bounds — see SYMPATHISER_INCOME_MIN/MAX) and
+ * enforces control, phase and the one-shot-per-cycle guard.
+ */
+export const collectSympathiserIncomeSchema = z.object({
+  gangId: z.string().uuid("Invalid gang ID."),
+  sympathiserId: z.string().min(1, "Select the Sympathiser."),
+  amount: z.coerce
+    .number()
+    .int()
+    .min(10, "The rolled income is at least 10 credits.")
+    .max(300, "The rolled income is at most 300 credits.")
+    .multipleOf(10, "The rolled income is a multiple of 10."),
+});
+
+/** Rewritten boon summary (private DB — keyword_rule IP pattern). */
+export const sympathiserBoonSchema = z.object({
+  sympathiserId: z.string().min(1, "Sympathiser id required.").max(60),
+  summary: z.string().trim().min(10, "Summary too short.").max(2000),
+});
+
+/** Bulk paste-import: a JSON array of sympathiserBoonSchema objects. */
+export const importSympathiserBoonsSchema = z.object({
+  payload: z.string().trim().min(2, "Paste the JSON array."),
+});
+
+export const deleteSympathiserBoonSchema = z.object({
+  sympathiserBoonId: z.string().uuid("Invalid boon ID."),
+});
+
+export type SympathiserBoonInput = z.infer<typeof sympathiserBoonSchema>;
+
+/** Water Guild roster boon: clear one fighter's recovery (issue #85). */
+export const clearRecoveryBoonSchema = z.object({
+  fighterId: z.string().uuid("Invalid fighter ID."),
+});
+
+/** Home Support free Ganger (issue #85) — name only; the rest comes later. */
+export const homeSupportRecruitSchema = z.object({
+  name: z.string().trim().min(1, "Please enter a name.").max(60),
+});
+
 /** Arbitrator registers a challenge for a Sympathiser. */
 export const createChallengeSchema = z.object({
   challengerGangId: z.string().uuid(),
