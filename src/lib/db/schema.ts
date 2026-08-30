@@ -98,10 +98,12 @@ export const downtimeEventKind = pgEnum("downtime_event_kind", [
   "fresh_recruitment",
 ]);
 
-/** Fighter advancement kinds (issue #71): stat bump or a recorded skill. */
+/** Fighter advancement kinds (issue #71): stat bump or a recorded skill;
+ *  issue #84 adds promotions (Ganger → Specialist, Specialist → Champion). */
 export const advancementKind = pgEnum("advancement_kind", [
   "stat_increase",
   "skill",
+  "promotion",
 ]);
 
 /** Campaign journal post kinds (issue #5). */

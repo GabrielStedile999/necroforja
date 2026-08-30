@@ -96,7 +96,9 @@ export function buildGangSheetData(gang: Gang): GangSheetData {
       advancements: (f.advancements ?? []).map((adv) =>
         adv.kind === "stat_increase"
           ? `+1 ${STAT_LABEL[adv.statKey as StatKey] ?? adv.statKey} (${adv.xpCost} XP, +${adv.creditIncrease}c)`
-          : `Skill: ${adv.skillName} (${adv.xpCost} XP, +${adv.creditIncrease}c)`,
+          : adv.kind === "promotion"
+            ? `Promotion: ${adv.skillName} (${adv.xpCost} XP, +${adv.creditIncrease}c)`
+            : `Skill: ${adv.skillName} (${adv.xpCost} XP, +${adv.creditIncrease}c)`,
       ),
       injuries: (f.injuries ?? []).map((inj) => {
         const effect = injuryEffectLabel(inj.statKey, inj.statDelta);

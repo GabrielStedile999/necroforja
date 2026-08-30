@@ -7,45 +7,66 @@ import { Input, Label, Select } from "@/components/ui/input";
 import {
   STAT_ADVANCEMENTS,
   SKILL_ADVANCEMENTS,
+  PROMOTIONS,
+  PROMOTION_KEYS,
   STAT_KEYS,
   STAT_LABEL,
   SKILL_TIER_KEYS,
   type StatKey,
   type SkillTier,
+  type PromotionKey,
 } from "@/lib/data/advancements";
 
 /**
- * Buy-advancement form (issue #71): stat bump or recorded skill. Costs
- * shown come from the shared config, but the SERVER recomputes them
- * (including the repeat surcharge) — the form never posts a price.
+ * Buy-advancement form (issue #71): stat bump, recorded skill or — for
+ * Gangers (issue #84) — a promotion. Costs shown come from the shared
+ * config, but the SERVER recomputes them (including the repeat surcharge)
+ * — the form never posts a price.
  */
 export function AdvancementForm({
   fighterId,
   gangId,
   xp,
+  category,
 }: {
   fighterId: string;
   gangId: string;
   /** Fighter's current XP — display only. */
   xp: number;
+  /** Fighter's category — gates the promotion options (Gangers only). */
+  category: string;
 }) {
   const [state, formAction, pending] = useActionState<PlayerState, FormData>(
     buyAdvancement,
     {},
   );
   const formRef = useRef<HTMLFormElement>(null);
-  const [kind, setKind] = useState<"stat_increase" | "skill">("stat_increase");
+  const [kind, setKind] = useState<"stat_increase" | "skill" | "promotion">(
+    "stat_increase",
+  );
   const [statKey, setStatKey] = useState<StatKey>("wil");
   const [skillTier, setSkillTier] = useState<SkillTier>("primary_random");
+  const [promotion, setPromotion] = useState<PromotionKey>(
+    "ganger_to_specialist",
+  );
+  const canPromote = category === "ganger";
 
   useEffect(() => {
     if (state.success) formRef.current?.reset();
   }, [state.success]);
 
+  // A successful Specialist → Champion re-renders with a non-Ganger
+  // category: the promotion option is gone, so the kind falls back —
+  // derived, not stored, to keep the select and the fields coherent.
+  const effectiveKind =
+    kind === "promotion" && !canPromote ? "stat_increase" : kind;
+
   const cost =
-    kind === "stat_increase"
+    effectiveKind === "stat_increase"
       ? STAT_ADVANCEMENTS[statKey]
-      : SKILL_ADVANCEMENTS[skillTier];
+      : effectiveKind === "promotion"
+        ? PROMOTIONS[promotion]
+        : SKILL_ADVANCEMENTS[skillTier];
 
   return (
     <form ref={formRef} action={formAction} className="flex flex-col gap-2">
@@ -58,18 +79,36 @@ export function AdvancementForm({
           <Select
             id={`adv-kind-${fighterId}`}
             name="kind"
-            value={kind}
+            value={effectiveKind}
             onChange={(e) =>
-              setKind(e.target.value as "stat_increase" | "skill")
+              setKind(e.target.value as "stat_increase" | "skill" | "promotion")
             }
             className="h-9"
           >
             <option value="stat_increase">Characteristic +1</option>
             <option value="skill">Skill</option>
+            {canPromote && <option value="promotion">Promotion</option>}
           </Select>
         </div>
 
-        {kind === "stat_increase" ? (
+        {effectiveKind === "promotion" ? (
+          <div className="w-60">
+            <Label htmlFor={`adv-promotion-${fighterId}`}>Promotion</Label>
+            <Select
+              id={`adv-promotion-${fighterId}`}
+              name="promotion"
+              value={promotion}
+              onChange={(e) => setPromotion(e.target.value as PromotionKey)}
+              className="h-9"
+            >
+              {PROMOTION_KEYS.map((k) => (
+                <option key={k} value={k}>
+                  {PROMOTIONS[k].label} — {PROMOTIONS[k].xpCost} XP
+                </option>
+              ))}
+            </Select>
+          </div>
+        ) : effectiveKind === "stat_increase" ? (
           <div className="w-40">
             <Label htmlFor={`adv-stat-${fighterId}`}>Characteristic</Label>
             <Select
@@ -126,8 +165,10 @@ export function AdvancementForm({
       <p className="text-xs text-muted">
         XP available: <span className="font-mono text-ink">{xp}</span> · cost{" "}
         {cost.xpCost} XP · fighter cost +{cost.creditIncrease}c. Repeats of the
-        same characteristic cost +2 XP each (Juves/Prospects exempt). Dice are
-        rolled at the table — record the result here.
+        same characteristic cost +2 XP each (Juves/Prospects exempt).
+        Ganger → Specialist comes from the table&apos;s 2D6 roll (0 XP);
+        Specialist → Champion changes the category. Dice are rolled at the
+        table — record the result here.
       </p>
 
       <div role="status" aria-live="polite">

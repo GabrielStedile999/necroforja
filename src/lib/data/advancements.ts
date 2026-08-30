@@ -139,3 +139,36 @@ export const INJURY_PRESETS: {
 export function getInjuryPreset(id: string) {
   return INJURY_PRESETS.find((p) => p.id === id) ?? null;
 }
+
+/**
+ * Fighter promotions bought outside Downtime (issue #84; Core Rulebook
+ * 2023, p.149). In-app, a Specialist is a Ganger who took the promotion —
+ * the category stays `ganger` (the book treats Specialist as a Ganger
+ * flag); Specialist → Champion is the one that changes the category.
+ * Ganger → Specialist comes from the Ganger 2D6 table (rolled at the
+ * table, recorded here, 0 XP); Specialist → Champion is a normal XP
+ * purchase. Both raise the fighter's cost like any other advancement.
+ * (Juve/Prospect promotions happen automatically during Downtime — #83.)
+ */
+export const PROMOTIONS = {
+  ganger_to_specialist: {
+    label: "Ganger → Specialist",
+    xpCost: 0,
+    creditIncrease: 20,
+    fromCategory: "ganger",
+    /** null = the category does not change. */
+    toCategory: null,
+  },
+  specialist_to_champion: {
+    label: "Specialist → Champion",
+    xpCost: 12,
+    creditIncrease: 40,
+    fromCategory: "ganger",
+    toCategory: "champion",
+  },
+} as const;
+
+export type PromotionKey = keyof typeof PROMOTIONS;
+export const PROMOTION_KEYS = Object.keys(
+  PROMOTIONS,
+) as [PromotionKey, ...PromotionKey[]];
