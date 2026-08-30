@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SKILL_TIER_KEYS } from "@/lib/data/advancements";
+import { PROMOTION_KEYS, SKILL_TIER_KEYS } from "@/lib/data/advancements";
 
 /** Login (Credentials provider). */
 export const loginSchema = z.object({
@@ -622,7 +622,31 @@ export const buyAdvancementSchema = z.discriminatedUnion("kind", [
     skillTier: z.enum(SKILL_TIER_KEYS),
     skillName: z.string().trim().min(2, "Skill name too short.").max(60),
   }),
+  // issue #84 — promotions ride the same machinery; costs are config-side.
+  z.object({
+    fighterId: z.string().uuid("Invalid fighter ID."),
+    kind: z.literal("promotion"),
+    promotion: z.enum(PROMOTION_KEYS),
+  }),
 ]);
+
+/**
+ * Medical Escort (issue #84; post-battle action) — the 2D6x10 cost and the
+ * D6 outcome are rolled at the table; the app debits the rolled amount
+ * conditionally and applies the chosen outcome atomically.
+ */
+export const medicalEscortSchema = z.object({
+  fighterId: z.string().uuid("Invalid fighter ID."),
+  cost: z.coerce
+    .number()
+    .int()
+    .min(10, "The rolled cost is at least 10 credits.")
+    .max(120, "The rolled cost is at most 120 credits.")
+    .multipleOf(10, "The rolled cost is a multiple of 10."),
+  outcome: z.enum(["died", "stabilised", "full_recovery"]),
+});
+
+export type MedicalEscortInput = z.infer<typeof medicalEscortSchema>;
 
 /**
  * Records a lasting injury (issue #71): either a preset id (server pulls

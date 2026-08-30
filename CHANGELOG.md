@@ -7,6 +7,27 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Added
+- **Medical Escort & promoções fora do Downtime — o ciclo de vida do
+  fighter fecha as últimas pontas** (issue #84; Core Rulebook 2023, p.145 e
+  p.149): o card do fighter ferido ganhou o bloco **Medical Escort** —
+  informa-se o custo rolado na mesa (2D6x10) e o desfecho do D6, e o app
+  faz o resto numa transação só: **débito condicional do Stash** (crédito
+  insuficiente = recusa limpa, nada é escrito) e o desfecho aplicado
+  atomicamente — died → morto; stabilised → in recovery com o lasting
+  injury registrado pelo fluxo da issue #71; full recovery → in recovery
+  sem sequela. E o form de advancements ganhou o tipo **Promotion** (só
+  para Gangers): **Ganger → Specialist** (0 XP, +20c, rolado na tabela 2D6
+  da mesa; não muda a categoria — Specialist é flag de Ganger — e é
+  one-way: quem já tem a promoção não repete) e **Specialist → Champion**
+  (12 XP, +40c, categoria trocada com guard no WHERE — duas compras
+  concorrentes nunca aterrissam juntas; corrida perdida após o débito
+  reverte tudo). Promoções são linhas de `fighter_advancement` (novo valor
+  `promotion` no enum — migração aditiva `scripts/escort-promotions.sql`),
+  então entram no custo do fighter e no Rating pelo caminho de sempre, e
+  aparecem no card e no gang sheet PDF. Coberto o risco da issue: fighter
+  promovido (categoria ganger) perde a isenção de sobretaxa de Juve. Como
+  sempre, **o app não rola dado nenhum** — a mesa rola, o app registra.
+  15 testes novos (`tests/escort-promotions.test.ts`).
 - **Downtime completo — os Effects of Downtime oficiais, do início ao fim**
   (issue #83; Cinderak Burning, p.61, passos A–E): ao entrar no ciclo de
   Downtime, além de limpar recovery e devolver cativos, o app agora **paga a

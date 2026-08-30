@@ -16,6 +16,7 @@ import { EditFighterForm } from "@/components/player/EditFighterForm";
 import { FighterAvatarForm } from "@/components/player/FighterAvatarForm";
 import { AdvancementForm } from "@/components/player/AdvancementForm";
 import { InjuryForm } from "@/components/player/InjuryForm";
+import { MedicalEscortForm } from "@/components/player/MedicalEscortForm";
 import { RemoveInjuryButton } from "@/components/player/RemoveInjuryButton";
 import { AllegianceForm } from "@/components/player/AllegianceForm";
 import { STAT_LABEL, ROLL_STATS, type StatKey } from "@/lib/data/advancements";
@@ -299,7 +300,9 @@ export function GangManager({
                                 <span className="text-ink">
                                   {adv.kind === "stat_increase"
                                     ? `+1 ${STAT_LABEL[adv.statKey as StatKey] ?? adv.statKey}`
-                                    : `Skill: ${adv.skillName}`}
+                                    : adv.kind === "promotion"
+                                      ? `Promotion: ${adv.skillName}`
+                                      : `Skill: ${adv.skillName}`}
                                 </span>
                               </div>
                               <span className="font-mono text-xs text-muted">
@@ -359,8 +362,22 @@ export function GangManager({
                             fighterId={f.id}
                             gangId={gangId}
                             xp={f.xp}
+                            category={f.category}
                           />
                         </div>
+                        {/* Medical Escort (issue #84) — injured fighters only */}
+                        {(f.status === "injured" ||
+                          f.status === "in_recovery") && (
+                          <div>
+                            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
+                              Medical Escort (pays from the Stash)
+                            </p>
+                            <MedicalEscortForm
+                              fighterId={f.id}
+                              gangId={gangId}
+                            />
+                          </div>
+                        )}
                         <div>
                           <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
                             Record lasting injury

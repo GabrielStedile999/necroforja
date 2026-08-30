@@ -33,6 +33,7 @@ import {
   addInjurySchema,
   removeInjurySchema,
   setGangAllegianceSchema,
+  medicalEscortSchema,
 } from "@/lib/validation";
 import { ALLEGIANCE_LABEL } from "@/lib/data/allegiances";
 import {
@@ -45,6 +46,7 @@ import {
   storageDelta,
   clampStat,
   getInjuryPreset,
+  PROMOTIONS,
   type StatKey,
 } from "@/lib/data/advancements";
 import { recalcGangScores, debitStashCredits } from "@/lib/db/mutations";
@@ -955,6 +957,10 @@ export async function setGangAllegiance(
  *  rolls the whole transaction back (debit included). */
 class AdvancementCapError extends Error {}
 
+/** Control-flow error: the guarded category change of a promotion matched
+ *  no row (concurrent promotion) — throwing rolls the XP debit back. */
+class PromotionConflictError extends Error {}
+
 /**
  * Buys ONE advancement with XP (issue #71): +1 to a characteristic
  * (respecting the p.73 bounds) or a recorded skill. Server-authoritative
@@ -1041,6 +1047,36 @@ export async function buyAdvancement(
           cfg.xpCost + (fastLearner ? 0 : prior.length * REPEAT_STAT_SURCHARGE);
         creditIncrease = cfg.creditIncrease;
         successLabel = `${label} improved`;
+      } else if (d.kind === "promotion") {
+        // issue #84 — promotions ride the advancement machinery. The label
+        // lands in skillName (display), the category change (when the
+        // promotion has one) is guarded below.
+        const cfg = PROMOTIONS[d.promotion];
+        if (fighter.category !== cfg.fromCategory) {
+          result = {
+            error: `"${cfg.label}" applies to a ${cfg.fromCategory} — ${fighter.name} is a ${fighter.category}.`,
+          };
+          return;
+        }
+        if (d.promotion === "ganger_to_specialist") {
+          // One-way: a Ganger with a promotion row is already a Specialist
+          // (a specialist_to_champion row would have changed the category).
+          const prior = await tx.query.fighterAdvancements.findFirst({
+            where: and(
+              eq(schema.fighterAdvancements.fighterId, d.fighterId),
+              eq(schema.fighterAdvancements.kind, "promotion"),
+            ),
+            columns: { id: true },
+          });
+          if (prior) {
+            result = { error: `${fighter.name} is already a Specialist.` };
+            return;
+          }
+        }
+        xpCost = cfg.xpCost;
+        creditIncrease = cfg.creditIncrease;
+        skillName = cfg.label;
+        successLabel = `Promoted (${cfg.label})`;
       } else {
         const cfg = SKILL_ADVANCEMENTS[d.skillTier];
         xpCost = cfg.xpCost;
@@ -1088,6 +1124,29 @@ export async function buyAdvancement(
         if (rows.length === 0) throw new AdvancementCapError();
       }
 
+      if (d.kind === "promotion") {
+        const toCategory = PROMOTIONS[d.promotion].toCategory;
+        if (toCategory) {
+          // Guarded category change: the source category lives in the
+          // WHERE, so two concurrent promotions cannot both land. Failure
+          // AFTER the debit throws — the transaction rolls the XP back.
+          const rows = await tx
+            .update(schema.fighters)
+            .set({ category: toCategory })
+            .where(
+              and(
+                eq(schema.fighters.id, d.fighterId),
+                eq(
+                  schema.fighters.category,
+                  PROMOTIONS[d.promotion].fromCategory,
+                ),
+              ),
+            )
+            .returning({ id: schema.fighters.id });
+          if (rows.length === 0) throw new PromotionConflictError();
+        }
+      }
+
       await tx.insert(schema.fighterAdvancements).values({
         fighterId: d.fighterId,
         kind: d.kind,
@@ -1105,6 +1164,10 @@ export async function buyAdvancement(
   } catch (e) {
     if (e instanceof AdvancementCapError) {
       result = { error: "That characteristic is already at its maximum." };
+    } else if (e instanceof PromotionConflictError) {
+      result = {
+        error: "The fighter's category changed meanwhile — reload and try again.",
+      };
     } else {
       throw e;
     }
@@ -1270,6 +1333,94 @@ export async function removeInjury(
 
     await recalcGangScores(gang.id, tx);
     result = { success: `Injury "${injury.name}" removed.` };
+  });
+
+  revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
+  return result;
+}
+
+/* ---------------------- Medical Escort (issue #84) ---------------------- */
+
+/**
+ * Medical Escort — post-battle action (Core Rulebook 2023, p.145): pay the
+ * 2D6x10 credits rolled at the table to send a badly injured fighter for
+ * treatment, and record the D6 outcome (the app never rolls). One
+ * transaction:
+ *   conditional Stash debit (debitStashCredits — an insufficient Stash
+ *   refuses cleanly; what happens to the unpaid fighter is the table's
+ *   call, the app writes nothing) → outcome (died → dead; stabilised →
+ *   in_recovery, with the rolled lasting injury recorded via the existing
+ *   #71 injury flow; full recovery → in_recovery, no lasting injury)
+ *   → recalcGangScores (credits move Wealth; a death moves the Rating).
+ * Only a fighter currently injured / in recovery can be escorted — set the
+ * status first if the card is stale.
+ */
+export async function medicalEscort(
+  _prev: PlayerState,
+  formData: FormData,
+): Promise<PlayerState> {
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return { error: resolved.error };
+  const gang = resolved.gang;
+
+  const parsed = medicalEscortSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+  const d = parsed.data;
+
+  let result: PlayerState = { error: "Medical Escort failed." };
+  await db.transaction(async (tx) => {
+    const fighter = await tx.query.fighters.findFirst({
+      where: and(
+        eq(schema.fighters.id, d.fighterId),
+        eq(schema.fighters.gangId, gang.id),
+      ),
+      columns: { id: true, name: true, status: true },
+    });
+    if (!fighter) {
+      result = { error: "Invalid fighter." };
+      return;
+    }
+    if (fighter.status !== "injured" && fighter.status !== "in_recovery") {
+      result = {
+        error: `Medical Escort applies to an injured fighter — set ${fighter.name}'s status first.`,
+      };
+      return;
+    }
+
+    // Conditional debit FIRST (the Trading Post pattern): nothing has been
+    // written yet, so an insufficient Stash returns cleanly.
+    const paid = await debitStashCredits(gang.id, d.cost, tx);
+    if (!paid) {
+      result = {
+        error: `Insufficient Stash credits: the escort costs ${d.cost}c.`,
+      };
+      return;
+    }
+
+    if (d.outcome === "died") {
+      await tx
+        .update(schema.fighters)
+        .set({ status: "dead", capturedByGangId: null })
+        .where(eq(schema.fighters.id, d.fighterId));
+    } else {
+      await tx
+        .update(schema.fighters)
+        .set({ status: "in_recovery" })
+        .where(eq(schema.fighters.id, d.fighterId));
+    }
+
+    await recalcGangScores(gang.id, tx);
+    result = {
+      success:
+        d.outcome === "died"
+          ? `${fighter.name} did not survive the treatment — ${d.cost}c spent.`
+          : d.outcome === "stabilised"
+            ? `${fighter.name} stabilised (in recovery) — ${d.cost}c spent. Record the lasting injury rolled at the table.`
+            : `${fighter.name} will make a full recovery — ${d.cost}c spent, no lasting injury.`,
+    };
   });
 
   revalidatePath("/player");

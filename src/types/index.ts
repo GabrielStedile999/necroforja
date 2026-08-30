@@ -62,10 +62,11 @@ export interface EquipmentItem {
   cost: number;
 }
 
-/** An advancement bought with XP (issue #71): stat bump or recorded skill. */
+/** An advancement bought with XP (issue #71): stat bump, recorded skill or
+ *  a promotion (issue #84 — the label lives in skillName). */
 export interface FighterAdvancement {
   id: string;
-  kind: "stat_increase" | "skill";
+  kind: "stat_increase" | "skill" | "promotion";
   statKey: string | null;
   skillName: string | null;
   xpCost: number;
