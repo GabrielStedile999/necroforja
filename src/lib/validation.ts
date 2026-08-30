@@ -166,6 +166,11 @@ export const setCampaignCycleSchema = z.object({
 
 export type SetCampaignCycleInput = z.infer<typeof setCampaignCycleSchema>;
 
+/** Downtime Fresh Recruitment grant (issue #83) — the campaign to pay. */
+export const grantFreshRecruitmentSchema = z.object({
+  campaignId: z.string().uuid("Invalid campaign ID."),
+});
+
 /** Activates/deactivates a gang's participation in the campaign. */
 export const toggleGangActiveSchema = z.object({
   gangId: z.string().uuid("Invalid gang ID."),
