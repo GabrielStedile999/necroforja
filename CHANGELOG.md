@@ -7,6 +7,29 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Added
+- **Cativos completos — o que acontece DEPOIS da captura** (issue #86;
+  Core Rulebook 2023, p.142–144): novo painel **"Captives held"** no card
+  da gangue lista os fighters inimigos que ela segura, com valor cheio e
+  metade (equipamento + advancements inclusos, arredondada PARA CIMA em
+  múltiplos de 5). As três resoluções são **exclusivas do Árbitro**, cada
+  uma numa transação com **recalc das DUAS gangues** e uma linha
+  **append-only** em `captive_event` (migração aditiva
+  `scripts/captives.sql`) com o **nome do fighter fotografado** — a venda
+  deleta a linha do fighter, a auditoria sobrevive. **Sell to the
+  Guilders**: destrutivo — fighter deletado (equipamento vai junto, nada
+  entra em Stash nenhum), captora creditada; preço default = metade,
+  **editável até o valor CHEIO** com clamp no servidor (cobre bounties e o
+  boon da Slave Guild); exige digitar o nome exato (padrão deleteGang,
+  issue #64) e o DELETE é guardado no status — resolução concorrente perde
+  limpo. **Ransom back**: a perna de créditos do trade — valor movido
+  **condicionalmente** do pagador (default a gangue do cativo paga; dá pra
+  inverter), Stash insuficiente recusa sem escrever nada e corrida no
+  retorno reverte o débito. **Release for free**: devolução sem créditos.
+  O "Resolution log" aparece no painel das duas gangues envolvidas com o
+  sinal do crédito pela perspectiva de quem olha (venda nunca mostra
+  crédito no lado do dono). O status "captured" ganhou um **ícone de
+  alerta** (PNG transparente em `public/icons/`) ao lado do badge, no card
+  e no painel. 13 testes novos (`tests/captives.test.ts`).
 - **Sympathiser Boons — controlar um Sympathiser finalmente FAZ alguma
   coisa** (issue #85; Cinderak Burning, p.65–76): novo card **"Sympathiser
   income"** no painel do Árbitro — na fase Spark of Rebellion, cada

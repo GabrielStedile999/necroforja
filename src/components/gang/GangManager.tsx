@@ -21,6 +21,8 @@ import {
   ClearRecoveryBoonForm,
   HomeSupportRecruitForm,
 } from "@/components/player/SympathiserBoonForms";
+import { CaptiveActions } from "@/components/player/CaptiveActions";
+import { captiveReturnPayment } from "@/lib/campaign-rules";
 import {
   getSympathiserBoons,
   sympathiserIncomeDice,
@@ -73,6 +75,8 @@ export function GangManager({
   controlledSympathisers = [],
   boonSummaries = {},
   campaignPhase,
+  captivesHeld = [],
+  captiveEvents = [],
 }: {
   gang: Gang & { id: string };
   otherGangs: GangOption[];
@@ -89,6 +93,25 @@ export function GangManager({
   controlledSympathisers?: { id: string; name: string }[];
   boonSummaries?: Record<string, string>;
   campaignPhase?: string;
+  /**
+   * Captives this gang currently holds (issue #86) — value fields are
+   * cost-bearing so the panel prices the sale; actions render only in
+   * Arbitrator mode. Optional so existing callers/tests stay valid.
+   */
+  captivesHeld?: {
+    id: string;
+    name: string;
+    ownerGangName: string;
+    value: number;
+  }[];
+  /** Captive resolutions this gang took part in (audit trail). */
+  captiveEvents?: {
+    id: string;
+    fighterName: string;
+    kind: "sold" | "ransomed" | "released";
+    amount: number;
+    captorGangId: string;
+  }[];
   /** Enabled catalogue items (issue #67) — feeds the equipment pickers. */
   catalog?: CatalogOption[];
   /** Keyword glossary map (issue #67 follow-up) — clickable trait chips. */
@@ -233,6 +256,100 @@ export function GangManager({
         </details>
       )}
 
+      {/* Captives held (issue #86): sell / ransom / release are Arbitrator
+          calls; players see who their gang is holding. */}
+      {(captivesHeld.length > 0 || captiveEvents.length > 0) && (
+        <details className="border border-rivet/60 bg-panel px-5 py-3 clip-chamfer-sm">
+          <summary className="cursor-pointer py-1 font-mono text-xs uppercase tracking-wider text-muted transition-colors hover:text-hazard">
+            Captives held ({captivesHeld.length})
+          </summary>
+          <div className="mt-3 flex flex-col gap-5 border-t border-rivet/50 pt-4">
+            {captivesHeld.length === 0 && (
+              <p className="m-0 text-sm text-muted">
+                No captives held right now.
+              </p>
+            )}
+            {captivesHeld.map((c) => (
+              <div key={c.id} className="flex flex-col gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Image
+                    src="/icons/warning-captured.png"
+                    alt=""
+                    width={24}
+                    height={24}
+                    className="h-6 w-6 shrink-0"
+                    aria-hidden
+                  />
+                  <Badge variant="blood">captive</Badge>
+                  <span className="text-sm font-medium text-ink">{c.name}</span>
+                  <span className="text-xs text-muted">
+                    of {c.ownerGangName} · value{" "}
+                    <span className="font-mono">{c.value}c</span> · half{" "}
+                    <span className="font-mono">
+                      {captiveReturnPayment(c.value)}c
+                    </span>
+                  </span>
+                </div>
+                {arbitratorMode ? (
+                  <CaptiveActions
+                    gangId={gangId}
+                    fighterId={c.id}
+                    fighterName={c.name}
+                    value={c.value}
+                    half={captiveReturnPayment(c.value)}
+                  />
+                ) : (
+                  <p className="m-0 text-xs text-muted">
+                    Sell, ransom or release are Arbitrator calls — agree the
+                    trade at the table. A rescue attempt is a normal
+                    challenge (Rescue Mission).
+                  </p>
+                )}
+              </div>
+            ))}
+            {captiveEvents.length > 0 && (
+              <details>
+                <summary className="cursor-pointer py-1 font-mono text-xs uppercase tracking-wider text-muted transition-colors hover:text-hazard">
+                  Resolution log ({captiveEvents.length})
+                </summary>
+                <ul className="m-0 mt-2 flex list-none flex-col gap-1 border-t border-rivet/50 p-0 pt-3">
+                  {captiveEvents.map((ev) => (
+                    <li key={ev.id} className="text-xs">
+                      <span className="text-ink">{ev.fighterName}</span>
+                      <span className="text-muted">
+                        {" "}
+                        {ev.kind === "sold"
+                          ? "sold to the Guilders"
+                          : ev.kind === "ransomed"
+                            ? "ransomed back"
+                            : "released"}
+                        {/* Sale money never touches the owner; ransom flips
+                            sign by perspective (positive = owner paid). */}
+                        {ev.amount !== 0 &&
+                          !(ev.kind === "sold" && ev.captorGangId !== gangId) && (
+                            <>
+                              {" · "}
+                              <span className="font-mono text-hazard">
+                                {ev.captorGangId === gangId
+                                  ? ev.amount > 0
+                                    ? `+${ev.amount}c`
+                                    : `${ev.amount}c`
+                                  : ev.amount > 0
+                                    ? `-${ev.amount}c`
+                                    : `+${-ev.amount}c`}
+                              </span>
+                            </>
+                          )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+          </div>
+        </details>
+      )}
+
       {/* Allegiance (issue #82): badge + declaration. Players declare once
           (form hides after); the Arbitrator can always correct. */}
       <div className="flex flex-wrap items-center gap-3">
@@ -286,6 +403,20 @@ export function GangManager({
                           >
                             {f.status === "in_recovery" ? "recovery" : f.status}
                           </Badge>
+                        )}
+                        {/* issue #86 follow-up — a captured fighter is an
+                            open situation the table must resolve. The icon
+                            sits OUTSIDE the badge (≈2x the text size) so
+                            the badge keeps its height. */}
+                        {f.status === "captured" && (
+                          <Image
+                            src="/icons/warning-captured.png"
+                            alt=""
+                            width={24}
+                            height={24}
+                            className="h-6 w-6 shrink-0"
+                            aria-hidden
+                          />
                         )}
                       </div>
                       <div className="text-xs text-muted">

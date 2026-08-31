@@ -405,6 +405,54 @@ export const sympathisers = pgTable("sympathiser", {
 });
 
 /**
+ * Captive resolution kinds (issue #86) — what the captor did with a held
+ * captive: sold to the Guilders (fighter deleted), ransomed back (credits
+ * moved) or released for free.
+ */
+export const captiveEventKind = pgEnum("captive_event_kind", [
+  "sold",
+  "ransomed",
+  "released",
+]);
+
+/**
+ * Captive resolution log (issue #86) — append-only audit of every sell /
+ * ransom / release, written in the same transaction as the effect. The
+ * fighter's name is SNAPSHOTTED because selling deletes the fighter row
+ * (the FK then nulls fighterId); rows are never edited.
+ */
+export const captiveEvents = pgTable(
+  "captive_event",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    /** Gang that held the captive. */
+    captorGangId: uuid("captor_gang_id")
+      .notNull()
+      .references(() => gangs.id, { onDelete: "cascade" }),
+    /** Gang the captive belongs to. */
+    ownerGangId: uuid("owner_gang_id")
+      .notNull()
+      .references(() => gangs.id, { onDelete: "cascade" }),
+    /** Null after a sale (row deleted) or roster cleanup. */
+    fighterId: uuid("fighter_id").references(() => fighters.id, {
+      onDelete: "set null",
+    }),
+    /** Name snapshot — survives the fighter's deletion. */
+    fighterName: text("fighter_name").notNull(),
+    kind: captiveEventKind("kind").notNull(),
+    /**
+     * Credits that moved: sold = credited to the captor; ransomed =
+     * positive when the owner paid the captor, negative when the captor
+     * paid the owner; released = 0.
+     */
+    amount: integer("amount").notNull().default(0),
+    notes: text("notes").notNull().default(""),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("captive_event_captor_idx").on(t.captorGangId, t.createdAt)],
+);
+
+/**
  * Rewritten Sympathiser boon summaries (issue #85) — the keyword_rule IP
  * pattern: the summaries are (1) REWRITTEN in our own concise wording
  * (function preserved, never book prose) and (2) stored ONLY in this
