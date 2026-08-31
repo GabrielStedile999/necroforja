@@ -9,7 +9,10 @@ import {
   listKeywordRules,
   getSympathiserBoonMap,
   getActiveCampaign,
+  listCaptivesHeldBy,
+  listCaptiveEvents,
 } from "@/lib/db/queries";
+import { fighterTotalCost } from "@/lib/scoring";
 import { keywordRuleMap } from "@/lib/keywords";
 import { getSympathiser } from "@/lib/data/sympathisers";
 import type { Metadata } from "next";
@@ -40,15 +43,36 @@ export default async function PlayerPage() {
     );
   }
 
-  const [controlMap, otherGangs, catalog, keywordRules, boonMap, campaign] =
-    await Promise.all([
-      getSympathiserControlMap(),
-      getOtherGangsInCampaign(gang.id),
-      listEnabledCatalogItems(),
-      listKeywordRules(),
-      getSympathiserBoonMap(),
-      getActiveCampaign(),
-    ]);
+  const [
+    controlMap,
+    otherGangs,
+    catalog,
+    keywordRules,
+    boonMap,
+    campaign,
+    captiveRows,
+    captiveEvents,
+  ] = await Promise.all([
+    getSympathiserControlMap(),
+    getOtherGangsInCampaign(gang.id),
+    listEnabledCatalogItems(),
+    listKeywordRules(),
+    getSympathiserBoonMap(),
+    getActiveCampaign(),
+    listCaptivesHeldBy(gang.id),
+    listCaptiveEvents(gang.id),
+  ]);
+  // issue #86 — held captives priced server-side (equipment + advancements).
+  const captivesHeld = captiveRows.map((c) => ({
+    id: c.id,
+    name: c.name,
+    ownerGangName: c.gang?.name ?? "—",
+    value: fighterTotalCost({
+      baseCost: c.baseCost,
+      equipment: c.equipment.map((fe) => ({ cost: fe.equipment.cost })),
+      advancements: c.advancements,
+    }),
+  }));
   // issue #85 — controlled Sympathisers feed the boon panel (id + name).
   const controlled = (controlMap[gang.id] ?? [])
     .map((id) => getSympathiser(id))
@@ -65,6 +89,8 @@ export default async function PlayerPage() {
         controlledSympathisers={controlled}
         boonSummaries={boonMap}
         campaignPhase={campaign?.phase}
+        captivesHeld={captivesHeld}
+        captiveEvents={captiveEvents}
         exportHref="/player/export"
         assistantHref="/player/assistant"
         catalog={catalog}

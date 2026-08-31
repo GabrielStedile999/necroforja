@@ -286,6 +286,41 @@ export async function getSympathiserControllerMap(): Promise<
   return map;
 }
 
+/* ------------------------ Captive flow (issue #86) ------------------------ */
+
+/**
+ * Enemy fighters a gang currently holds captive (issue #86) — with the
+ * cost-bearing relations so the panel can price the sale (half / full) and
+ * the owner gang's name for display.
+ */
+export async function listCaptivesHeldBy(gangId: string) {
+  return db.query.fighters.findMany({
+    where: and(
+      eq(schema.fighters.capturedByGangId, gangId),
+      eq(schema.fighters.status, "captured"),
+    ),
+    columns: { id: true, name: true, gangId: true, baseCost: true },
+    with: {
+      gang: { columns: { name: true } },
+      equipment: { with: { equipment: { columns: { cost: true } } } },
+      advancements: { columns: { creditIncrease: true } },
+    },
+    orderBy: [asc(schema.fighters.name)],
+  });
+}
+
+/** Captive resolutions a gang took part in (either side), newest first. */
+export async function listCaptiveEvents(gangId: string, limit = 20) {
+  return db.query.captiveEvents.findMany({
+    where: or(
+      eq(schema.captiveEvents.captorGangId, gangId),
+      eq(schema.captiveEvents.ownerGangId, gangId),
+    ),
+    orderBy: [desc(schema.captiveEvents.createdAt)],
+    limit,
+  });
+}
+
 /* ---------------------- Sympathiser Boons (issue #85) ---------------------- */
 
 /** All rewritten boon summaries (admin list), catalogue order left to callers. */

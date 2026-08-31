@@ -2,7 +2,7 @@
 
 import { and, eq, gt, gte, lt, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { db, schema } from "@/lib/db";
+import { db, schema, type DbOrTx } from "@/lib/db";
 import {
   resolveGangForWrite,
   gangIdFromForm,
@@ -13,7 +13,11 @@ import {
   countFighterWeapons,
   getCatalogItemById,
 } from "@/lib/db/queries";
-import { MAX_WEAPONS_PER_FIGHTER } from "@/lib/campaign-rules";
+import {
+  MAX_WEAPONS_PER_FIGHTER,
+  captiveReturnPayment,
+} from "@/lib/campaign-rules";
+import { fighterTotalCost } from "@/lib/scoring";
 import {
   fighterSchema,
   updateFighterSchema,
@@ -36,6 +40,9 @@ import {
   medicalEscortSchema,
   clearRecoveryBoonSchema,
   homeSupportRecruitSchema,
+  sellCaptiveSchema,
+  ransomCaptiveSchema,
+  releaseCaptiveSchema,
 } from "@/lib/validation";
 import {
   getSympathiser,
@@ -1643,5 +1650,324 @@ export async function homeSupportRecruit(
 
   revalidatePath("/player");
   revalidatePath(`/admin/gangs/${gang.id}`);
+  return result;
+}
+
+/* ------------------------ Captive flow (issue #86) ------------------------ */
+
+/** Control-flow error: the guarded captive write matched no row AFTER an
+ *  earlier write — throwing rolls the transaction back. */
+class CaptiveRaceError extends Error {}
+
+/**
+ * Loads and validates a held captive inside the caller's transaction: the
+ * fighter must exist, be CAPTURED, be held BY the captor gang and belong
+ * to ANOTHER gang. Returns null with an error message otherwise.
+ */
+async function loadHeldCaptive(
+  tx: DbOrTx,
+  captorGangId: string,
+  fighterId: string,
+) {
+  const fighter = await tx.query.fighters.findFirst({
+    where: eq(schema.fighters.id, fighterId),
+    columns: {
+      id: true,
+      name: true,
+      gangId: true,
+      status: true,
+      baseCost: true,
+      capturedByGangId: true,
+    },
+    with: {
+      equipment: { with: { equipment: { columns: { cost: true } } } },
+      advancements: { columns: { creditIncrease: true } },
+    },
+  });
+  if (!fighter) return { error: "Fighter not found." as const };
+  if (
+    fighter.status !== "captured" ||
+    fighter.capturedByGangId !== captorGangId ||
+    fighter.gangId === captorGangId
+  ) {
+    return { error: "This fighter is not a captive held by this gang." as const };
+  }
+  return { fighter };
+}
+
+/**
+ * Sells a held captive to the Guilders (issue #86; Core Rulebook 2023,
+ * p.144) — ARBITRATOR-ONLY and destructive: the fighter is deleted from
+ * the owner's roster, equipment goes with them (nothing enters any Stash),
+ * and the captor is credited. The default price is half the captive's
+ * total Cost rounded UP to 5s (`captiveReturnPayment` — equipment and
+ * advancements included); the amount is Arbitrator-editable up to the FULL
+ * value (bounty-style agreements, Slave Guild boon), clamped server-side.
+ * Type-to-confirm (the exact fighter name) like deleteGang (#64). One
+ * transaction: guarded DELETE (status in the WHERE — a concurrent
+ * resolution loses cleanly) → captor credit → audit row (name snapshot) →
+ * recalc BOTH gangs.
+ */
+export async function sellCaptive(
+  _prev: PlayerState,
+  formData: FormData,
+): Promise<PlayerState> {
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return { error: resolved.error };
+  if (!resolved.isAdmin) {
+    return { error: "Only the Arbitrator can resolve captives." };
+  }
+  const gang = resolved.gang;
+
+  const parsed = sellCaptiveSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+  const d = parsed.data;
+
+  let result: PlayerState = { error: "Sale failed." };
+  await db.transaction(async (tx) => {
+    const loaded = await loadHeldCaptive(tx, gang.id, d.fighterId);
+    if ("error" in loaded) {
+      result = { error: loaded.error };
+      return;
+    }
+    const { fighter } = loaded;
+
+    if (d.confirmName.trim() !== fighter.name) {
+      result = {
+        error: "Name does not match — type the captive's name exactly to confirm.",
+      };
+      return;
+    }
+
+    const value = fighterTotalCost({
+      baseCost: fighter.baseCost,
+      equipment: fighter.equipment.map((fe) => ({ cost: fe.equipment.cost })),
+      advancements: fighter.advancements,
+    });
+    const half = captiveReturnPayment(value);
+    if (d.amount > value) {
+      result = {
+        error: `Amount exceeds ${fighter.name}'s full value (${value}c).`,
+      };
+      return;
+    }
+
+    // Guarded, irreversible removal: the status lives in the WHERE, so a
+    // concurrent ransom/release/sale can never double-resolve.
+    const removed = await tx
+      .delete(schema.fighters)
+      .where(
+        and(
+          eq(schema.fighters.id, d.fighterId),
+          eq(schema.fighters.status, "captured"),
+        ),
+      )
+      .returning({ id: schema.fighters.id });
+    if (removed.length === 0) {
+      result = { error: "The captive was already resolved." };
+      return;
+    }
+
+    if (d.amount > 0) {
+      await tx
+        .update(schema.gangs)
+        .set({
+          stashCredits: sql`${schema.gangs.stashCredits} + ${d.amount}`,
+        })
+        .where(eq(schema.gangs.id, gang.id));
+    }
+
+    await tx.insert(schema.captiveEvents).values({
+      captorGangId: gang.id,
+      ownerGangId: fighter.gangId,
+      fighterId: null, // the row is gone; the snapshot below is the record
+      fighterName: fighter.name,
+      kind: "sold",
+      amount: d.amount,
+      notes: `value ${value}c, half ${half}c`,
+    });
+
+    await recalcGangScores(gang.id, tx);
+    await recalcGangScores(fighter.gangId, tx);
+    result = {
+      success: `${fighter.name} sold to the Guilders for ${d.amount}c (value ${value}c, half ${half}c). The fighter is gone for good.`,
+    };
+  });
+
+  revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
+  revalidatePath("/");
+  revalidatePath("/dashboard");
+  return result;
+}
+
+/**
+ * Ransoms a held captive back to their gang (issue #86; the credit leg of
+ * a p.143 trade) — ARBITRATOR-ONLY. The agreed amount moves CONDITIONALLY
+ * from the payer (either side: a classic ransom has the owner pay the
+ * captor; free-form trades may flow the other way) — an insufficient
+ * Stash refuses cleanly before anything is written. Then the fighter
+ * returns (status guarded in the WHERE; a lost race rolls the debit back),
+ * the audit row lands and BOTH gangs recalc — one transaction. Item or
+ * territory legs stay at the table.
+ */
+export async function ransomCaptive(
+  _prev: PlayerState,
+  formData: FormData,
+): Promise<PlayerState> {
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return { error: resolved.error };
+  if (!resolved.isAdmin) {
+    return { error: "Only the Arbitrator can resolve captives." };
+  }
+  const gang = resolved.gang;
+
+  const parsed = ransomCaptiveSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+  const d = parsed.data;
+
+  let result: PlayerState = { error: "Ransom failed." };
+  try {
+    await db.transaction(async (tx) => {
+      const loaded = await loadHeldCaptive(tx, gang.id, d.fighterId);
+      if ("error" in loaded) {
+        result = { error: loaded.error };
+        return;
+      }
+      const { fighter } = loaded;
+
+      const payerGangId = d.payer === "owner" ? fighter.gangId : gang.id;
+      const receiverGangId = d.payer === "owner" ? gang.id : fighter.gangId;
+
+      // Conditional debit FIRST (the Trading Post pattern): nothing has
+      // been written yet, so an empty Stash returns cleanly.
+      const paid = await debitStashCredits(payerGangId, d.amount, tx);
+      if (!paid) {
+        result = {
+          error: `Insufficient Stash credits: the ${d.payer === "owner" ? "captive's gang" : "captor"} cannot pay ${d.amount}c.`,
+        };
+        return;
+      }
+
+      await tx
+        .update(schema.gangs)
+        .set({
+          stashCredits: sql`${schema.gangs.stashCredits} + ${d.amount}`,
+        })
+        .where(eq(schema.gangs.id, receiverGangId));
+
+      // The return is guarded on the status: losing this race AFTER the
+      // debit throws, rolling the whole transfer back.
+      const returned = await tx
+        .update(schema.fighters)
+        .set({ status: "active", capturedByGangId: null })
+        .where(
+          and(
+            eq(schema.fighters.id, d.fighterId),
+            eq(schema.fighters.status, "captured"),
+          ),
+        )
+        .returning({ id: schema.fighters.id });
+      if (returned.length === 0) throw new CaptiveRaceError();
+
+      await tx.insert(schema.captiveEvents).values({
+        captorGangId: gang.id,
+        ownerGangId: fighter.gangId,
+        fighterId: fighter.id,
+        fighterName: fighter.name,
+        kind: "ransomed",
+        // positive = the owner paid the captor; negative = the reverse
+        amount: d.payer === "owner" ? d.amount : -d.amount,
+      });
+
+      await recalcGangScores(gang.id, tx);
+      await recalcGangScores(fighter.gangId, tx);
+      result = {
+        success: `${fighter.name} ransomed back — ${d.amount}c from the ${d.payer === "owner" ? "captive's gang to the captor" : "captor to the captive's gang"}.`,
+      };
+    });
+  } catch (e) {
+    if (e instanceof CaptiveRaceError) {
+      result = { error: "The captive was already resolved." };
+    } else {
+      throw e;
+    }
+  }
+
+  revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
+  revalidatePath("/");
+  revalidatePath("/dashboard");
+  return result;
+}
+
+/**
+ * Releases a held captive for free (issue #86) — ARBITRATOR-ONLY: covers
+ * failed trades and goodwill. Guarded return + audit row + both recalcs
+ * in one transaction.
+ */
+export async function releaseCaptive(
+  _prev: PlayerState,
+  formData: FormData,
+): Promise<PlayerState> {
+  const resolved = await resolveGangForWrite(gangIdFromForm(formData));
+  if ("error" in resolved) return { error: resolved.error };
+  if (!resolved.isAdmin) {
+    return { error: "Only the Arbitrator can resolve captives." };
+  }
+  const gang = resolved.gang;
+
+  const parsed = releaseCaptiveSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+  const d = parsed.data;
+
+  let result: PlayerState = { error: "Release failed." };
+  await db.transaction(async (tx) => {
+    const loaded = await loadHeldCaptive(tx, gang.id, d.fighterId);
+    if ("error" in loaded) {
+      result = { error: loaded.error };
+      return;
+    }
+    const { fighter } = loaded;
+
+    const returned = await tx
+      .update(schema.fighters)
+      .set({ status: "active", capturedByGangId: null })
+      .where(
+        and(
+          eq(schema.fighters.id, d.fighterId),
+          eq(schema.fighters.status, "captured"),
+        ),
+      )
+      .returning({ id: schema.fighters.id });
+    if (returned.length === 0) {
+      result = { error: "The captive was already resolved." };
+      return;
+    }
+
+    await tx.insert(schema.captiveEvents).values({
+      captorGangId: gang.id,
+      ownerGangId: fighter.gangId,
+      fighterId: fighter.id,
+      fighterName: fighter.name,
+      kind: "released",
+      amount: 0,
+    });
+
+    await recalcGangScores(gang.id, tx);
+    await recalcGangScores(fighter.gangId, tx);
+    result = { success: `${fighter.name} released back to their gang.` };
+  });
+
+  revalidatePath("/player");
+  revalidatePath(`/admin/gangs/${gang.id}`);
+  revalidatePath("/");
+  revalidatePath("/dashboard");
   return result;
 }

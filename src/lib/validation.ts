@@ -428,6 +428,48 @@ export const importKeywordRulesSchema = z.object({
 
 export type KeywordRuleInput = z.infer<typeof keywordRuleSchema>;
 
+/* ------------------------ Captive flow (issue #86) ------------------------ */
+
+/**
+ * Sells a held captive to the Guilders (Arbitrator-only, destructive):
+ * the fighter is DELETED, so the exact name must be typed to confirm. The
+ * amount is Arbitrator-editable (default half the value rounded up to 5s;
+ * override up to the full value covers bounty-style agreements) — the
+ * server clamps it against the fighter's real value.
+ */
+export const sellCaptiveSchema = z.object({
+  gangId: z.string().uuid("Invalid gang ID."),
+  fighterId: z.string().uuid("Invalid fighter ID."),
+  amount: z.coerce
+    .number()
+    .int()
+    .min(0, "The sale amount cannot be negative.")
+    .max(5000, "Sale amount too large."),
+  confirmName: z.string().min(1, "Type the captive's name to confirm."),
+});
+
+/**
+ * Ransoms a held captive back to their gang (Arbitrator-only): the agreed
+ * credit leg moves conditionally from the payer, the fighter returns.
+ * Direction covers free-form trades where either side pays.
+ */
+export const ransomCaptiveSchema = z.object({
+  gangId: z.string().uuid("Invalid gang ID."),
+  fighterId: z.string().uuid("Invalid fighter ID."),
+  amount: z.coerce
+    .number()
+    .int()
+    .min(5, "The ransom is at least 5 credits (use Release for none).")
+    .max(5000, "Ransom too large."),
+  payer: z.enum(["owner", "captor"]),
+});
+
+/** Releases a held captive for free (failed trades / goodwill). */
+export const releaseCaptiveSchema = z.object({
+  gangId: z.string().uuid("Invalid gang ID."),
+  fighterId: z.string().uuid("Invalid fighter ID."),
+});
+
 /* ---------------------- Sympathiser Boons (issue #85) ---------------------- */
 
 /**
