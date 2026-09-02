@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db, schema } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/guards";
@@ -9,6 +9,11 @@ import {
   getSympathiser,
   sympathiserIncomeDice,
 } from "@/lib/data/sympathisers";
+import {
+  getScenario,
+  getScenarioByName,
+  diceBounds,
+} from "@/lib/data/scenarios";
 import {
   createChallengeSchema,
   resolveChallengeSchema,
@@ -20,6 +25,7 @@ import {
   battleEventSchema,
   grantFreshRecruitmentSchema,
   collectSympathiserIncomeSchema,
+  applyScenarioRewardsSchema,
 } from "@/lib/validation";
 import {
   setSympathiserController,
@@ -212,6 +218,10 @@ export async function createChallenge(
     d.scenario && d.scenario.length > 0
       ? d.scenario
       : rollScenario(campaign.phase).scenario;
+  // issue #87 — a name that matches the catalogue (rolled names always do;
+  // "choose" results and free text may not) carries its id for the preset
+  // rewards; the display string stays in `scenario` either way.
+  const scenarioId = getScenarioByName(scenario)?.id ?? null;
 
   await db.insert(schema.challenges).values({
     campaignId: campaign.id,
@@ -220,6 +230,7 @@ export async function createChallenge(
     challengedGangId: d.challengedGangId ?? null,
     sympathiserId: d.sympathiserId,
     scenario,
+    scenarioId,
     resolved: false,
   });
 
@@ -493,6 +504,211 @@ export async function grantFreshRecruitment(
   return {
     success: `Fresh Recruitment: ${result.credits}c credited to ${result.gangs} active gang${result.gangs === 1 ? "" : "s"}.`,
   };
+}
+
+/** Control-flow error: an applyBattleEvent leg failed mid-transaction —
+ *  throwing rolls back the guard and every event already applied. */
+class RewardApplicationError extends Error {}
+
+/**
+ * Applies a scenario's STANDARD rewards to a resolved challenge (issue
+ * #87) — the pre-filled path into the Battle Aftermath log (#69). The
+ * Arbitrator types the values rolled at the table; the server validates
+ * each against the scenario's dice label (`diceBounds`) and emits the
+ * corresponding battle_event rows through `applyBattleEvent`, all in ONE
+ * transaction opened by the one-shot guard:
+ *   conditional UPDATE on `challenge.rewards_applied_at is null` — a
+ *   second application matches no row and nothing is written. A failed
+ *   event leg throws, rolling back the guard and the earlier legs.
+ * Corrections afterwards are compensating events, as always. Outcomes:
+ * a win applies winner/loser lines (Assassin's two conditional lines are
+ * gated by role — the CHALLENGER is the attacker); a draw applies the
+ * draw line per participant; "declined" has no battle and is refused.
+ * Per-fighter XP (participation +1 and scenario extras) stays table-side
+ * via the aftermath panel — fighter picks don't fit a preset form.
+ */
+export async function applyScenarioRewards(
+  _prev: CampaignState,
+  formData: FormData,
+): Promise<CampaignState> {
+  await requireAdmin();
+
+  const parsed = applyScenarioRewardsSchema.safeParse(
+    Object.fromEntries(formData),
+  );
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid data." };
+  }
+  const d = parsed.data;
+
+  const challenge = await db.query.challenges.findFirst({
+    where: eq(schema.challenges.id, d.challengeId),
+  });
+  if (!challenge) return { error: "Challenge not found." };
+  if (!challenge.resolved || !challenge.outcome) {
+    return { error: "Resolve the challenge first." };
+  }
+  if (!challenge.scenarioId) {
+    return { error: "This challenge has no catalogue scenario." };
+  }
+  const scenario = getScenario(challenge.scenarioId);
+  if (!scenario) return { error: "Unknown scenario." };
+  const rewards = scenario.rewards;
+
+  if (challenge.outcome === "declined") {
+    return { error: "A declined challenge has no battle to reward." };
+  }
+
+  const challenger = challenge.challengerGangId;
+  const challenged = challenge.challengedGangId; // null = free Sympathiser
+
+  /** One battle_event leg, validated against its dice label. */
+  type Leg = { gangId: string; kind: "credits_gained" | "reputation_change"; amount: number };
+  const legs: Leg[] = [];
+  const rolled = (
+    label: string,
+    value: number | undefined,
+    lineName: string,
+  ): number | { error: string } => {
+    const bounds = diceBounds(label);
+    if (!bounds) return { error: `Bad dice label "${label}".` };
+    if (value === undefined) {
+      return { error: `Enter the rolled ${lineName} (${label}).` };
+    }
+    if (
+      value < bounds.min ||
+      value > bounds.max ||
+      value % bounds.step !== 0
+    ) {
+      return {
+        error: `${lineName}: ${value} is not a valid ${label} result.`,
+      };
+    }
+    return value;
+  };
+
+  if (challenge.outcome === "draw") {
+    if (!rewards.creditsDraw) {
+      return { error: `${scenario.name} has no standard draw reward.` };
+    }
+    const pairs: [string | null, number | undefined, string][] = [
+      [challenger, d.creditsDrawChallenger, "draw credits (challenger)"],
+      [challenged, d.creditsDrawChallenged, "draw credits (defender)"],
+    ];
+    for (const [gangId, value, name] of pairs) {
+      if (!gangId) continue;
+      const v = rolled(rewards.creditsDraw, value, name);
+      if (typeof v !== "number") return v;
+      legs.push({ gangId, kind: "credits_gained", amount: v });
+    }
+  } else {
+    const winner =
+      challenge.outcome === "challenger_win" ? challenger : challenged;
+    const loser =
+      challenge.outcome === "challenger_win" ? challenged : challenger;
+    if (!winner) return { error: "This outcome has no winning gang." };
+
+    const winnerCreditsApply =
+      rewards.creditsWinner &&
+      !(rewards.winnerCreditsOnlyAttacker && winner !== challenger);
+    if (winnerCreditsApply) {
+      const v = rolled(
+        rewards.creditsWinner!,
+        d.creditsWinner,
+        "winner credits",
+      );
+      if (typeof v !== "number") return v;
+      legs.push({ gangId: winner, kind: "credits_gained", amount: v });
+    }
+    if (rewards.creditsLoser && loser) {
+      const v = rolled(rewards.creditsLoser, d.creditsLoser, "loser credits");
+      if (typeof v !== "number") return v;
+      legs.push({ gangId: loser, kind: "credits_gained", amount: v });
+    }
+    const repApplies =
+      rewards.repWinner &&
+      !(rewards.repWinnerOnlyDefender && winner !== challenged);
+    if (repApplies) {
+      const v = rolled(rewards.repWinner!, d.repWinner, "winner Reputation");
+      if (typeof v !== "number") return v;
+      legs.push({ gangId: winner, kind: "reputation_change", amount: v });
+    }
+  }
+
+  // Bottled-out Reputation loss — table knowledge, flagged per gang.
+  if (rewards.repBottled !== 0) {
+    if (d.bottledChallenger && challenger) {
+      legs.push({
+        gangId: challenger,
+        kind: "reputation_change",
+        amount: rewards.repBottled,
+      });
+    }
+    if (d.bottledChallenged && challenged) {
+      legs.push({
+        gangId: challenged,
+        kind: "reputation_change",
+        amount: rewards.repBottled,
+      });
+    }
+  }
+
+  if (legs.length === 0) {
+    return { error: `${scenario.name} has no standard reward line to apply here.` };
+  }
+
+  let result: CampaignState = { error: "Reward application failed." };
+  try {
+    await db.transaction(async (tx) => {
+      // One-shot guard FIRST: rewards land exactly once per challenge.
+      const claimed = await tx
+        .update(schema.challenges)
+        .set({ rewardsAppliedAt: sql`now()` })
+        .where(
+          and(
+            eq(schema.challenges.id, d.challengeId),
+            isNull(schema.challenges.rewardsAppliedAt),
+          ),
+        )
+        .returning({ id: schema.challenges.id });
+      if (claimed.length === 0) {
+        result = {
+          error: "Rewards were already applied — use compensating events for corrections.",
+        };
+        return;
+      }
+
+      for (const leg of legs) {
+        const res = await applyBattleEvent(
+          {
+            challengeId: d.challengeId,
+            gangId: leg.gangId,
+            kind: leg.kind,
+            amount: leg.amount,
+            notes: `${scenario.name} reward`,
+          },
+          tx,
+        );
+        if (!res.ok) throw new RewardApplicationError(res.error);
+      }
+
+      result = {
+        success: `${scenario.name}: ${legs.length} reward line${legs.length === 1 ? "" : "s"} applied through the aftermath log.`,
+      };
+    });
+  } catch (e) {
+    if (e instanceof RewardApplicationError) {
+      result = { error: e.message };
+    } else {
+      throw e;
+    }
+  }
+
+  revalidatePath("/admin/campaign");
+  revalidatePath("/player");
+  revalidatePath("/");
+  revalidatePath("/dashboard");
+  return result;
 }
 
 /**

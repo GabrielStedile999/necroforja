@@ -516,6 +516,38 @@ export const homeSupportRecruitSchema = z.object({
   name: z.string().trim().min(1, "Please enter a name.").max(60),
 });
 
+/* ------------------- Scenario rewards (issue #87) ------------------- */
+
+/** A rolled reward value: blank = not provided; numbers pass through. */
+const rolledValue = z.preprocess(
+  (v) => (v === "" || v === null || v === undefined ? undefined : v),
+  z.coerce.number().int().min(-10).max(1000).optional(),
+);
+
+/** Checkbox: present ("on"/"true") = true, absent = false. */
+const checkboxFlag = z.preprocess((v) => v === "on" || v === "true", z.boolean());
+
+/**
+ * Applies a scenario's standard rewards to a resolved challenge (issue
+ * #87). The Arbitrator types the values ROLLED at the table; the server
+ * validates each against the scenario's dice label (diceBounds) and emits
+ * battle_event rows through applyBattleEvent (#69) — once per challenge.
+ */
+export const applyScenarioRewardsSchema = z.object({
+  challengeId: z.string().uuid("Invalid challenge ID."),
+  creditsWinner: rolledValue,
+  creditsLoser: rolledValue,
+  creditsDrawChallenger: rolledValue,
+  creditsDrawChallenged: rolledValue,
+  repWinner: rolledValue,
+  bottledChallenger: checkboxFlag,
+  bottledChallenged: checkboxFlag,
+});
+
+export type ApplyScenarioRewardsInput = z.infer<
+  typeof applyScenarioRewardsSchema
+>;
+
 /** Arbitrator registers a challenge for a Sympathiser. */
 export const createChallengeSchema = z.object({
   challengerGangId: z.string().uuid(),

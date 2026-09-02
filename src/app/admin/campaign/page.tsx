@@ -32,6 +32,7 @@ import {
 } from "@/lib/db/queries";
 import { sympathiserIncomeDice, DEEP_POCKETS_DICE } from "@/lib/data/sympathisers";
 import { CollectIncomeForm } from "@/components/admin/CollectIncomeForm";
+import { ApplyScenarioRewardsForm } from "@/components/admin/ApplyScenarioRewardsForm";
 import {
   ALLEGIANCE_OPTIONS,
   ALLEGIANCE_BADGE,
@@ -834,6 +835,39 @@ export default async function CampaignAdminPage() {
                           ))}
                         </ul>
                       )}
+
+                      {/* issue #87 — preset scenario rewards, once per challenge */}
+                      {c.scenarioId &&
+                        c.outcome &&
+                        c.outcome !== "declined" &&
+                        (c.rewardsAppliedAt ? (
+                          <p className="m-0 mt-2 font-mono text-xs uppercase tracking-wider text-toxic">
+                            scenario rewards applied ✓
+                          </p>
+                        ) : (
+                          !isFinished && (
+                            <details className="mt-2">
+                              <summary className="cursor-pointer py-1 font-mono text-xs uppercase tracking-wider text-muted transition-colors hover:text-hazard">
+                                Scenario rewards — {c.scenario}
+                              </summary>
+                              <div className="mt-2 border-t border-rivet/50 pt-3">
+                                <ApplyScenarioRewardsForm
+                                  challengeId={c.id}
+                                  scenarioId={c.scenarioId}
+                                  outcome={c.outcome}
+                                  challengerName={
+                                    gangName.get(c.challengerGangId) ?? "—"
+                                  }
+                                  challengedName={
+                                    c.challengedGangId
+                                      ? (gangName.get(c.challengedGangId) ?? null)
+                                      : null
+                                  }
+                                />
+                              </div>
+                            </details>
+                          )
+                        ))}
 
                       {!isFinished && participants.length > 0 && (
                         <details className="mt-2">
