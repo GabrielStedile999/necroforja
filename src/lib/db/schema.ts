@@ -552,6 +552,19 @@ export const challenges = pgTable("challenge", {
   }),
   sympathiserId: text("sympathiser_id").references(() => sympathisers.id),
   scenario: text("scenario"),
+  /**
+   * Catalogue id (issue #87 — src/lib/data/scenarios.ts) when the scenario
+   * matches an entry; null for free-text/legacy rows. The display string
+   * stays in `scenario` so history never breaks.
+   */
+  scenarioId: text("scenario_id"),
+  /**
+   * When the scenario's standard rewards were applied (issue #87) — null =
+   * not yet. Set by a conditional UPDATE (`is null` in the WHERE) in the
+   * same transaction as the battle_event rows, so rewards land exactly
+   * once per challenge; corrections use compensating events (#69).
+   */
+  rewardsAppliedAt: timestamp("rewards_applied_at"),
   outcome: text("outcome"), // "challenger_win" | "challenged_win" | "declined" | "draw"
   resolved: boolean("resolved").notNull().default(false),
   playedAt: timestamp("played_at"),

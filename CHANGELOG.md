@@ -7,6 +7,31 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Added
+- **Cenários com recompensas preset — resolver batalha ficou 10x mais
+  rápido** (issue #87; Cinderak Burning, p.77–101): os **12 cenários
+  narrativos** viraram um catálogo funcional
+  (`src/lib/data/scenarios.ts`) — só nomes e parâmetros numéricos (labels
+  de dado como "2D6x10", Rep do vencedor, −1 de bottled, 1 XP de
+  participação; zero prosa, disciplina de IP de sempre). Criar um
+  challenge agora grava o `scenario_id` quando o nome bate com o catálogo
+  (rolado no 2D6 ou digitado — o campo ganhou autocomplete); texto livre
+  e histórico antigo seguem intactos. Em cada challenge resolvido, o novo
+  bloco **"Scenario rewards"** mostra exatamente os campos do desfecho
+  (vitória: créditos do vencedor/perdedor + Rep; empate: créditos por
+  gangue; checkboxes de bottled out), cada input **limitado pelo dado do
+  cenário** (`diceBounds` — 2D6x10 só aceita 20–120 em passos de 10, e o
+  servidor revalida). Aplicar emite cada linha como um `battle_event` REAL
+  via `applyBattleEvent` (issue #69) — mesma trilha de auditoria, mesmos
+  eventos compensatórios pra corrigir — tudo numa transação aberta pelo
+  **guard one-shot** (`challenge.rewards_applied_at is null`): aplicar
+  duas vezes é recusado e uma perna falha reverte tudo. Casos especiais
+  fiéis ao livro: as duas linhas condicionais do Assassin in the Spire
+  gated por papel (challenger = atacante) e o Escape from Hive Zalktraa
+  (recompensas por cativo) fica com o aftermath manual. XP por fighter
+  continua na mesa via aftermath panel (decisão de escopo — form preset
+  não comporta seletor de fighter por linha). Migração aditiva
+  `scripts/scenario-rewards.sql`. 13 testes novos
+  (`tests/scenario-rewards.test.ts`).
 - **Cativos completos — o que acontece DEPOIS da captura** (issue #86;
   Core Rulebook 2023, p.142–144): novo painel **"Captives held"** no card
   da gangue lista os fighters inimigos que ela segura, com valor cheio e

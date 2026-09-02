@@ -7,6 +7,7 @@ import {
 } from "@/app/admin/campaign/actions";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select } from "@/components/ui/input";
+import { SCENARIOS } from "@/lib/data/scenarios";
 
 type GangOption = { id: string; name: string };
 type SympOption = { id: string; name: string; controllerName: string | null };
@@ -60,11 +61,18 @@ export function CreateChallengeForm({
         </div>
         <div className="sm:col-span-2">
           <Label htmlFor="scenario">Scenario (empty = roll 2D6)</Label>
+          {/* issue #87 — catalogue names get preset rewards after resolving */}
           <Input
             id="scenario"
             name="scenario"
+            list="scenario-catalogue"
             placeholder="e.g.: Gunk War"
           />
+          <datalist id="scenario-catalogue">
+            {SCENARIOS.map((s) => (
+              <option key={s.id} value={s.name} />
+            ))}
+          </datalist>
         </div>
       </div>
 
