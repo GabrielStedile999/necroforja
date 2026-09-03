@@ -29,10 +29,14 @@ import {
   countChallengeWinsByAllegiance,
   listDowntimeEvents,
   listSympathiserIncome,
+  listFighterDeathsWithCycle,
+  listBattleWins,
 } from "@/lib/db/queries";
 import { sympathiserIncomeDice, DEEP_POCKETS_DICE } from "@/lib/data/sympathisers";
 import { CollectIncomeForm } from "@/components/admin/CollectIncomeForm";
 import { ApplyScenarioRewardsForm } from "@/components/admin/ApplyScenarioRewardsForm";
+import { AwardSuggestionButton } from "@/components/admin/AwardSuggestionButton";
+import { suggestTriumphs } from "@/lib/triumph-suggestions";
 import {
   ALLEGIANCE_OPTIONS,
   ALLEGIANCE_BADGE,
@@ -111,6 +115,32 @@ export default async function CampaignAdminPage() {
   // Downtime cycle (or when a log exists, e.g. after a rewind).
   const downtimeReached =
     campaign.phase !== "great_darkness" || downtimeEvents.length > 0;
+
+  // issue #88 — Triumph suggestions feed the Closure card only, so their
+  // inputs are fetched only when it renders (last cycle or finished).
+  const showClosure = isLastCycle || isFinished;
+  const [deathRows, winRows] = showClosure
+    ? await Promise.all([
+        listFighterDeathsWithCycle(campaign.id),
+        listBattleWins(campaign.id),
+      ])
+    : [[], []];
+  const triumphSuggestions = showClosure
+    ? suggestTriumphs({
+        gangs: gangs.map((g) => ({
+          id: g.id,
+          name: g.name,
+          isActive: g.isActive,
+          wealth: g.wealthCached,
+          reputation: g.reputation,
+        })),
+        totalCycles: campaign.totalCycles,
+        deaths: deathRows,
+        controllerMap,
+        wins: winRows,
+      })
+    : [];
+  const awardedTitles = new Set(triumphs.map((t) => t.title));
 
   const gangName = new Map(gangs.map((g) => [g.id, g.name]));
   /**
@@ -567,6 +597,79 @@ export default async function CampaignAdminPage() {
                   </ul>
                 </div>
               )}
+
+              {/* issue #88 — the six official Triumphs, ranked from data
+                  the app recorded; awarding stays the Arbitrator's click. */}
+              <div>
+                <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
+                  Suggested Triumphs (official)
+                </p>
+                <p className="mb-3 text-xs text-muted">
+                  Rankings based on RECORDED events — deaths or wins that
+                  never entered the aftermath log are invisible here. Ties
+                  are your call; every candidate gets a button.
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {triumphSuggestions.map((s) => (
+                    <div
+                      key={s.title}
+                      className="flex flex-col gap-2 border border-rivet/60 p-3 clip-chamfer-sm"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="text-sm font-semibold text-hazard">
+                          {s.title}
+                        </span>
+                        {awardedTitles.has(s.title) && (
+                          <span className="font-mono text-xs uppercase tracking-wider text-toxic">
+                            awarded ✓
+                          </span>
+                        )}
+                      </div>
+                      <p className="m-0 text-xs text-muted">{s.metric}</p>
+                      {s.ranking.length === 0 ? (
+                        <p className="m-0 text-xs text-muted">
+                          No recorded data to rank — battle wins need a
+                          declared side to count here.
+                        </p>
+                      ) : (
+                        <ul className="m-0 flex list-none flex-col gap-1 p-0">
+                          {s.ranking.slice(0, 3).map((row, i) => (
+                            <li
+                              key={row.gangId}
+                              className="flex items-center justify-between gap-2 text-sm"
+                            >
+                              <span>
+                                <span className="font-mono text-xs text-muted">
+                                  {i + 1}.{" "}
+                                </span>
+                                <span className="text-ink">{row.gangName}</span>
+                                <span className="font-mono text-xs text-muted">
+                                  {" "}
+                                  · {row.value}
+                                </span>
+                                {s.tie && i > 0 &&
+                                  row.value === s.ranking[0]!.value && (
+                                    <span className="ml-1 font-mono text-xs uppercase text-hazard">
+                                      tie
+                                    </span>
+                                  )}
+                              </span>
+                              {/* awardTriumph also works on a finished
+                                  campaign — awarding happens at close */}
+                              {!awardedTitles.has(s.title) && (
+                                <AwardSuggestionButton
+                                  title={s.title}
+                                  gangId={row.gangId}
+                                />
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               {/* Award Triumph form */}
               <div>

@@ -286,6 +286,66 @@ export async function getSympathiserControllerMap(): Promise<
   return map;
 }
 
+/* -------------------- Triumph suggestions (issue #88) -------------------- */
+
+/**
+ * Recorded fighter deaths with the challenge's cycle (issue #88 —
+ * Survivor): every fighter_dead aftermath event of the campaign, joined
+ * to its challenge for the cycle. Phase attribution happens in the pure
+ * lib via phaseForCycle.
+ */
+export async function listFighterDeathsWithCycle(campaignId: string) {
+  const rows = await db
+    .select({
+      gangId: schema.battleEvents.gangId,
+      cycle: schema.challenges.cycle,
+    })
+    .from(schema.battleEvents)
+    .innerJoin(
+      schema.challenges,
+      eq(schema.battleEvents.challengeId, schema.challenges.id),
+    )
+    .where(
+      and(
+        eq(schema.challenges.campaignId, campaignId),
+        eq(schema.battleEvents.kind, "fighter_dead"),
+      ),
+    );
+  return rows;
+}
+
+/**
+ * Battle wins with the winner's snapshotted side (issue #88 — Champions):
+ * every resolved challenge with a REAL battle winner (declined/draw have
+ * none), the winner derived from the outcome, the side from the #82
+ * resolution-time snapshot (null for pre-#82 rows).
+ */
+export async function listBattleWins(campaignId: string) {
+  const rows = await db.query.challenges.findMany({
+    where: and(
+      eq(schema.challenges.campaignId, campaignId),
+      eq(schema.challenges.resolved, true),
+    ),
+    columns: {
+      outcome: true,
+      challengerGangId: true,
+      challengedGangId: true,
+      winnerAllegiance: true,
+    },
+  });
+  const wins: { gangId: string; allegiance: string | null }[] = [];
+  for (const c of rows) {
+    const winner =
+      c.outcome === "challenger_win"
+        ? c.challengerGangId
+        : c.outcome === "challenged_win"
+          ? c.challengedGangId
+          : null;
+    if (winner) wins.push({ gangId: winner, allegiance: c.winnerAllegiance });
+  }
+  return wins;
+}
+
 /* ------------------------ Captive flow (issue #86) ------------------------ */
 
 /**
@@ -585,6 +645,9 @@ export async function listGangsBasic(campaignId: string) {
       id: true,
       name: true,
       ratingCached: true,
+      // issue #88 — Hoarder of Coin / Legendary Status suggestions
+      wealthCached: true,
+      reputation: true,
       isActive: true,
       allegiance: true,
     },
@@ -594,6 +657,8 @@ export async function listGangsBasic(campaignId: string) {
     id: g.id,
     name: g.name,
     ratingCached: g.ratingCached,
+    wealthCached: g.wealthCached,
+    reputation: g.reputation,
     isActive: g.isActive,
     allegiance: g.allegiance,
     ownerName: g.owner?.displayName ?? null,

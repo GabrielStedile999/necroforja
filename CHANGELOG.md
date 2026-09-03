@@ -7,6 +7,27 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Added
+- **Triumphs sugeridos automaticamente — o encerramento da campanha se
+  fecha sozinho** (issue #88; Cinderak Burning, p.64): o card Campaign
+  Closure ganhou a seção **"Suggested Triumphs (official)"** com os seis
+  Triumphs oficiais rankeados a partir de dados que o app JÁ registra —
+  **Survivor** (menos mortes de fighters na Great Darkness, contando só
+  eventos do aftermath log e re-derivando a fase do `totalCycles` ATUAL,
+  então editar a duração no meio da campanha não distorce nada),
+  **Hoarder of Coin** (Wealth), **Legendary Status** (Reputation),
+  **Leader of Men** (Sympathisers controlados no fim) e os dois
+  **Champions** (vitórias de batalha por lado, via o snapshot de
+  winner_allegiance da issue #82 — sem esses dados o ranking degrada com
+  uma dica, nada quebra). A lib é **pura e testável**
+  (`src/lib/triumph-suggestions.ts`); **empates nunca são resolvidos pelo
+  app** — a flag "tie" aparece e cada candidato do top-3 tem seu próprio
+  botão **Award**, que reusa a action `awardTriumph` existente com título
+  e gangue pré-preenchidos (1 clique, funciona também em campanha já
+  encerrada; título premiado vira "awarded ✓"). Gangues "sitting out"
+  nunca rankeiam, o aviso "based on recorded events" deixa claro que
+  morte não logada é invisível, e os dados extras só são buscados quando
+  o Closure card renderiza. Sem migração. 7 testes novos
+  (`tests/triumph-suggestions.test.ts`).
 - **Cenários com recompensas preset — resolver batalha ficou 10x mais
   rápido** (issue #87; Cinderak Burning, p.77–101): os **12 cenários
   narrativos** viraram um catálogo funcional
