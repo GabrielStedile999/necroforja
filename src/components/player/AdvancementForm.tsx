@@ -16,6 +16,7 @@ import {
   type SkillTier,
   type PromotionKey,
 } from "@/lib/data/advancements";
+import { SKILL_SETS, getSkillSet } from "@/lib/data/skills";
 
 /**
  * Buy-advancement form (issue #71): stat bump, recorded skill or — for
@@ -49,6 +50,9 @@ export function AdvancementForm({
   const [promotion, setPromotion] = useState<PromotionKey>(
     "ganger_to_specialist",
   );
+  // issue #89 — set → skill picker; "custom" keeps house/unknown skills
+  // usable until their catalogue lands.
+  const [skillSet, setSkillSet] = useState<string>("agility");
   const canPromote = category === "ganger";
 
   useEffect(() => {
@@ -143,17 +147,52 @@ export function AdvancementForm({
                 ))}
               </Select>
             </div>
-            <div className="min-w-40 flex-1">
-              <Label htmlFor={`adv-skill-${fighterId}`}>Skill name</Label>
-              <Input
-                id={`adv-skill-${fighterId}`}
-                name="skillName"
-                maxLength={60}
-                placeholder="e.g. Nerves of Steel"
-                required
+            {/* issue #89 — universal Skill Sets picker (canonical names);
+                the D6 index shown mirrors the table's random roll. */}
+            <div className="w-40">
+              <Label htmlFor={`adv-set-${fighterId}`}>Skill set</Label>
+              <Select
+                id={`adv-set-${fighterId}`}
+                value={skillSet}
+                onChange={(e) => setSkillSet(e.target.value)}
                 className="h-9"
-              />
+              >
+                {SKILL_SETS.map((s) => (
+                  <option key={s.key} value={s.key}>
+                    {s.name}
+                  </option>
+                ))}
+                <option value="custom">Custom / house skill</option>
+              </Select>
             </div>
+            {skillSet === "custom" ? (
+              <div className="min-w-40 flex-1">
+                <Label htmlFor={`adv-skill-${fighterId}`}>Skill name</Label>
+                <Input
+                  id={`adv-skill-${fighterId}`}
+                  name="skillName"
+                  maxLength={60}
+                  placeholder="e.g. a House book skill"
+                  required
+                  className="h-9"
+                />
+              </div>
+            ) : (
+              <div className="min-w-44 flex-1">
+                <Label htmlFor={`adv-skill-${fighterId}`}>Skill</Label>
+                <Select
+                  id={`adv-skill-${fighterId}`}
+                  name="skillName"
+                  className="h-9"
+                >
+                  {getSkillSet(skillSet)?.skills.map((sk) => (
+                    <option key={sk.name} value={sk.name}>
+                      {sk.index}. {sk.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            )}
           </>
         )}
 
