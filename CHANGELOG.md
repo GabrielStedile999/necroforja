@@ -7,6 +7,24 @@ All notable changes to this project. Format based on
 ## [Unreleased]
 
 ### Added
+- **Skill Sets universais com picker e regras clicáveis — comprar skill
+  virou escolher da tabela** (issue #89; Core Rulebook 2023, p.256–261):
+  os **9 Skill Sets universais** (Agility, Brawn, Combat, Cunning,
+  Driving, Ferocity, Leadership, Savant e Shooting) viraram catálogo
+  funcional no repo (`src/lib/data/skills.ts`) — só nomes, set e o
+  **índice D6 impresso** (1–6, espelhando a rolagem aleatória da mesa;
+  zero prosa, disciplina de IP de sempre). No form de advancement, a
+  compra de skill agora tem **picker Set → Skill** ("1. Berserker …
+  6. Unstoppable") com a opção **"Custom / house skill"** mantendo o
+  campo livre de antes — o form posta o MESMO `skillName` canônico, então
+  a action do servidor (issue #71) não mudou uma linha. No card do
+  fighter, cada skill comprada renderiza como **chip clicável**
+  (`KeywordChips`) que abre o resumo reescrito vindo do banco privado —
+  reusa a tabela `keyword_rule` e o import JSON de /admin/catalog da
+  issue #67, então **sem migração**; skills sem entrada no banco (house
+  books futuros) degradam para chip estático, nada quebra. `setKey`
+  aberto para Skill Sets de casa entrarem depois sem mudança de schema.
+  4 testes novos (`tests/skill-sets.test.ts`) — suíte total 633.
 - **Triumphs sugeridos automaticamente — o encerramento da campanha se
   fecha sozinho** (issue #88; Cinderak Burning, p.64): o card Campaign
   Closure ganhou a seção **"Suggested Triumphs (official)"** com os seis

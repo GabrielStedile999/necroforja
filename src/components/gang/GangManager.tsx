@@ -7,7 +7,10 @@ import { AddEquipmentForm } from "@/components/player/AddEquipmentForm";
 import { AddStashItemForm } from "@/components/player/AddStashItemForm";
 import { PurchaseEquipmentForm } from "@/components/player/PurchaseEquipmentForm";
 import type { CatalogOption } from "@/components/player/CatalogPicker";
-import type { KeywordRuleMap } from "@/components/rules/KeywordChips";
+import {
+  KeywordChips,
+  type KeywordRuleMap,
+} from "@/components/rules/KeywordChips";
 import { StashCreditsForm } from "@/components/player/StashCreditsForm";
 import { EquipFromStashForm } from "@/components/player/EquipFromStashForm";
 import { UpdateFighterStatusForm } from "@/components/player/UpdateFighterStatusForm";
@@ -514,11 +517,21 @@ export function GangManager({
                               <div className="flex items-center gap-2">
                                 <Badge variant="toxic">advancement</Badge>
                                 <span className="text-ink">
-                                  {adv.kind === "stat_increase"
-                                    ? `+1 ${STAT_LABEL[adv.statKey as StatKey] ?? adv.statKey}`
-                                    : adv.kind === "promotion"
-                                      ? `Promotion: ${adv.skillName}`
-                                      : `Skill: ${adv.skillName}`}
+                                  {adv.kind === "stat_increase" ? (
+                                    `+1 ${STAT_LABEL[adv.statKey as StatKey] ?? adv.statKey}`
+                                  ) : adv.kind === "promotion" ? (
+                                    `Promotion: ${adv.skillName}`
+                                  ) : (
+                                    <>
+                                      {"Skill: "}
+                                      {/* issue #89 — the rewritten summary
+                                          (private DB) opens on click */}
+                                      <KeywordChips
+                                        traits={adv.skillName ?? ""}
+                                        rules={keywordRules}
+                                      />
+                                    </>
+                                  )}
                                 </span>
                               </div>
                               <span className="font-mono text-xs text-muted">
